@@ -1,0 +1,209 @@
+<!-- CART & CHECKOUT PAGE -->
+<div class="cart-page">
+  <div class="container" id="cart-container">
+    <!-- Rendered via JS -->
+  </div>
+</div>
+
+<script>
+document.addEventListener('page:cart', renderCartPage);
+document.addEventListener('cart:updated', () => {
+  if (_currentRoute === 'cart') renderCartPage();
+});
+
+function renderCartPage() {
+  const container = document.getElementById('cart-container');
+  if (!container) return;
+
+  const cart = Store.getCart();
+  if (cart.length === 0) {
+    container.innerHTML = `
+      <div class="text-center" style="padding:100px 20px">
+        <div style="font-size:4rem;margin-bottom:24px;opacity:0.5">🛒</div>
+        <h2 style="margin-bottom:16px" data-i18n="cart.empty">Your cart is empty.</h2>
+        <button class="btn btn-primary" onclick="navigate('catalog')" data-i18n="cart.empty.cta">Start Shopping</button>
+      </div>
+    `;
+    applyStrings();
+    return;
+  }
+
+  const subtotal = Store.getCartTotal();
+  const shipping = subtotal >= 499 ? 0 : 60;
+  const tax      = Math.round(subtotal * 0.18);
+  const total    = subtotal + shipping + tax;
+  const lang     = localStorage.getItem('pa_lang') || 'en';
+
+  container.innerHTML = `
+    <h1 class="mb-32" data-i18n="cart.title">Your Cart</h1>
+    <div class="cart-layout">
+      <!-- Items -->
+      <div class="cart-items">
+        ${cart.map(item => {
+          const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
+          return `
+            <div class="cart-item">
+              <div class="cart-item-image">
+                <img src="${item.image}" alt="${name}" loading="lazy"/>
+              </div>
+              <div>
+                <div class="cart-item-name">${name}</div>
+                <div class="cart-item-meta">${Store.formatPrice(item.price)} each</div>
+              </div>
+              <div class="cart-item-right">
+                <div class="cart-item-price">${Store.formatPrice(item.price * item.qty)}</div>
+                <div style="display:flex;align-items:center;gap:16px">
+                  <div class="qty-control">
+                    <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty - 1})">−</button>
+                    <span class="qty-value">${item.qty}</span>
+                    <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty + 1})">+</button>
+                  </div>
+                  <button class="cart-remove-btn" onclick="Store.removeFromCart('${item.id}')" data-i18n="cart.remove">Remove</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- Summary -->
+      <div>
+        <div class="order-summary-card">
+          <div class="order-summary-title">Order Summary</div>
+          <div class="order-summary-row">
+            <span data-i18n="cart.subtotal">Subtotal</span>
+            <span>${Store.formatPrice(subtotal)}</span>
+          </div>
+          <div class="order-summary-row">
+            <span data-i18n="cart.shipping">Shipping</span>
+            <span>${shipping === 0 ? '<span class="text-gold" data-i18n="cart.shipping.free">Free</span>' : Store.formatPrice(shipping)}</span>
+          </div>
+          <div class="order-summary-row">
+            <span data-i18n="cart.tax">GST (18%)</span>
+            <span>${Store.formatPrice(tax)}</span>
+          </div>
+          <div class="order-summary-row total">
+            <span data-i18n="cart.total">Total</span>
+            <span>${Store.formatPrice(total)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checkout Form -->
+    <div class="checkout-section">
+      <div class="checkout-section-title" data-i18n="checkout.address.title">Delivery Address</div>
+      <form id="checkout-form" class="form-group" style="max-width:800px;gap:20px">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" data-i18n="checkout.name">Full Name</label>
+            <input type="text" class="form-input" id="co-name" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="checkout.phone">Phone Number</label>
+            <input type="tel" class="form-input" id="co-phone" required pattern="[0-9]{10}" placeholder="10-digit number"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="checkout.email">Email Address</label>
+          <input type="email" class="form-input" id="co-email" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="checkout.address">Address Line</label>
+          <input type="text" class="form-input" id="co-address" required/>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" data-i18n="checkout.city">City</label>
+            <input type="text" class="form-input" id="co-city" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="checkout.state">State</label>
+            <input type="text" class="form-input" id="co-state" required/>
+          </div>
+        </div>
+        <div class="form-group" style="max-width:200px">
+          <label class="form-label" data-i18n="checkout.pincode">Pincode</label>
+          <input type="text" class="form-input" id="co-pin" required pattern="[0-9]{6}"/>
+        </div>
+
+        <div style="margin-top:32px;display:flex;flex-direction:column;align-items:flex-start;gap:12px">
+          <button type="submit" class="btn btn-primary btn-lg" id="pay-btn">
+            <span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}
+          </button>
+          <span style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:6px">
+            🔒 <span data-i18n="checkout.secure">Payments secured by Razorpay</span>
+          </span>
+        </div>
+      </form>
+    </div>
+  `;
+
+  applyStrings();
+
+  // Handle Checkout
+  const form = document.getElementById('checkout-form');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('pay-btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      const user = getCurrentUser();
+      const address = {
+        name:    document.getElementById('co-name').value,
+        phone:   document.getElementById('co-phone').value,
+        email:   document.getElementById('co-email').value,
+        address: document.getElementById('co-address').value,
+        city:    document.getElementById('co-city').value,
+        state:   document.getElementById('co-state').value,
+        pincode: document.getElementById('co-pin').value
+      };
+
+      const orderPayload = Store.buildOrderPayload({ address, userId: user?.uid });
+
+      // Initiate Razorpay
+      await RazorpayHelper.initiatePayment({
+        amount:       orderPayload.total,
+        customerName: address.name,
+        email:        address.email,
+        phone:        address.phone
+      }, async (res) => {
+        // Success
+        try {
+          orderPayload.paymentId = res.paymentId;
+          const orderId = await createOrder(orderPayload);
+
+          // Attempt Shiprocket creation
+          const shp = await ShiprocketHelper.createShipment({ id: orderId, ...orderPayload });
+          await updateOrderTracking(orderId, shp.awb, shp.shipmentId);
+
+          Store.clearCart();
+          showOrderSuccess();
+        } catch (err) {
+          console.error('Order save error:', err);
+          showToast('Payment successful, but order save failed. Contact support.', 'error');
+        }
+      }, (err) => {
+        // Failure
+        btn.disabled = false;
+        btn.innerHTML = `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
+      });
+    });
+  }
+}
+
+function showOrderSuccess() {
+  const container = document.getElementById('cart-container');
+  container.innerHTML = `
+    <div class="order-success">
+      <div class="order-success-icon">✨</div>
+      <h1 class="mb-16" data-i18n="order.success.title">Order Placed!</h1>
+      <p style="color:var(--text-secondary);margin-bottom:32px" data-i18n="order.success.desc">Thank you for your purchase. Your order is confirmed.</p>
+      <button class="btn btn-primary" onclick="navigate('dashboard')" data-i18n="order.success.cta">View My Orders</button>
+    </div>
+  `;
+  applyStrings();
+}
+</script>

@@ -1,0 +1,541 @@
+<!-- ADMIN HUB PAGE -->
+<!-- Login Gate -->
+<div id="admin-login-view" class="admin-login-page">
+  <div class="admin-login-card">
+    <div class="admin-login-logo">
+      <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" style="height: 80px; width: auto; max-width: 100%; object-fit: contain; margin-bottom: 1rem;" />
+      <h1 class="admin-login-title" data-i18n="admin.login.title">Neural Hub</h1>
+      <p class="admin-login-sub" data-i18n="admin.login.subtitle">Admin Access Only</p>
+    </div>
+    <form id="admin-login-form" class="form-group" style="gap:20px">
+      <div class="form-group">
+        <label class="form-label" data-i18n="admin.login.user">Username</label>
+        <input type="text" class="form-input" id="admin-user" required autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="admin.login.pass">Password</label>
+        <input type="password" class="form-input" id="admin-pass" required/>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full mt-8" data-i18n="admin.login.submit">Enter Hub</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Dashboard Shell -->
+<div id="admin-shell" class="admin-shell" style="display:none">
+
+  <!-- Sidebar -->
+  <aside id="admin-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <span class="sidebar-brand-name">Neural Hub</span>
+        <span class="sidebar-brand-sub">Padmanabh Admin</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Sidebar">≡</button>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="sidebar-item active" data-target="tab-analytics">
+        <span class="sidebar-icon">📊</span>
+        <span class="sidebar-label">Analytics</span>
+      </button>
+      <button class="sidebar-item" data-target="tab-products">
+        <span class="sidebar-icon">📦</span>
+        <span class="sidebar-label">Products</span>
+      </button>
+      <button class="sidebar-item" data-target="tab-hero">
+        <span class="sidebar-icon">🖼️</span>
+        <span class="sidebar-label">Hero & Config</span>
+      </button>
+      <button class="sidebar-item" data-target="tab-history">
+        <span class="sidebar-icon">🗑️</span>
+        <span class="sidebar-label">History Archive</span>
+      </button>
+      <button class="sidebar-item" data-target="tab-leads">
+        <span class="sidebar-icon">👥</span>
+        <span class="sidebar-label">Leads</span>
+      </button>
+      <button class="sidebar-item" data-target="tab-orders">
+        <span class="sidebar-icon">📋</span>
+        <span class="sidebar-label">Orders</span>
+      </button>
+      <button class="sidebar-item" data-target="tab-users">
+        <span class="sidebar-icon">👤</span>
+        <span class="sidebar-label">Users</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-item" onclick="adminLogout()">
+        <span class="sidebar-icon">🚪</span>
+        <span class="sidebar-label">Log Out</span>
+      </button>
+      <button class="sidebar-item" onclick="navigate('home')">
+        <span class="sidebar-icon">🌐</span>
+        <span class="sidebar-label">View Site</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main id="admin-main">
+
+    <!-- 1. ANALYTICS TAB -->
+    <div id="tab-analytics" class="admin-tab active">
+      <div class="admin-page-header">
+        <h2 class="admin-page-title">Storefront Analytics</h2>
+        <p class="admin-page-subtitle">Real-time performance metrics</p>
+      </div>
+
+      <div class="charts-row">
+        <!-- Main Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Traffic Overview</h3>
+            <div class="date-filter-group" id="chart-filters">
+              <button class="date-filter-btn" data-days="7">7D</button>
+              <button class="date-filter-btn" data-days="14">14D</button>
+              <button class="date-filter-btn active" data-days="30">30D</button>
+            </div>
+          </div>
+          <div id="chart-wrapper" style="position: relative; height: 250px; width: 100%;">
+            <canvas id="traffic-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Metric Cards Grid -->
+        <div style="display:grid;grid-template-columns:1fr;gap:20px">
+          <div class="metric-card">
+            <div class="metric-label">Views Today</div>
+            <div class="metric-value" id="m-today">0</div>
+            <div class="metric-icon">👁️</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Active Sessions</div>
+            <div class="metric-value" id="m-active">0</div>
+            <div class="metric-icon">🔥</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Lifetime Traffic</div>
+            <div class="metric-value" id="m-lifetime">0</div>
+            <div class="metric-icon">📈</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Total Cart Adds</div>
+            <div class="metric-value" id="m-carts">0</div>
+            <div class="metric-icon">🛒</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ORDER ANALYTICS ────────────────────────────── -->
+      <div class="admin-section-divider">
+        <span>Order Analytics</span>
+      </div>
+
+      <!-- Order KPI Cards -->
+      <div class="order-kpi-grid">
+        <div class="metric-card order-kpi-card">
+          <div class="metric-label">Total Orders</div>
+          <div class="metric-value" id="o-total">0</div>
+          <div class="metric-icon">📋</div>
+        </div>
+        <div class="metric-card order-kpi-card">
+          <div class="metric-label">Total Revenue</div>
+          <div class="metric-value" id="o-revenue">₹0</div>
+          <div class="metric-icon">💰</div>
+        </div>
+        <div class="metric-card order-kpi-card">
+          <div class="metric-label">Avg. Order Value</div>
+          <div class="metric-value" id="o-avg">₹0</div>
+          <div class="metric-icon">📊</div>
+        </div>
+        <div class="metric-card order-kpi-card">
+          <div class="metric-label">Pending Orders</div>
+          <div class="metric-value" id="o-pending">0</div>
+          <div class="metric-icon">⏳</div>
+        </div>
+      </div>
+
+      <!-- Delivery Status KPIs -->
+      <div class="order-kpi-grid" style="margin-top:16px">
+        <div class="metric-card order-kpi-card" style="border-color:rgba(34,197,94,0.25)">
+          <div class="metric-label">Total Delivered</div>
+          <div class="metric-value" id="o-delivered" style="color:#22c55e">0</div>
+          <div class="metric-icon">✅</div>
+        </div>
+        <div class="metric-card order-kpi-card" style="border-color:rgba(139,92,246,0.25)">
+          <div class="metric-label">In Transit</div>
+          <div class="metric-value" id="o-transit" style="color:#8b5cf6">0</div>
+          <div class="metric-icon">🚚</div>
+        </div>
+        <div class="metric-card order-kpi-card" style="border-color:rgba(59,130,246,0.25)">
+          <div class="metric-label">Processing</div>
+          <div class="metric-value" id="o-processing" style="color:#3b82f6">0</div>
+          <div class="metric-icon">⚙️</div>
+        </div>
+        <div class="metric-card order-kpi-card" style="border-color:rgba(239,68,68,0.25)">
+          <div class="metric-label">Cancelled</div>
+          <div class="metric-value" id="o-cancelled" style="color:#ef4444">0</div>
+          <div class="metric-icon">❌</div>
+        </div>
+      </div>
+
+      <!-- Orders & Top Products Charts -->
+      <div class="charts-row" style="margin-top:24px">
+        <!-- Orders Over Time -->
+        <div class="chart-card" style="flex:2">
+          <div class="chart-header">
+            <h3 class="chart-title">Orders Over Time</h3>
+            <div class="date-filter-group" id="order-chart-filters">
+              <button class="date-filter-btn" data-days="7">7D</button>
+              <button class="date-filter-btn" data-days="14">14D</button>
+              <button class="date-filter-btn active" data-days="30">30D</button>
+            </div>
+          </div>
+          <div id="order-chart-wrapper" style="position:relative;height:240px;width:100%">
+            <canvas id="orders-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Products by Revenue -->
+        <div class="chart-card" style="flex:1">
+          <div class="chart-header">
+            <h3 class="chart-title">Top Products</h3>
+            <span style="font-size:0.75rem;color:var(--text-muted)">by revenue</span>
+          </div>
+          <div id="top-products-chart-wrapper" style="position:relative;height:240px;width:100%">
+            <canvas id="top-products-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Status Breakdown -->
+      <div class="charts-row" style="margin-top:24px">
+        <div class="chart-card" style="flex:1">
+          <div class="chart-header">
+            <h3 class="chart-title">Order Status Breakdown</h3>
+          </div>
+          <div style="display:flex;align-items:center;gap:32px;padding:16px 0">
+            <div id="status-donut-wrapper" style="position:relative;width:160px;height:160px;flex-shrink:0">
+              <canvas id="status-donut-chart"></canvas>
+            </div>
+            <div id="status-legend" style="flex:1;display:flex;flex-direction:column;gap:10px">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Method Split -->
+        <div class="chart-card" style="flex:1">
+          <div class="chart-header">
+            <h3 class="chart-title">Payment Methods</h3>
+          </div>
+          <div style="display:flex;align-items:center;gap:32px;padding:16px 0">
+            <div id="payment-donut-wrapper" style="position:relative;width:160px;height:160px;flex-shrink:0">
+              <canvas id="payment-donut-chart"></canvas>
+            </div>
+            <div id="payment-legend" style="flex:1;display:flex;flex-direction:column;gap:10px">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LIVE SHIPMENT TRACKER ─────────────────────────────── -->
+      <div class="admin-section-divider" style="margin-top:36px">
+        <span>🚚 Live Shipment Tracker</span>
+      </div>
+
+      <div class="chart-card" style="padding:0;overflow:hidden">
+        <div class="chart-header" style="padding:20px 24px;border-bottom:1px solid var(--border);margin-bottom:0">
+          <div>
+            <h3 class="chart-title">Shipment Status — All Orders</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Real-time tracking via Shiprocket AWB. Refresh to get latest status.</p>
+          </div>
+          <button class="btn btn-outline" id="btn-refresh-tracking" onclick="refreshAllTracking()" style="font-size:0.78rem;padding:8px 16px">
+            🔄 Refresh All
+          </button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="shipment-tracker-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Items</th>
+                <th>AWB / Tracking ID</th>
+                <th>Status</th>
+                <th>Last Update</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="shipment-tracker-body">
+              <tr><td colspan="8" class="text-center" style="padding:40px;color:var(--text-muted)">Loading shipments...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2. PRODUCTS TAB -->
+    <div id="tab-products" class="admin-tab">
+      <div class="admin-actions-row">
+        <div>
+          <h2 class="admin-page-title">Product Catalog</h2>
+          <p class="admin-page-subtitle">Manage live inventory and storefront display order.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
+      </div>
+
+      <div class="data-table-wrap">
+        <table class="data-table" id="admin-product-table">
+          <thead>
+            <tr>
+              <th width="40"></th>
+              <th width="60">Image</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th width="120" style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-product-body">
+            <tr><td colspan="7" class="text-center" style="padding:40px">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. HERO & CONFIG TAB -->
+    <div id="tab-hero" class="admin-tab">
+      <div class="admin-actions-row">
+        <div>
+          <h2 class="admin-page-title">Hero & Spotlight Config</h2>
+          <p class="admin-page-subtitle">Customize the home page banners and featured collections.</p>
+        </div>
+        <button class="btn btn-primary" onclick="saveHeroConfigAdmin()" id="btn-save-hero">Publish Changes</button>
+      </div>
+
+      <div class="hero-config-grid">
+        <!-- Desktop Banner -->
+        <div class="hero-config-card">
+          <div class="hero-config-card-header">Desktop Banner</div>
+          <div class="hero-config-preview" id="preview-desktop"></div>
+          <div class="hero-config-card-body">
+            <input type="text" class="form-input mb-16" id="input-desktop-img" placeholder="Image URL"/>
+            <p class="text-muted text-xs">Recommended size: 1600x900px</p>
+          </div>
+        </div>
+        <!-- Mobile Banner -->
+        <div class="hero-config-card">
+          <div class="hero-config-card-header">Mobile Banner</div>
+          <div class="hero-config-preview" id="preview-mobile" style="aspect-ratio:4/5"></div>
+          <div class="hero-config-card-body">
+            <input type="text" class="form-input mb-16" id="input-mobile-img" placeholder="Image URL"/>
+            <p class="text-muted text-xs">Recommended size: 800x1000px</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="mb-16">Featured Collections (4 Spots)</h3>
+      <div class="collection-config-grid" id="collection-config-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- 4. HISTORY ARCHIVE TAB -->
+    <div id="tab-history" class="admin-tab">
+      <div class="admin-page-header">
+        <h2 class="admin-page-title">History Archive</h2>
+        <p class="admin-page-subtitle">Soft-deleted products. Restore to live catalog or permanently delete.</p>
+      </div>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th width="60">Image</th>
+              <th>Product Name</th>
+              <th>Deleted On</th>
+              <th width="180" style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-history-body">
+            <tr><td colspan="4" class="history-empty">Loading history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. LEADS TAB -->
+    <div id="tab-leads" class="admin-tab">
+      <div class="admin-page-header">
+        <h2 class="admin-page-title">Collected Leads</h2>
+        <p class="admin-page-subtitle">From Lead Catcher Modal</p>
+      </div>
+      <div class="admin-card">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Location</th>
+                <th>Service Interest</th>
+              </tr>
+            </thead>
+            <tbody id="leads-tbody">
+              <!-- JS Populated -->
+              <tr><td colspan="5" class="text-center" style="padding:24px;color:var(--text-muted)">Loading leads...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. ORDERS TAB -->
+    <div id="tab-orders" class="admin-tab">
+      <div class="admin-page-header">
+        <h2 class="admin-page-title">Order Management</h2>
+        <p class="admin-page-subtitle">All customer orders. Enter tracking IDs and generate invoices.</p>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table" id="admin-orders-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders-body">
+            <tr><td colspan="7" class="text-center" style="padding:40px">Loading orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 7. USERS TAB -->
+    <div id="tab-users" class="admin-tab">
+      <div class="admin-page-header">
+        <h2 class="admin-page-title">User Database</h2>
+        <p class="admin-page-subtitle">Registered users. Auth0 integration coming soon.</p>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table" id="admin-users-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone / Email</th>
+              <th>Registered On</th>
+              <th>Total Orders</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-body">
+            <tr><td colspan="5" class="text-center" style="padding:40px">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div id="product-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="pm-title">Add Product</h3>
+      <button class="modal-close" onclick="closeProductModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="product-form" class="form-group" style="gap:20px">
+        <input type="hidden" id="pm-id"/>
+        <div class="form-group">
+          <label class="form-label">Product Name (EN) *</label>
+          <input type="text" class="form-input" id="pm-name" required/>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Name (Hindi)</label>
+            <input type="text" class="form-input" id="pm-name-hi"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Name (Marathi)</label>
+            <input type="text" class="form-input" id="pm-name-mr"/>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Price (₹) *</label>
+            <input type="number" class="form-input" id="pm-price" required min="0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">MRP (₹)</label>
+            <input type="number" class="form-input" id="pm-mrp" min="0"/>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select class="form-select" id="pm-cat" required>
+              <option value="wellness">Wellness</option>
+              <option value="skincare">Skincare</option>
+              <option value="haircare">Haircare</option>
+              <option value="immunity">Immunity</option>
+              <option value="digestion">Digestion</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock Status</label>
+            <select class="form-select" id="pm-stock">
+              <option value="true">In Stock</option>
+              <option value="false">Out of Stock</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Images -->
+        <div class="form-group mt-16">
+          <label class="form-label">Images (Max 4)</label>
+          <div class="image-upload-zone" id="img-upload-zone" onclick="document.getElementById('img-file-input').click()">
+            <div style="font-size:2rem;margin-bottom:8px">📷</div>
+            <div>Click to add image</div>
+          </div>
+          <input type="file" id="img-file-input" class="hidden" accept="image/*"/>
+          <div class="image-preview-grid" id="pm-img-preview"></div>
+          <!-- Hidden storage for URLs -->
+          <input type="hidden" id="pm-img-urls"/>
+        </div>
+
+        <div class="form-group mt-16">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="pm-desc"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">How to Use</label>
+          <textarea class="form-textarea" id="pm-usage" style="min-height:60px"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ingredients</label>
+          <textarea class="form-textarea" id="pm-ing" style="min-height:60px"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeProductModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-product" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -1,0 +1,124 @@
+<!-- CATALOG PAGE -->
+<div class="catalog-page" style="padding-top:var(--nav-h)">
+  <div class="container">
+    <div class="catalog-hero">
+      <p class="section-label" data-i18n="catalog.label">Our Products</p>
+      <span class="accent-line centered"></span>
+      <h1 data-i18n="catalog.title">The Collection</h1>
+    </div>
+
+    <!-- Filters -->
+    <div class="catalog-filters">
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="filter-tab active" data-category="all">All Products</button>
+        <button class="filter-tab" data-category="orthopedic">🦴 Orthopedic</button>
+        <button class="filter-tab" data-category="digestive">🍃 Digestive</button>
+        <button class="filter-tab" data-category="wellness">🌿 Wellness</button>
+        <button class="filter-tab" data-category="immunity">⚡ Immunity</button>
+      </div>
+
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div class="catalog-search-wrap">
+          <span class="catalog-search-icon">🔍</span>
+          <input type="search" class="catalog-search" id="catalog-search" data-i18n-ph="catalog.search" placeholder="Search products…" autocomplete="off"/>
+        </div>
+        <div class="catalog-sort-wrap">
+          <span class="catalog-sort-label" data-i18n="catalog.sort">Sort by</span>
+          <select class="sort-select" id="catalog-sort">
+            <option value="newest" data-i18n="catalog.sort.newest">Newest</option>
+            <option value="price_asc" data-i18n="catalog.sort.price_asc">Price: Low–High</option>
+            <option value="price_desc" data-i18n="catalog.sort.price_desc">Price: High–Low</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="products-grid" id="catalog-grid">
+      <div class="product-card skeleton" style="height:380px"></div>
+      <div class="product-card skeleton" style="height:380px"></div>
+      <div class="product-card skeleton" style="height:380px"></div>
+      <div class="product-card skeleton" style="height:380px"></div>
+      <div class="product-card skeleton" style="height:380px"></div>
+      <div class="product-card skeleton" style="height:380px"></div>
+    </div>
+
+    <div class="catalog-empty hidden" id="catalog-empty">
+      <h3 data-i18n="catalog.empty">No products found.</h3>
+      <button class="btn btn-outline mt-24" onclick="clearFilters()">Clear Filters</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _allProducts = [];
+let _activeCategory = 'all';
+let _searchQuery = '';
+let _sortOrder = 'newest';
+
+document.addEventListener('page:catalog', async () => {
+  _allProducts = await Store.loadProducts().catch(() => []);
+  renderCatalog();
+
+  // Filter tabs
+  document.getElementById('filter-tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.filter-tab');
+    if (!tab) return;
+    _activeCategory = tab.dataset.category;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t === tab));
+    renderCatalog();
+  });
+
+  // Search
+  const searchEl = document.getElementById('catalog-search');
+  if (searchEl) {
+    searchEl.addEventListener('input', () => {
+      _searchQuery = searchEl.value;
+      renderCatalog();
+    });
+  }
+
+  // Sort
+  const sortEl = document.getElementById('catalog-sort');
+  if (sortEl) {
+    sortEl.addEventListener('change', () => {
+      _sortOrder = sortEl.value;
+      renderCatalog();
+    });
+  }
+});
+
+function renderCatalog() {
+  const filtered = Store.filterProducts(_allProducts, {
+    category: _activeCategory,
+    search:   _searchQuery,
+    sort:     _sortOrder
+  });
+
+  const grid  = document.getElementById('catalog-grid');
+  const empty = document.getElementById('catalog-empty');
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  grid.innerHTML = filtered.map(p => renderProductCard(p)).join('');
+  // Re-observe newly rendered cards for scroll animations
+  if (window.initScrollAnimations) requestAnimationFrame(initScrollAnimations);
+}
+
+function clearFilters() {
+  _activeCategory = 'all';
+  _searchQuery    = '';
+  _sortOrder      = 'newest';
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.category === 'all'));
+  const s = document.getElementById('catalog-search');
+  if (s) s.value = '';
+  const so = document.getElementById('catalog-sort');
+  if (so) so.value = 'newest';
+  renderCatalog();
+}
+window.clearFilters = clearFilters;
+</script>

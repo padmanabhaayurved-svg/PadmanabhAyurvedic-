@@ -1,0 +1,188 @@
+<!-- PRODUCT DETAIL PAGE -->
+<div class="product-detail-hero" id="product-page">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <div style="padding:24px 0 0;display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text-muted)">
+      <span style="cursor:pointer" onclick="navigate('home')">Home</span>
+      <span>/</span>
+      <span style="cursor:pointer" onclick="navigate('catalog')">Shop</span>
+      <span>/</span>
+      <span id="product-breadcrumb" style="color:var(--text-secondary)">Product</span>
+    </div>
+
+    <div class="product-detail-grid mt-32" id="product-content">
+      <!-- Skeleton -->
+      <div class="skeleton" style="aspect-ratio:1;border-radius:var(--radius-xl)"></div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="skeleton" style="height:20px;width:30%"></div>
+        <div class="skeleton" style="height:48px;width:80%"></div>
+        <div class="skeleton" style="height:32px;width:40%"></div>
+        <div class="skeleton" style="height:80px"></div>
+        <div class="skeleton" style="height:52px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RELATED PRODUCTS -->
+<section class="section" style="border-top:1px solid var(--border)" id="related-section" style="display:none">
+  <div class="container">
+    <h3 class="mb-32" data-i18n="product.related">You May Also Like</h3>
+    <div class="products-grid" id="related-grid"></div>
+  </div>
+</section>
+
+<script>
+let _currentProduct = null;
+let _selectedImageIdx = 0;
+let _qty = 1;
+
+document.addEventListener('page:product', async (e) => {
+  const id = e.detail?.id;
+  if (!id) { navigate('catalog'); return; }
+
+  // Load all products if needed
+  if (!Store.getCachedProducts().length) await Store.loadProducts();
+
+  const product = await getProduct(id).catch(() => null)
+    || Store.getCachedProducts().find(p => p.id === id);
+
+  if (!product) { navigate('catalog'); return; }
+
+  _currentProduct = product;
+  _selectedImageIdx = 0;
+  _qty = 1;
+  renderProductDetail(product);
+
+  // Related
+  const related = Store.getRelatedProducts(product, 3);
+  const relGrid = document.getElementById('related-grid');
+  const relSec  = document.getElementById('related-section');
+  if (related.length && relGrid) {
+    relGrid.innerHTML = related.map(p => renderProductCard(p)).join('');
+    if (relSec) relSec.style.display = '';
+  }
+});
+
+function renderProductDetail(p) {
+  const lang    = localStorage.getItem('pa_lang') || 'en';
+  const name    = lang === 'hi' ? (p.nameHi || p.name) : lang === 'mr' ? (p.nameMr || p.name) : p.name;
+  const savings = Store.getSavings(p.price, p.mrp);
+  const images  = p.images?.length ? p.images : ['https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80'];
+
+  document.getElementById('product-breadcrumb').textContent = name;
+  document.title = `${name} — Padmanabh Ayurvedics`;
+
+  document.getElementById('product-content').innerHTML = `
+    <!-- Gallery -->
+    <div class="product-gallery">
+      <div class="gallery-main" id="gallery-main">
+        <img src="${images[0]}" alt="${name}" id="gallery-main-img" loading="eager"/>
+      </div>
+      <div class="gallery-thumbnails" id="gallery-thumbs">
+        ${images.map((img, i) => `
+          <div class="gallery-thumb ${i===0?'active':''}" data-idx="${i}" onclick="selectGalleryImage(${i})">
+            <img src="${img}" alt="${name} ${i+1}" loading="lazy"/>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div id="product-info">
+      <div class="product-info-category">${p.category?.toUpperCase()}</div>
+      <h1 class="product-info-name">${name}</h1>
+
+      <div class="product-info-price-row">
+        <span class="product-info-price">${Store.formatPrice(p.price)}</span>
+        ${p.mrp ? `<span class="product-info-mrp">MRP ${Store.formatPrice(p.mrp)}</span>` : ''}
+        ${savings > 0 ? `<span class="product-info-save">Save ${savings}%</span>` : ''}
+      </div>
+
+      <div class="product-info-stock">
+        <span class="stock-dot ${p.inStock ? 'in' : 'out'}"></span>
+        <span style="font-size:0.85rem;color:var(--text-secondary)">${p.inStock ? '✓ In Stock' : 'Out of Stock'}</span>
+      </div>
+
+      <!-- Qty -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+        <span style="font-size:0.8rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase">Qty</span>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-value" id="qty-display">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+
+      <div class="product-info-actions">
+        <button class="btn btn-primary btn-lg" onclick="addCurrentToCart()" ${!p.inStock?'disabled':''} data-i18n="product.add_to_cart">Add to Cart</button>
+        <button class="btn btn-outline btn-lg" onclick="buyNow()" ${!p.inStock?'disabled':''} data-i18n="product.buy_now">Buy Now</button>
+      </div>
+
+      <hr class="product-divider"/>
+
+      <!-- Tabs -->
+      <div class="tabs" id="product-tabs">
+        <button class="tab-btn active" data-tab="about" data-i18n="product.tab.about">About</button>
+        <button class="tab-btn" data-tab="usage" data-i18n="product.tab.usage">How to Use</button>
+        <button class="tab-btn" data-tab="ingredients" data-i18n="product.tab.ingredients">Ingredients</button>
+      </div>
+      <div id="tab-content" style="padding:20px 0;color:var(--text-secondary);font-size:0.9rem;line-height:1.8">
+        ${p.description || ''}
+      </div>
+
+      <hr class="product-divider"/>
+
+      <!-- Trust -->
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text-muted)">
+          <span>🌿</span> 100% Natural
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text-muted)">
+          <span>🏆</span> Ayush Certified
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text-muted)">
+          <span>🚚</span> Free shipping ₹499+
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Tab events
+  document.getElementById('product-tabs').addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    document.querySelectorAll('#product-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    const content = { about: p.description, usage: p.usage, ingredients: p.ingredients };
+    document.getElementById('tab-content').textContent = content[tab] || 'Coming soon.';
+  });
+}
+
+function selectGalleryImage(idx) {
+  _selectedImageIdx = idx;
+  const images = _currentProduct?.images;
+  if (!images) return;
+  document.getElementById('gallery-main-img').src = images[idx];
+  document.querySelectorAll('.gallery-thumb').forEach((t, i) => t.classList.toggle('active', i === idx));
+}
+window.selectGalleryImage = selectGalleryImage;
+
+function changeQty(delta) {
+  _qty = Math.max(1, _qty + delta);
+  document.getElementById('qty-display').textContent = _qty;
+}
+window.changeQty = changeQty;
+
+function addCurrentToCart() {
+  if (!_currentProduct) return;
+  Store.addToCart(_currentProduct, _qty);
+}
+window.addCurrentToCart = addCurrentToCart;
+
+function buyNow() {
+  addCurrentToCart();
+  navigate('cart');
+}
+window.buyNow = buyNow;
+</script>

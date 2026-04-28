@@ -1,0 +1,225 @@
+<!-- HOME PAGE -->
+<section class="hero" id="hero-section">
+  <div class="hero-bg" id="hero-carousel">
+    <!-- Images injected by JS -->
+  </div>
+  <div class="container hero-content">
+    <p class="hero-label" data-i18n="hero.label">Rooted in Ancient Wisdom</p>
+    <h1 class="hero-title" data-i18n="hero.title">Nature's Finest,<br>Crafted for You</h1>
+    <p class="hero-subtitle" data-i18n="hero.subtitle">Authentic Ayurvedic formulations for holistic well-being.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-lg" onclick="navigate('catalog')" data-i18n="hero.cta">Explore Collection</button>
+      <button class="btn btn-outline btn-lg" onclick="navigate('about')" data-i18n="hero.cta2">Our Story</button>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">Scroll</div>
+</section>
+
+<!-- FEATURED COLLECTIONS -->
+<section class="section">
+  <div class="container">
+    <div class="text-center mb-48 animate-on-scroll">
+      <p class="section-label" data-i18n="home.collections.label">Curated for You</p>
+      <span class="accent-line centered"></span>
+      <h2 data-i18n="home.collections.title">Featured Collections</h2>
+    </div>
+    <div class="collections-grid stagger animate-on-scroll" id="collections-grid">
+      <!-- Populated by JS -->
+      <div class="collection-card skeleton" style="aspect-ratio:3/4"></div>
+      <div class="collection-card skeleton" style="aspect-ratio:3/4"></div>
+      <div class="collection-card skeleton" style="aspect-ratio:3/4"></div>
+      <div class="collection-card skeleton" style="aspect-ratio:3/4"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BADGES -->
+<section class="section-sm" style="background:var(--bg-surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <div class="text-center mb-32 animate-on-scroll">
+      <p class="section-label" data-i18n="home.trust.label">Why Padmanabh?</p>
+      <h2 class="mt-8" data-i18n="home.trust.title">Purity You Can Trust</h2>
+    </div>
+    <div class="trust-grid stagger">
+      <div class="trust-item animate-on-scroll">
+        <span class="trust-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--gold)">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+            <path d="M12 6v6l4 2"/>
+            <path stroke-linecap="round" d="M8 14s1.5 2 4 2 4-2 4-2"/>
+            <circle cx="9" cy="10" r="1" fill="currentColor"/>
+            <circle cx="15" cy="10" r="1" fill="currentColor"/>
+          </svg>
+        </span>
+        <h4 class="trust-title" data-i18n="home.trust.natural.title">100% Natural</h4>
+        <p class="trust-desc" data-i18n="home.trust.natural.desc">Sourced from certified organic farms across India.</p>
+      </div>
+      <div class="trust-item animate-on-scroll">
+        <span class="trust-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--gold)">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </span>
+        <h4 class="trust-title" data-i18n="home.trust.certified.title">Ayush Certified</h4>
+        <p class="trust-desc" data-i18n="home.trust.certified.desc">Every product meets the highest Ayurvedic standards.</p>
+      </div>
+      <div class="trust-item animate-on-scroll">
+        <span class="trust-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--gold)">
+            <path d="M1 3h15v13H1z"/>
+            <path d="M16 8h4l3 3v5h-7V8z"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/>
+            <circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        </span>
+        <h4 class="trust-title" data-i18n="home.trust.shipping.title">Free Shipping</h4>
+        <p class="trust-desc" data-i18n="home.trust.shipping.desc">Complimentary delivery on orders above ₹499.</p>
+      </div>
+      <div class="trust-item animate-on-scroll">
+        <span class="trust-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--gold)">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </span>
+        <h4 class="trust-title" data-i18n="home.trust.support.title">Expert Guidance</h4>
+        <p class="trust-desc" data-i18n="home.trust.support.desc">Talk to our Ayurvedic practitioners anytime.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+<section class="section">
+  <div class="container">
+    <div class="flex items-center justify-between mb-32 animate-on-scroll">
+      <div>
+        <p class="section-label">Best Sellers</p>
+        <h2 class="mt-8">Top Products</h2>
+      </div>
+      <button class="btn btn-outline" onclick="navigate('catalog')">View All →</button>
+    </div>
+    <div class="products-grid" id="home-products-grid">
+      <div class="product-card skeleton" style="height:360px"></div>
+      <div class="product-card skeleton" style="height:360px"></div>
+      <div class="product-card skeleton" style="height:360px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section" style="background:var(--bg-surface);border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="text-center mb-48">
+      <p class="section-label" data-i18n="home.testimonials.label">What Our Customers Say</p>
+      <span class="accent-line centered"></span>
+      <h2 data-i18n="home.testimonials.title">Voices of Wellness</h2>
+    </div>
+    <div class="testimonials-track stagger">
+      <div class="testimonial-card animate-in">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"The Ashwagandha capsules transformed my energy levels within 3 weeks. Absolutely genuine Ayurvedic quality — I can feel the difference."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">P</div>
+          <div><div class="testimonial-name">Priya Sharma</div><div class="testimonial-location">Mumbai, Maharashtra</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card animate-in">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Kumkumadi oil is worth every rupee. My skin glows like never before. Padmanabh's quality is unmatched — will keep ordering!"</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">A</div>
+          <div><div class="testimonial-name">Anita Desai</div><div class="testimonial-location">Pune, Maharashtra</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card animate-in">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Bhringraj oil stopped my hair fall in just 2 months. Packaging is premium, delivery was fast. Highly recommend to everyone!"</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">R</div>
+          <div><div class="testimonial-name">Rahul Mehta</div><div class="testimonial-location">Nashik, Maharashtra</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<section class="section" style="text-align:center">
+  <div class="container-narrow">
+    <p class="section-label">Start Your Wellness Journey</p>
+    <span class="accent-line centered"></span>
+    <h2 style="font-size:clamp(2rem,4vw,3.2rem);margin:16px 0">Ancient Wisdom.<br><em class="text-gold">Modern Living.</em></h2>
+    <p style="color:var(--text-muted);max-width:480px;margin:0 auto 32px">Explore our curated range of Ayurvedic products and discover the power of nature's finest ingredients.</p>
+    <button class="btn btn-primary btn-lg" onclick="navigate('catalog')">Shop the Collection</button>
+  </div>
+</section>
+
+<script>
+document.addEventListener('page:home', async () => {
+  // Load hero config
+  const config = await getHeroConfig().catch(() => getDefaultHeroConfig());
+  const isMobile = window.innerWidth < 768;
+  const carousel = document.getElementById('hero-carousel');
+  
+  if (carousel) {
+    const images = isMobile 
+      ? [
+          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&q=80',
+          'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1000&q=80',
+          'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1000&q=80'
+        ]
+      : [
+          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1600&q=80',
+          'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1600&q=80',
+          'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1600&q=80'
+        ];
+      
+    carousel.innerHTML = images.map((src, i) => `
+      <img src="${src}" alt="Ayurvedic wellness" class="carousel-img" loading="${i === 0 ? 'eager' : 'lazy'}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0 ? 0.55 : 0};transition:opacity 2s ease-in-out;"/>
+    `).join('');
+    
+    let currentIndex = 0;
+    const imgElements = carousel.querySelectorAll('.carousel-img');
+    
+    if (window.heroInterval) clearInterval(window.heroInterval);
+    window.heroInterval = setInterval(() => {
+      if(imgElements.length === 0) return;
+      imgElements[currentIndex].style.opacity = '0';
+      currentIndex = (currentIndex + 1) % imgElements.length;
+      imgElements[currentIndex].style.opacity = '0.55';
+    }, 5000);
+  }
+
+  // Render collections
+  const grid = document.getElementById('collections-grid');
+  if (grid && config.collections) {
+    const lang = localStorage.getItem('pa_lang') || 'en';
+    const labels = { en: 'Shop Collection', hi: 'संग्रह खरीदें', mr: 'संग्रह खरेदी करा' };
+    grid.innerHTML = config.collections.map(c => `
+      <div class="collection-card animate-in" onclick="navigate('catalog')">
+        <img src="${c.image}" alt="${c.title}" loading="lazy"/>
+        <div class="collection-card-overlay">
+          <div class="collection-card-title">${c.title}</div>
+          <div class="collection-card-label">${labels[lang] || labels.en} →</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Load featured products (first 3)
+  const prods = await Store.loadProducts().catch(() => []);
+  const homeGrid = document.getElementById('home-products-grid');
+  if (homeGrid) {
+    homeGrid.innerHTML = prods.slice(0, 3).map(p => renderProductCard(p)).join('');
+  }
+
+  // Trigger cinematic hero animation
+  const heroSection = document.getElementById('hero-section');
+  if (heroSection) {
+    heroSection.classList.remove('play-anim');
+    setTimeout(() => {
+      heroSection.classList.add('play-anim');
+    }, 100);
+  }
+});
+</script>

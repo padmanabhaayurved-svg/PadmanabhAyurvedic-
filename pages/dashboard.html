@@ -1,0 +1,212 @@
+<!-- USER DASHBOARD PAGE -->
+<div class="dashboard-page">
+  <div class="container" id="dashboard-container">
+    <!-- Rendered via JS -->
+  </div>
+</div>
+
+<script>
+document.addEventListener('page:dashboard', renderDashboard);
+
+async function renderDashboard() {
+  const container = document.getElementById('dashboard-container');
+  if (!container) return;
+
+  const user = getCurrentUser();
+
+  if (!user) {
+    // Show Auth Forms
+    container.innerHTML = `
+      <div class="auth-card">
+        <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" style="height: 60px; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto 16px auto; display: block;" />
+        <h2 class="admin-login-title" style="margin-bottom:8px" id="auth-title" data-i18n="dashboard.login.title">Welcome Back</h2>
+        <p class="auth-subtitle">Sign in to track your orders and manage your account.</p>
+
+        <form id="auth-form" class="form-group" style="gap:20px">
+          <div class="form-group" id="name-group" style="display:none">
+            <label class="form-label" data-i18n="dashboard.register.name">Full Name</label>
+            <input type="text" class="form-input" id="auth-name"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="dashboard.login.email">Email Address</label>
+            <input type="email" class="form-input" id="auth-email" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="dashboard.login.password">Password</label>
+            <input type="password" class="form-input" id="auth-pass" required/>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full mt-8" id="auth-submit" data-i18n="dashboard.login.submit">Sign In</button>
+        </form>
+
+        <div class="text-center mt-24">
+          <button class="btn btn-ghost btn-sm" id="auth-toggle" onclick="toggleAuthMode()" data-i18n="dashboard.login.register">New here? Create account</button>
+        </div>
+      </div>
+    `;
+    applyStrings();
+
+    document.getElementById('auth-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const isReg = document.getElementById('name-group').style.display !== 'none';
+      const email = document.getElementById('auth-email').value;
+      const pass  = document.getElementById('auth-pass').value;
+      const btn   = document.getElementById('auth-submit');
+
+      btn.disabled = true;
+      btn.textContent = 'Please wait...';
+
+      try {
+        if (isReg) {
+          const res = await signUp(email, pass);
+          const name = document.getElementById('auth-name').value;
+          if (name) await res.user.updateProfile({ displayName: name });
+        } else {
+          await signIn(email, pass);
+        }
+        showToast('Successfully signed in', 'success');
+        renderDashboard(); // Re-render as logged in
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = isReg ? 'Create Account' : 'Sign In';
+        showToast(err.message, 'error');
+      }
+    });
+    return;
+  }
+
+  // Logged In State
+  container.innerHTML = `
+    <div class="dashboard-header">
+      <div>
+        <h1 data-i18n="dashboard.title">My Orders</h1>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-top:4px">${user.email}</p>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="handleSignOut()" data-i18n="dashboard.logout">Sign Out</button>
+    </div>
+
+    <div class="data-table-wrap" style="margin-top:40px">
+      <table class="orders-table" id="orders-table">
+        <thead>
+          <tr>
+            <th data-i18n="dashboard.order.id">Order ID</th>
+            <th data-i18n="dashboard.order.date">Date</th>
+            <th data-i18n="dashboard.order.total">Total</th>
+            <th data-i18n="dashboard.order.status">Status</th>
+            <th data-i18n="dashboard.order.track">Track</th>
+          </tr>
+        </thead>
+        <tbody id="orders-body">
+          <tr><td colspan="5" class="text-center" style="padding:40px" data-i18n="common.loading">Loading orders...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+  applyStrings();
+
+  // Fetch orders from localStorage (chatbot + future Firebase)
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  // Also try Firebase if available
+  try {
+    const firebaseOrders = await getUserOrders(user.uid);
+    if (firebaseOrders.length > 0) orders = [...firebaseOrders, ...orders];
+  } catch(e) {}
+
+  const tbody = document.getElementById('orders-body');
+
+  if (orders.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center" style="padding:60px 20px">
+          <p style="color:var(--text-muted);margin-bottom:16px" data-i18n="dashboard.no_orders">No orders yet.</p>
+          <button class="btn btn-outline" onclick="navigate('catalog')" data-i18n="dashboard.no_orders.cta">Shop Now</button>
+        </td>
+      </tr>
+    `;
+    applyStrings();
+    return;
+  }
+
+  tbody.innerHTML = orders.map(o => {
+    const d = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'Just now';
+    let statusClass = 'pill-muted';
+    if (o.status === 'processing') statusClass = 'pill-warning';
+    if (o.status === 'shipped')    statusClass = 'pill-gold';
+    if (o.status === 'delivered')  statusClass = 'pill-success';
+
+    const itemSummary = (o.items || []).map(i => `${i.name} ×${i.qty}`).join(', ');
+
+    return `
+      <tr>
+        <td style="font-family:var(--font-sans);font-weight:500">#${o.id.slice(-6).toUpperCase()}</td>
+        <td>
+          <div style="font-size:0.82rem">${d}</div>
+          ${itemSummary ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">${itemSummary}</div>` : ''}
+        </td>
+        <td>₹${o.total || 0}</td>
+        <td><span class="pill ${statusClass}" data-i18n="status.${o.status}">${(o.status || 'PENDING').toUpperCase()}</span></td>
+        <td>
+          ${o.trackingId
+            ? `<button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:0.75rem" onclick="trackOrder('${o.trackingId}')">Track ↗</button>`
+            : `<span style="color:var(--text-muted);font-size:0.8rem">Awaiting shipment</span>`
+          }
+        </td>
+      </tr>
+    `;
+  }).join('');
+  applyStrings();
+}
+
+let _isRegMode = false;
+function toggleAuthMode() {
+  _isRegMode = !_isRegMode;
+  document.getElementById('name-group').style.display = _isRegMode ? 'block' : 'none';
+  const nameInput = document.getElementById('auth-name');
+  if (_isRegMode) nameInput.setAttribute('required', 'true'); else nameInput.removeAttribute('required');
+
+  document.getElementById('auth-title').setAttribute('data-i18n', _isRegMode ? 'dashboard.register.title' : 'dashboard.login.title');
+  document.getElementById('auth-submit').setAttribute('data-i18n', _isRegMode ? 'dashboard.register.submit' : 'dashboard.login.submit');
+  document.getElementById('auth-toggle').setAttribute('data-i18n', _isRegMode ? 'dashboard.register.login' : 'dashboard.login.register');
+  applyStrings();
+}
+window.toggleAuthMode = toggleAuthMode;
+
+async function handleSignOut() {
+  await signOut();
+  navigate('home');
+  showToast('Signed out successfully');
+}
+window.handleSignOut = handleSignOut;
+
+async function trackOrder(awb) {
+  showToast('Fetching tracking details...', 'info');
+  const res = await ShiprocketHelper.trackShipment(awb);
+  const data = res.tracking_data;
+
+  const activities = data?.shipment_track_activities || [];
+  const listHtml = activities.map(a => `
+    <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div style="font-size:0.75rem;color:var(--text-muted)">${a.date}</div>
+      <div style="font-weight:500;margin:4px 0">${a.activity}</div>
+      <div style="font-size:0.8rem;color:var(--text-secondary)">${a.location}</div>
+    </div>
+  `).join('');
+
+  // Show in a modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Tracking: ${awb}</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        ${listHtml || '<p>No tracking updates available yet.</p>'}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+window.trackOrder = trackOrder;
+</script>
