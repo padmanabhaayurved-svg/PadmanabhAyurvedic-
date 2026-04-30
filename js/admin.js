@@ -14,7 +14,7 @@ let _historyProducts = [];
 // ── Auth0 Configuration ──────────────────────────────────────
 const AUTH0_CONFIG = {
   domain:   'dev-7c0nglnmb4cv228b.us.auth0.com',
-  clientId: 'L86GzDIgRWyvsASsN0yT7MGxdadPhCd3',
+  clientId: 'B4XFDFFGu1emngk9Yv4upDM51HZddskq',
   audience: 'https://dev-7c0nglnmb4cv228b.us.auth0.com/api/v2/'
 };
 
