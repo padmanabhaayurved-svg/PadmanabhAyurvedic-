@@ -362,6 +362,32 @@
   color: var(--text-inverse);
 }
 
+.custom-date-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-elevated);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-gold);
+  margin-top: 10px;
+  animation: fadeIn 0.3s ease;
+}
+
+.form-input-sm {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.form-input-sm:focus {
+  border-color: var(--gold);
+}
+
 /* Canvas bar chart wrapper handles sizing */
 #traffic-chart {
   /* Let Chart.js auto-fill the relative parent */
@@ -682,5 +708,87 @@
 }
 @media (max-width: 600px) {
   .order-kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Invoice / Print ─────────────────────────────────────────── */
+@media print {
+  body * { visibility: hidden; }
+  .order-detail-modal, .order-detail-modal * { visibility: visible; }
+  .order-detail-modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print { display: none !important; }
+  .order-detail-modal table { border-collapse: collapse; width: 100%; }
+  .order-detail-modal th, .order-detail-modal td { border: 1px solid #ddd; padding: 8px; }
+  .text-gold { color: #64a435 !important; }
+}
+
+.order-detail-modal {
+  color: var(--text-primary);
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 20px;
+}
+
+.invoice-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+}
+
+.invoice-table th {
+  background: var(--bg-elevated);
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+
+.invoice-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.invoice-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.total-row {
+  display: grid;
+  grid-template-columns: 150px 100px;
+  text-align: right;
+  gap: 10px;
+}
+
+.total-row.grand-total {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gold);
+  border-top: 1px solid var(--gold);
+  margin-top: 8px;
+  padding-top: 8px;
 }
 

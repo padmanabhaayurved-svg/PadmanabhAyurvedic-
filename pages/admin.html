@@ -94,6 +94,14 @@
               <button class="date-filter-btn" data-days="7">7D</button>
               <button class="date-filter-btn" data-days="14">14D</button>
               <button class="date-filter-btn active" data-days="30">30D</button>
+              <button class="date-filter-btn" data-days="lifetime">Lifetime</button>
+              <button class="date-filter-btn" id="btn-custom-range">Custom</button>
+            </div>
+            <div id="custom-date-picker" class="custom-date-picker hidden">
+              <input type="date" id="start-date" class="form-input-sm"/>
+              <span>to</span>
+              <input type="date" id="end-date" class="form-input-sm"/>
+              <button class="btn btn-primary btn-sm" id="btn-apply-custom">Apply</button>
             </div>
           </div>
           <div id="chart-wrapper" style="position: relative; height: 250px; width: 100%;">
@@ -189,6 +197,7 @@
               <button class="date-filter-btn" data-days="7">7D</button>
               <button class="date-filter-btn" data-days="14">14D</button>
               <button class="date-filter-btn active" data-days="30">30D</button>
+              <button class="date-filter-btn" data-days="lifetime">Lifetime</button>
             </div>
           </div>
           <div id="order-chart-wrapper" style="position:relative;height:240px;width:100%">
@@ -398,9 +407,12 @@
 
     <!-- 6. ORDERS TAB -->
     <div id="tab-orders" class="admin-tab">
-      <div class="admin-page-header">
-        <h2 class="admin-page-title">Order Management</h2>
-        <p class="admin-page-subtitle">All customer orders. Enter tracking IDs and generate invoices.</p>
+      <div class="admin-actions-row">
+        <div>
+          <h2 class="admin-page-title">Order Management</h2>
+          <p class="admin-page-subtitle">All customer orders. Enter tracking IDs and generate invoices.</p>
+        </div>
+        <button class="btn btn-outline" onclick="addDummyOrder()">+ Add Dummy Order</button>
       </div>
       <div class="data-table-wrap">
         <table class="data-table" id="admin-orders-table">
@@ -533,6 +545,22 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeProductModal()">Cancel</button>
       <button class="btn btn-primary" id="btn-save-product" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Detail / Invoice Modal -->
+<div id="order-modal" class="modal-overlay hidden">
+  <div class="modal order-detail-modal" style="max-width:800px">
+    <div class="modal-header no-print">
+      <h3 class="modal-title">Order Details</h3>
+      <button class="modal-close" onclick="closeOrderModal()">×</button>
+    </div>
+    <div class="modal-body" id="order-modal-body">
+      <!-- Injected by JS -->
+    </div>
+    <div class="modal-footer no-print">
+      <button class="btn btn-primary" onclick="closeOrderModal()">Close</button>
     </div>
   </div>
 </div>
