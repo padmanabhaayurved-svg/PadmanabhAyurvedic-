@@ -328,14 +328,14 @@ async function trackTraffic() {
       ip: data.ip,
       location: `${data.city}, ${data.region}, ${data.country_name}`,
       device: isMobile ? 'Mobile' : 'Desktop',
-      userAgent: navigator.userAgent,
-      timestamp: new Date().toISOString()
+      userAgent: navigator.userAgent
     };
     
-    console.log('[Analytics] New Visit recorded:', visitData);
+    console.log('[Analytics] Recording visit in Firebase:', visitData);
     
-    // In production, send to Firebase:
-    // await db.collection('traffic').add(visitData);
+    if (window.trackPageView) {
+      await trackPageView('visit:' + visitData.location);
+    }
     
     sessionStorage.setItem('pa_tracked', 'true');
   } catch(e) {
@@ -373,21 +373,22 @@ document.addEventListener('DOMContentLoaded', () => {
         name: document.getElementById('lead-name').value,
         phone: document.getElementById('lead-phone').value,
         location: document.getElementById('lead-location').value,
-        service: document.getElementById('lead-service').value,
-        timestamp: new Date().toISOString()
+        service: document.getElementById('lead-service').value
       };
 
       try {
-        console.log('[Lead Captured]', data);
+        console.log('[Lead Captured] Sending to Firebase', data);
         
-        // Save to localStorage for Admin Panel simulation
-        let leads = [];
-        try { leads = JSON.parse(localStorage.getItem('pa_leads') || '[]'); } catch(e){}
-        leads.unshift(data);
-        localStorage.setItem('pa_leads', JSON.stringify(leads));
+        if (window.saveLead) {
+          await saveLead(data);
+        } else {
+          // Fallback to localStorage if Firebase helper is missing
+          let leads = [];
+          try { leads = JSON.parse(localStorage.getItem('pa_leads') || '[]'); } catch(e){}
+          leads.unshift({ ...data, timestamp: new Date().toISOString() });
+          localStorage.setItem('pa_leads', JSON.stringify(leads));
+        }
 
-        await new Promise(r => setTimeout(r, 1000)); // Simulate network
-        
         closeModal('lead-modal');
         showToast('Thank you! Our expert will contact you soon.', 'success');
       } catch (err) {
@@ -524,40 +525,34 @@ document.addEventListener('DOMContentLoaded', () => {
         case 'ASK_PAYMENT':
           chatData.payment = text;
           chatState = 'CLOSE_DEAL';
-          // Save order to localStorage
           try {
             const cartItems = Store.getCart();
             const cartTotal = Store.getCartTotal();
             const shipping = cartTotal >= 499 ? 0 : 60;
-            const orderId = 'ORD' + Date.now();
-            const newOrder = {
-              id: orderId,
+            
+            const orderData = {
               customerName: chatData.name,
               customerPhone: chatData.phone,
-              address: chatData.address,
-              payment: text,
-              items: cartItems.length > 0 ? cartItems : [{ name: chatData.product, qty: 1, price: 0, image: '' }],
+              address: { address: chatData.address, city: '', pincode: '', state: '', name: chatData.name, phone: chatData.phone },
+              paymentMethod: text,
+              items: cartItems.length > 0 ? cartItems : [{ name: chatData.product, qty: 1, price: 0, productId: 'CHAT' }],
               subtotal: cartTotal,
               shipping,
               total: cartTotal + shipping,
-              status: 'pending',
-              trackingId: '',
-              createdAt: new Date().toISOString()
+              userId: chatData.phone // Using phone as temporary ID if not logged in
             };
-            let orders = [];
-            try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e){}
-            orders.unshift(newOrder);
-            localStorage.setItem('pa_orders', JSON.stringify(orders));
-            // Also save user to user_db
-            let users = [];
-            try { users = JSON.parse(localStorage.getItem('pa_user_db') || '[]'); } catch(e){}
-            if (!users.find(u => u.phone === chatData.phone)) {
-              users.push({ name: chatData.name, phone: chatData.phone, registeredOn: new Date().toISOString() });
-              localStorage.setItem('pa_user_db', JSON.stringify(users));
+
+            console.log('[Chatbot] Creating order in Firebase:', orderData);
+            
+            let orderId = 'ORD' + Date.now().toString().slice(-6);
+            if (window.createOrder) {
+              orderId = await createOrder(orderData);
             }
-            appendBotMessage(`✅ Order #${orderId.slice(-6).toUpperCase()} confirmed! Payment: ${text}. Delivering to: ${chatData.address}. We'll send updates to ${chatData.phone}. Check "My Orders" to track your order. Thank you for choosing Padmanabh Ayurvedics! 🌿`);
+
+            appendBotMessage(`✅ Order #${orderId.slice(-6).toUpperCase()} confirmed! Payment: ${text}. Delivering to: ${chatData.address}. We'll send updates to ${chatData.phone}. Thank you for choosing Padmanabh Ayurvedics! 🌿`);
           } catch(e) {
-            appendBotMessage(`Perfect! Your order is confirmed using ${text}. We will send updates to ${chatData.phone}. Thank you for choosing Padmanabh Ayurvedics!`);
+            console.error('[Chatbot] Order failed:', e);
+            appendBotMessage(`Something went wrong with the order, but we've noted your interest in ${chatData.product}. Our team will contact you on ${chatData.phone}.`);
           }
           break;
         case 'CLOSE_DEAL':

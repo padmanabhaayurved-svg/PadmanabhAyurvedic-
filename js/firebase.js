@@ -7,12 +7,14 @@
 // ── Firebase Configuration ────────────────────────────────────
 // TODO: Replace with your actual Firebase project config
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSy-PLACEHOLDER-YOUR-KEY-HERE",
-  authDomain:        "padmanabh-ayurvedics.firebaseapp.com",
-  projectId:         "padmanabh-ayurvedics",
-  storageBucket:     "padmanabh-ayurvedics.appspot.com",
-  messagingSenderId: "000000000000",
-  appId:             "1:000000000000:web:0000000000000000000000"
+  apiKey:            "AIzaSyAZ-65jDJ6DfxxHXX8xYF5dax4V-4Iobpc",
+  authDomain:        "padmanabh-ayurved.firebaseapp.com",
+  projectId:         "padmanabh-ayurved",
+  storageBucket:     "padmanabh-ayurved.firebasestorage.app",
+  messagingSenderId: "571265429080",
+  appId:             "1:571265429080:web:44273e05f828d92cf7242d",
+  measurementId:     "G-TL9GM456F0",
+  databaseURL:       "https://padmanabh-ayurved-default-rtdb.firebaseio.com"
 };
 
 // ── Firebase App (compat SDK loaded via CDN in index.html) ────
@@ -209,6 +211,18 @@ async function updateOrderTracking(orderId, trackingId, shipmentId) {
     shipmentId,
     status: 'processing',
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+/** Save consultation lead */
+async function saveLead(data) {
+  if (!firebaseReady) {
+    console.log('[Firebase Offline] Simulated saveLead', data);
+    return;
+  }
+  await _db.collection('leads').add({
+    ...data,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
 
