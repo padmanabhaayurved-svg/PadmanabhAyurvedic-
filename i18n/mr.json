@@ -107,6 +107,8 @@
   "dashboard.register.submit": "अकाऊंट तयार करा",
   "dashboard.login.register": "नवीन आहात? अकाऊंट तयार करा",
   "dashboard.register.login": "आधीच अकाऊंट आहे? लॉगिन करा",
+  "dashboard.login.social": "किंवा सुरक्षित सोशल लॉगिन वापरा:",
+  "dashboard.login.auth0": "Auth0 सह लॉगिन करा",
   "dashboard.title": "माझ्या ऑर्डर्स",
   "dashboard.logout": "लॉगआऊट",
   "dashboard.order.id": "ऑर्डर ID",

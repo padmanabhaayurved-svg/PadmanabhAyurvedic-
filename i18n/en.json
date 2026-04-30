@@ -107,6 +107,8 @@
   "dashboard.register.submit": "Create Account",
   "dashboard.login.register": "New here? Create account",
   "dashboard.register.login": "Already have an account? Sign In",
+  "dashboard.login.social": "Or use secure social login:",
+  "dashboard.login.auth0": "Login with Auth0",
   "dashboard.title": "My Orders",
   "dashboard.logout": "Sign Out",
   "dashboard.order.id": "Order ID",
