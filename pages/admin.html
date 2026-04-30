@@ -7,6 +7,17 @@
       <h1 class="admin-login-title" data-i18n="admin.login.title">Neural Hub</h1>
       <p class="admin-login-sub" data-i18n="admin.login.subtitle">Admin Access Only</p>
     </div>
+    <div id="auth0-login-container" style="margin-bottom: 24px;">
+      <button type="button" class="btn btn-primary btn-full" id="btn-auth0-login" onclick="loginWithAuth0()" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#eb5424; border-color:#eb5424">
+        <img src="https://cdn.worldvectorlogo.com/logos/auth0.svg" alt="" style="height:18px; filter:brightness(0) invert(1)"/>
+        Login with Auth0
+      </button>
+      <div class="admin-login-divider" style="text-align:center; margin:1.5rem 0; color:var(--text-muted); font-size:0.8rem; position:relative;">
+        <span style="background:var(--bg-card); padding:0 10px; position:relative; z-index:1;">OR USE TRADITIONAL ACCESS</span>
+        <div style="position:absolute; top:50%; left:0; right:0; height:1px; background:var(--border); z-index:0;"></div>
+      </div>
+    </div>
+
     <form id="admin-login-form" class="form-group" style="gap:20px">
       <div class="form-group">
         <label class="form-label" data-i18n="admin.login.user">Username</label>

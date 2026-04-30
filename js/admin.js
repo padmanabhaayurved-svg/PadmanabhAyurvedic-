@@ -3,23 +3,129 @@
    Neural Hub Logic · Auth · Analytics · CRUD · Drag/Drop
    ============================================================ */
 
+let _adminTopProductsChart = null;
+let _adminStatusDonut = null;
+let _adminPaymentDonut = null;
 let _adminTrafficChart = null;
 let _adminProducts = [];
-let _adminImages = []; // Array of URL strings
+let _adminImages = []; 
 let _historyProducts = [];
+
+// ── Auth0 Configuration ──────────────────────────────────────
+const AUTH0_CONFIG = {
+  domain:   'dev-7c0nglnmb4cv228b.us.auth0.com',
+  clientId: 'L86GzDIgRWyvsASsN0yT7MGxdadPhCd3',
+  audience: 'https://dev-7c0nglnmb4cv228b.us.auth0.com/api/v2/'
+};
+
+let _auth0Client = null;
+
+// Global Login Function (exposed early)
+window.loginWithAuth0 = async function() {
+  console.log('[Auth0] loginWithAuth0 called');
+  if (typeof auth0 === 'undefined') {
+    showToast('Auth0 SDK not loaded. Please check your internet connection.', 'error');
+    return;
+  }
+  if (!_auth0Client) {
+    console.log('[Auth0] Client not initialized, attempting init...');
+    await initAuth0();
+  }
+  if (!_auth0Client) {
+    showToast('Failed to initialize Auth0 client', 'error');
+    return;
+  }
+  try {
+    console.log('[Auth0] Redirecting to login...');
+    await _auth0Client.loginWithRedirect();
+  } catch (err) {
+    console.error('[Auth0] Login error:', err);
+    showToast('Auth0 Login Failed', 'error');
+  }
+};
+
+async function initAuth0() {
+  console.log('[Auth0] initAuth0 starting...');
+  if (typeof auth0 === 'undefined') {
+    console.error('[Auth0] SDK global "auth0" is not defined!');
+    return;
+  }
+  try {
+    _auth0Client = await auth0.createAuth0Client({
+      domain:   AUTH0_CONFIG.domain,
+      clientId: AUTH0_CONFIG.clientId,
+      authorizationParams: {
+        audience: AUTH0_CONFIG.audience,
+        redirect_uri: window.location.origin + window.location.pathname + '#admin'
+      }
+    });
+    console.log('[Auth0] Client successfully initialized');
+  } catch (err) {
+    console.error('[Auth0] Initialization failed:', err);
+  }
+}
+
+async function logoutWithAuth0() {
+  if (!_auth0Client) await initAuth0();
+  sessionStorage.removeItem('pa_admin_auth');
+  sessionStorage.removeItem('pa_auth_provider');
+  await _auth0Client.logout({
+    logoutParams: { returnTo: window.location.origin + window.location.pathname + '#admin' }
+  });
+}
+window.logoutWithAuth0 = logoutWithAuth0;
 
 document.addEventListener('page:admin', initAdminHub);
 
-function initAdminHub() {
+async function initAdminHub() {
   document.title = 'Neural Hub — Padmanabh Ayurvedics';
 
+  // Initialize Auth0 first
+  if (!_auth0Client) await initAuth0();
+
+  // Handle Auth0 Redirect Callback
+  const query = window.location.search;
+  if (query.includes('code=') && query.includes('state=')) {
+    try {
+      await _auth0Client.handleRedirectCallback();
+      const user = await _auth0Client.getUser();
+      console.log('[Auth0] Logged in as:', user.name);
+      
+      sessionStorage.setItem('pa_admin_auth', 'true');
+      sessionStorage.setItem('pa_auth_provider', 'auth0');
+      
+      // Clear URL query params without reloading
+      window.history.replaceState({}, document.title, window.location.origin + window.location.pathname + '#admin');
+    } catch (err) {
+      console.error('[Auth0] Callback error:', err);
+      showToast('Authentication failed', 'error');
+    }
+  }
+
   const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
+  const provider = sessionStorage.getItem('pa_auth_provider');
+
+  // Verify Auth0 session if that was the provider
+  let finalAuth = isAuth;
+  if (isAuth && provider === 'auth0' && _auth0Client) {
+    const authenticated = await _auth0Client.isAuthenticated();
+    if (!authenticated) {
+      sessionStorage.removeItem('pa_admin_auth');
+      finalAuth = false;
+    }
+  }
+
   const loginView = document.getElementById('admin-login-view');
   const shellView = document.getElementById('admin-shell');
 
-  if (!isAuth) {
+  if (!finalAuth) {
     if (loginView) loginView.style.display = 'flex';
     if (shellView) shellView.style.display = 'none';
+    const auth0Btn = document.getElementById('btn-auth0-login');
+    if (auth0Btn) {
+      console.log('[Auth0] Button found in DOM');
+    }
+
     const form = document.getElementById('admin-login-form');
     if (form) {
       form.onsubmit = (e) => {
@@ -28,6 +134,7 @@ function initAdminHub() {
         const p = document.getElementById('admin-pass').value;
         if (u === 'admin' && p === 'Inafa2026') {
           sessionStorage.setItem('pa_admin_auth', 'true');
+          sessionStorage.setItem('pa_auth_provider', 'local');
           loginView.style.display = 'none';
           shellView.style.display = 'flex';
           loadAdminData();
@@ -136,8 +243,14 @@ function initAdminHub() {
 }
 
 function adminLogout() {
-  sessionStorage.removeItem('pa_admin_auth');
-  location.reload();
+  const provider = sessionStorage.getItem('pa_auth_provider');
+  if (provider === 'auth0') {
+    logoutWithAuth0();
+  } else {
+    sessionStorage.removeItem('pa_admin_auth');
+    sessionStorage.removeItem('pa_auth_provider');
+    location.reload();
+  }
 }
 window.adminLogout = adminLogout;
 
