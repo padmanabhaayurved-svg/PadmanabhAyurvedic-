@@ -196,7 +196,23 @@ function renderCartPage() {
       let user = getCurrentUser();
       if (!user && window.Auth0Helper) {
         const auth0User = await Auth0Helper.getUser();
-        if (auth0User) user = { uid: auth0User.sub };
+        if (auth0User) {
+          user = { uid: auth0User.sub };
+        }
+      }
+
+      if (!user) {
+        showToast('Please login to place an order', 'warning');
+        btn.disabled = false;
+        btn.textContent = 'Place Order';
+        
+        // Optionally trigger login
+        setTimeout(() => {
+          if (confirm('You need to be logged in to track your orders. Login now?')) {
+            Auth0Helper.login(window.location.hash || '#cart');
+          }
+        }, 1000);
+        return;
       }
       const address = {
         name:    document.getElementById('co-name').value,

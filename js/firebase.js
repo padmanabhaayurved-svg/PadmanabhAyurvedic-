@@ -615,3 +615,42 @@ function getMockAnalytics(days) {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', initFirebase);
+
+/** ── Teammate Helpers ────────────────────────────────────────── **/
+
+async function getTeammates() {
+  if (!firebaseReady) return [];
+  try {
+    const snap = await _db.collection('teammates').orderBy('name', 'asc').get();
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (err) {
+    console.error('getTeammates failed', err);
+    return [];
+  }
+}
+
+async function saveTeammateToDB(id, payload) {
+  if (!firebaseReady) return null;
+  try {
+    if (id) {
+      await _db.collection('teammates').doc(id).set(payload, { merge: true });
+      return id;
+    } else {
+      const docRef = await _db.collection('teammates').add({ ...payload, createdAt: new Date().toISOString() });
+      return docRef.id;
+    }
+  } catch (err) {
+    console.error('saveTeammate failed', err);
+    throw err;
+  }
+}
+
+async function deleteTeammateFromDB(id) {
+  if (!firebaseReady) return;
+  try {
+    await _db.collection('teammates').doc(id).delete();
+  } catch (err) {
+    console.error('deleteTeammate failed', err);
+    throw err;
+  }
+}

@@ -95,6 +95,7 @@ async function initAdminHub() {
       if (item.dataset.target === 'tab-retarget') initRetargetTab();
       if (item.dataset.target === 'tab-users') loadAdminUsers();
       if (item.dataset.target === 'tab-orders') loadAdminOrders();
+      if (item.dataset.target === 'tab-teammates') loadTeammates();
       if (item.dataset.target === 'tab-analytics') { renderAnalytics(30); renderOrderAnalytics(30); }
       
       if (window.innerWidth < 768) {
@@ -2928,3 +2929,156 @@ document.addEventListener('page:admin', () => {
     });
   }
 });
+
+
+/** ── TEAMMATES & EMPLOYEES ─────────────────────────────────── **/
+let _teammates = [];
+
+window.openTeammateModal = function(id = null) {
+  const modal = document.getElementById('teammate-modal');
+  const form = document.getElementById('teammate-form');
+  const title = document.getElementById('tm-title');
+  
+  form.reset();
+  document.getElementById('tm-id').value = '';
+  title.textContent = 'Add Teammate';
+
+  if (id) {
+    const tm = _teammates.find(t => t.id === id);
+    if (tm) {
+      title.textContent = 'Edit Teammate';
+      document.getElementById('tm-id').value = tm.id;
+      document.getElementById('tm-name').value = tm.name || '';
+      document.getElementById('tm-role').value = tm.role || 'Employee';
+      document.getElementById('tm-status').value = tm.status || 'active';
+      document.getElementById('tm-email').value = tm.email || '';
+      document.getElementById('tm-phone').value = tm.phone || '';
+      document.getElementById('tm-photo').value = tm.photo || '';
+    }
+  }
+
+  modal.classList.remove('hidden');
+};
+
+window.closeTeammateModal = function() {
+  document.getElementById('teammate-modal').classList.add('hidden');
+};
+
+
+window.loadTeammates = async function() {
+  const body = document.getElementById('admin-teammates-body');
+  body.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px">Loading teammates...</td></tr>';
+
+  try {
+    let data = [];
+    if (window.getTeammates) {
+       data = await getTeammates();
+    } else {
+       data = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
+    }
+    
+    _teammates = data;
+    renderTeammates();
+  } catch (err) {
+    console.error('Failed to load teammates', err);
+    body.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--error)">Error loading data.</td></tr>';
+  }
+};
+
+function renderTeammates() {
+  const body = document.getElementById('admin-teammates-body');
+  if (_teammates.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--text-muted)">No teammates found. Click "+ Add Teammate" to start.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = _teammates.map(tm => `
+    <tr>
+      <td>
+        <img src="${tm.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(tm.name) + '&background=random'}" 
+             style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" />
+      </td>
+      <td><strong>${tm.name}</strong></td>
+      <td><span class="badge badge-outline">${tm.role}</span></td>
+      <td style="font-size:0.85rem">
+        <div>${tm.email}</div>
+        <div style="color:var(--text-muted)">${tm.phone || '-'}</div>
+      </td>
+      <td>
+        <span class="badge ${tm.status === 'active' ? 'badge-success' : 'badge-ghost'}">${tm.status}</span>
+      </td>
+      <td style="text-align:right">
+        <button class="btn btn-ghost btn-sm" onclick="openTeammateModal('${tm.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--error)" onclick="deleteTeammate('${tm.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+
+window.saveTeammate = async function() {
+  const btn = document.getElementById('btn-save-teammate');
+  const id = document.getElementById('tm-id').value;
+  
+  const payload = {
+    name: document.getElementById('tm-name').value,
+    role: document.getElementById('tm-role').value,
+    status: document.getElementById('tm-status').value,
+    email: document.getElementById('tm-email').value,
+    phone: document.getElementById('tm-phone').value,
+    photo: document.getElementById('tm-photo').value,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (!payload.name || !payload.email) {
+    showToast('Name and Email are required', 'warning');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    if (window.saveTeammateToDB) {
+      await saveTeammateToDB(id, payload);
+    } else {
+      // Local Fallback
+      let data = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
+      if (id) {
+        data = data.map(t => t.id === id ? { ...t, ...payload } : t);
+      } else {
+        data.push({ id: 'tm_' + Date.now(), ...payload, createdAt: new Date().toISOString() });
+      }
+      localStorage.setItem('pa_teammates', JSON.stringify(data));
+    }
+
+    showToast('Teammate saved successfully', 'success');
+    closeTeammateModal();
+    loadTeammates();
+  } catch (err) {
+    console.error('Save failed', err);
+    showToast('Failed to save teammate', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Teammate';
+  }
+};
+
+
+window.deleteTeammate = async function(id) {
+  if (!confirm('Are you sure you want to remove this teammate?')) return;
+
+  try {
+    if (window.deleteTeammateFromDB) {
+      await deleteTeammateFromDB(id);
+    } else {
+      let data = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
+      data = data.filter(t => t.id !== id);
+      localStorage.setItem('pa_teammates', JSON.stringify(data));
+    }
+    showToast('Teammate removed', 'success');
+    loadTeammates();
+  } catch (err) {
+    showToast('Delete failed', 'error');
+  }
+};

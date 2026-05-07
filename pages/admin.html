@@ -94,6 +94,10 @@
         <span class="sidebar-icon">⚙️</span>
         <span class="sidebar-label">System</span>
       </button>
+          <button class="sidebar-item" data-target="tab-teammates">
+        <span class="sidebar-icon">🤝</span>
+        <span class="sidebar-label">Teammates</span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <button class="sidebar-item" onclick="adminLogout()">
@@ -1085,6 +1089,34 @@
       </div>
     </div>
 
+      <!-- 11. TEAMMATES TAB -->
+    <div id="tab-teammates" class="admin-tab">
+      <div class="admin-actions-row">
+        <div>
+          <h2 class="admin-page-title">Teammates & Employees</h2>
+          <p class="admin-page-subtitle">Manage your core team and staff access.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openTeammateModal()">+ Add Teammate</button>
+      </div>
+
+      <div class="data-table-wrap">
+        <table class="data-table" id="admin-teammates-table">
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Email / Contact</th>
+              <th>Status</th>
+              <th width="120" style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-teammates-body">
+            <tr><td colspan="6" class="text-center" style="padding:40px">Loading teammates...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </main>
 </div>
 
