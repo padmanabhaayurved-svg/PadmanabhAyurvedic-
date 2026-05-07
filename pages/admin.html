@@ -1096,7 +1096,14 @@
           <h2 class="admin-page-title">Teammates & Employees</h2>
           <p class="admin-page-subtitle">Manage your core team and staff access.</p>
         </div>
-        <button class="btn btn-primary" onclick="openTeammateModal()">+ Add Teammate</button>
+        <div>
+          <button class="btn btn-outline" onclick="seedRequestedEmployee()" style="margin-right:10px">
+            <span style="margin-right:8px">🧪</span>Quick Add
+          </button>
+          <button class="btn btn-primary" onclick="openTeammateModal()">
+            <span style="font-size:1.2rem;margin-right:8px">+</span>Add Teammate
+          </button>
+        </div>
       </div>
 
       <div class="data-table-wrap">

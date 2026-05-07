@@ -3093,3 +3093,43 @@ window.deleteTeammate = async function(id) {
     showToast('Delete failed', 'error');
   }
 };
+
+window.seedRequestedEmployee = async function() {
+  const payload = {
+    name: "Vaidya Rajesh Shinde",
+    role: "Ayurvedic Specialist",
+    email: "rajesh@padmanabhayurvedics.com",
+    phone: "+91 98765 43210",
+    photo: "https://drive.google.com/file/d/14LsaWlnAUiJjOMpGxkz31BhgUwfXTd4h/view?usp=sharing",
+    bio: "Lead practitioner specializing in bone-setting and traditional Ayurvedic healing methods.",
+    status: "active",
+    featured: true,
+    updatedAt: new Date().toISOString()
+  };
+  
+  const btn = event.currentTarget;
+  const oldText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Adding...';
+
+  try {
+    if (typeof window.saveTeammateToDB === 'function') {
+      await saveTeammateToDB(null, payload);
+      showToast('Requested employee added successfully!', 'success');
+      loadTeammates();
+    } else {
+      // Local fallback
+      let data = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
+      data.push({ id: 'tm_' + Date.now(), ...payload, createdAt: new Date().toISOString() });
+      localStorage.setItem('pa_teammates', JSON.stringify(data));
+      showToast('Added to local storage (Firebase not ready)', 'warning');
+      loadTeammates();
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to add: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = oldText;
+  }
+};
