@@ -112,9 +112,12 @@ const SR = {
       weight: weight.toString(),
       cod: '1'
     });
-    const data = await this._request(`/courier/serviceability/?${params}`);
-    // SR returns { available_courier_companies: [...] } or { message: '...' }
-    return data.available_courier_companies || data.courier_company_details || [];
+    const res = await this._request(`/courier/serviceability/?${params}`);
+    // Shiprocket returns nested structure: res.data.available_courier_companies
+    if (res && res.data && res.data.available_courier_companies) {
+      return res.data.available_courier_companies;
+    }
+    return res.available_courier_companies || res.courier_company_details || [];
   },
 
   // ── 2. Create Adhoc Order ───────────────────────────────
