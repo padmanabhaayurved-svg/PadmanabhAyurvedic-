@@ -152,10 +152,26 @@ async function startApp() {
     btn.addEventListener('click', () => setLang(btn.dataset.lang));
   });
 
+  // 4. Handle Auth0 Callback if present
+  if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+    if (window.Auth0Helper) {
+      await Auth0Helper.handleCallback();
+      updateAuthUI();
+    }
+  }
+
+  // 5. Initial Auth UI update
+  updateAuthUI();
+
   // Navigate to initial route
   let hash = location.hash || '#home';
   if (!location.hash) hash = '#home'; // Default to home if directly loading /
   
+  if (hash === '#dashboard') {
+    hash = '#home';
+    setTimeout(() => { if (window.openUserDrawer) openUserDrawer(); }, 500);
+  }
+
   await navigate(hash);
   
   // Dispatch app:ready for animations (specifically hero)
@@ -176,7 +192,6 @@ const ROUTES = {
   'catalog':   'pages/catalog.html',
   'product':   'pages/product.html',
   'cart':      'pages/cart.html',
-  'dashboard': 'pages/dashboard.html',
   'admin':     'pages/admin.html'
 };
 
@@ -186,6 +201,12 @@ async function navigate(hash, force = false) {
   const route = page || '';
 
   if (route === _currentRoute && !force) return;
+
+  // If someone tries to navigate to dashboard via JS
+  if (route === 'dashboard') {
+    openUserDrawer();
+    return;
+  }
 
   const src = ROUTES[route];
   if (!src) { navigate('home', true); return; }
@@ -624,6 +645,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 800);
   }
 
+// Update Navbar UI based on Auth state
+window.updateAuthUI = async function() {
+  let user = window.getCurrentUser ? getCurrentUser() : null;
+  if (!user && window.Auth0Helper) {
+    const auth0User = await Auth0Helper.getUser();
+    if (auth0User) {
+      user = { uid: auth0User.sub, email: auth0User.email, displayName: auth0User.name };
+    }
+  }
+
+  const navDashBtn = document.querySelector('[data-i18n="nav.dashboard"]');
+  const mobileDashBtn = document.querySelector('#mobile-nav [data-i18n="nav.dashboard"]');
+
+  if (user) {
+    const name = user.displayName || user.email.split('@')[0];
+    const label = `Hi, ${name}`;
+    if (navDashBtn) {
+      navDashBtn.innerHTML = `<span style="display:flex;align-items:center;gap:6px">👤 ${label}</span>`;
+      navDashBtn.classList.add('logged-in');
+    }
+    if (mobileDashBtn) {
+      mobileDashBtn.innerHTML = `👤 ${label}`;
+      mobileDashBtn.classList.add('logged-in');
+    }
+  } else {
+    if (navDashBtn) {
+      navDashBtn.textContent = 'My Orders';
+      navDashBtn.classList.remove('logged-in');
+    }
+    if (mobileDashBtn) {
+      mobileDashBtn.textContent = 'My Orders';
+      mobileDashBtn.classList.remove('logged-in');
+    }
+  }
+}
+
   if (chatSend) chatSend.addEventListener('click', sendChatMessage);
   if (chatInput) {
     chatInput.addEventListener('keypress', (e) => {
@@ -631,5 +688,275 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+});
+
+// ── USER PROFILE DRAWER ───────────────────────────────────────
+window.openUserDrawer = async function() {
+  const overlay = document.getElementById('user-drawer-overlay');
+  const drawer = document.getElementById('user-drawer');
+  const body = document.getElementById('user-drawer-body');
+  
+  // Show spinner immediately
+  overlay.classList.add('active');
+  drawer.classList.add('open');
+  body.innerHTML = `<div class="text-center" style="padding:40px;"><div class="spinner" style="border-top-color:var(--gold);width:30px;height:30px;border-width:3px;margin:0 auto;"></div><p style="margin-top:16px;color:var(--text-muted)">Loading Profile...</p></div>`;
+
+  // Get User
+  let user = window.getCurrentUser ? getCurrentUser() : null;
+  if (!user && window.Auth0Helper) {
+    const auth0User = await Auth0Helper.getUser();
+    if (auth0User) {
+      user = { uid: auth0User.sub, email: auth0User.email, displayName: auth0User.name, isAuth0: true };
+    }
+  }
+
+  if (!user) {
+    // Force Login if not authenticated
+    closeUserDrawer();
+    if (window.Auth0Helper) Auth0Helper.login('#dashboard');
+    return;
+  }
+
+  // Fetch orders
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  if (window.getUserOrders) {
+    try {
+      const fbOrders = await getUserOrders(user.uid);
+      if (fbOrders && fbOrders.length > 0) {
+        const fbIds = fbOrders.map(o => o.id);
+        orders = orders.filter(o => !fbIds.includes(o.id));
+        orders = [...fbOrders, ...orders];
+      }
+    } catch(e) {}
+  }
+  
+  window._currentUserOrders = orders; // For modal usage
+
+  let ordersHtml = `
+    <div style="text-align:center; padding: 40px 20px;">
+      <div style="font-size:3rem; margin-bottom:16px; opacity:0.3;">📦</div>
+      <p style="color:var(--text-muted); margin-bottom:16px;">No orders placed yet.</p>
+      <button class="btn btn-primary" onclick="navigate('catalog'); closeUserDrawer();">Start Shopping</button>
+    </div>
+  `;
+
+  if (orders.length > 0) {
+    ordersHtml = orders.map(o => {
+      const d = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'Just now';
+      let statusClass = 'pill-muted';
+      if (o.status === 'processing') statusClass = 'pill-warning';
+      if (o.status === 'shipped')    statusClass = 'pill-gold';
+      if (o.status === 'delivered')  statusClass = 'pill-success';
+      
+      return `
+        <div class="order-card" style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:16px; transition:transform 0.2s ease;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='translateY(0)'">
+          <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">${d}</span>
+            <span class="pill ${statusClass}" style="font-size:0.7rem;">${(o.status || 'pending').toUpperCase()}</span>
+          </div>
+          <div style="font-weight:600; font-size:1rem; margin-bottom:4px;">Order #${o.id.slice(-6).toUpperCase()}</div>
+          <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px;">${o.items?.length || 0} Items · Total: ₹${o.total}</div>
+          
+          <div style="background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:4px; margin-bottom:16px; font-size:0.8rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span style="color:var(--text-muted)">Payment</span>
+              <span style="color:var(--text-primary)">${o.paymentMethod || 'Razorpay'} (${o.paymentId ? 'Paid' : 'Pending'})</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted)">Courier</span>
+              <span style="color:var(--text-primary)">${o.courierName || o.courierCompany || 'Shiprocket'}</span>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="viewOrderDetails('${o.id}')" style="flex:1">View Invoice</button>
+            ${o.awb ? `<button class="btn btn-outline btn-sm" onclick="trackOrder('${o.awb}')" style="flex:1">Track Order</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  body.innerHTML = `
+    <div style="margin-bottom: 24px; padding: 24px; background:linear-gradient(135deg, var(--bg-surface), #1a1a1a); border:1px solid var(--border); border-radius:var(--radius-lg);">
+      <div style="font-size:0.75rem; color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:8px;">Account Profile</div>
+      <div style="font-weight:600; font-size:1.2rem; color:var(--text-primary); margin-bottom:4px;">${user.displayName || user.email.split('@')[0]}</div>
+      <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">${user.email}</div>
+      <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace; margin-bottom:20px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:4px; display:inline-block;">ID: ${user.uid}</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="handleSignOut()" style="flex:1">Sign Out</button>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <h4 style="margin:0; font-family:var(--font-serif); font-size:1.1rem;">Your Orders</h4>
+      <span style="font-size:0.8rem; color:var(--text-muted); background:var(--bg-elevated); padding:2px 8px; border-radius:12px;">${orders.length}</span>
+    </div>
+    
+    <div class="orders-list">
+      ${ordersHtml}
+    </div>
+  `;
+};
+
+window.closeUserDrawer = function() {
+  document.getElementById('user-drawer-overlay')?.classList.remove('active');
+  document.getElementById('user-drawer')?.classList.remove('open');
+};
+
+document.getElementById('user-drawer-overlay')?.addEventListener('click', closeUserDrawer);
+document.getElementById('user-drawer-close')?.addEventListener('click', closeUserDrawer);
+
+// ── EXTRACTED USER DASHBOARD FUNCTIONS ─────────────────────────
+window.handleSignOut = async function() {
+  const user = await Auth0Helper.getUser();
+  if (user) {
+    await Auth0Helper.logout('#');
+  } else {
+    if (window.signOut) await window.signOut();
+    navigate('home');
+    showToast('Signed out successfully');
+  }
+  if (window.updateAuthUI) updateAuthUI();
+};
+
+window.trackOrder = async function(awb) {
+  showToast('Fetching tracking details...', 'info');
+  let data = {};
+  if (window.ShiprocketHelper) {
+    const res = await ShiprocketHelper.trackShipment(awb);
+    data = res.tracking_data || {};
+  }
+
+  const activities = data?.shipment_track_activities || [];
+  const listHtml = activities.map(a => \`
+    <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div style="font-size:0.75rem;color:var(--text-muted)">\${a.date}</div>
+      <div style="font-weight:500;margin:4px 0">\${a.activity}</div>
+      <div style="font-size:0.8rem;color:var(--text-secondary)">\${a.location}</div>
+    </div>
+  \`).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = \`
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Tracking: \${awb}</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        \${listHtml || '<p>No tracking updates available yet.</p>'}
+      </div>
+    </div>
+  \`;
+  document.body.appendChild(modal);
+};
+
+window.viewOrderDetails = function(orderId) {
+  const o = window._currentUserOrders?.find(x => x.id === orderId);
+  if (!o) return;
+
+  const d = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'Just now';
+  const itemsHtml = (o.items || []).map(i => \`
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+      <div>
+        <div style="font-weight:500">\${i.name}</div>
+        <div style="font-size:0.8rem; color:var(--text-muted)">Qty: \${i.qty}</div>
+      </div>
+      <div style="font-weight:500">₹\${i.price * i.qty}</div>
+    </div>
+  \`).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay active';
+  modal.innerHTML = \`
+    <div class="modal" id="print-area">
+      <div class="modal-header">
+        <h3 class="modal-title">Order #\${o.id.slice(-6).toUpperCase()}</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="font-family:var(--font-sans); font-size:0.9rem;">
+        
+        <div style="margin-bottom:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Date</div>
+            <div style="font-weight:500">\${d}</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Status</div>
+            <span class="pill pill-gold">\${(o.status || 'PENDING').toUpperCase()}</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Shipping Address</div>
+          <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+            \${o.address ? \`
+              <div style="font-weight:500">\${o.address.name || o.customerName}</div>
+              <div>\${o.address.phone || o.customerPhone}</div>
+              <div style="margin-top:4px; color:var(--text-secondary)">\${o.address.address}, \${o.address.city}, \${o.address.state} - \${o.address.pincode}</div>
+            \` : 'No address provided'}
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Items Ordered</div>
+          <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+            \${itemsHtml}
+            <div style="display:flex; justify-content:space-between; margin-top:12px; font-size:0.85rem;">
+              <span style="color:var(--text-muted)">Subtotal</span>
+              <span>₹\${o.subtotal || o.total}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:0.85rem;">
+              <span style="color:var(--text-muted)">Shipping</span>
+              <span>₹\${o.shipping || 0}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; font-weight:600; font-size:1.1rem; border-top:1px solid var(--border); padding-top:8px;">
+              <span>Total</span>
+              <span style="color:var(--gold)">₹\${o.total}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Payment Details</div>
+          <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted)">Method</span>
+              <span style="font-weight:500">\${o.paymentMethod || 'COD'}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:4px;">
+              <span style="color:var(--text-muted)">Status</span>
+              <span style="font-weight:500; color:\${o.paymentMethod === 'Online' ? 'var(--success)' : 'var(--warning)'}">\${o.paymentMethod === 'Online' ? 'Paid' : 'Pending (COD)'}</span>
+            </div>
+            \${o.paymentId ? \`
+              <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:0.8rem;">
+                <span style="color:var(--text-muted)">Transaction ID</span>
+                <span>\${o.paymentId}</span>
+              </div>
+            \` : ''}
+          </div>
+        </div>
+
+      </div>
+      <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+        <button class="btn btn-outline" onclick="printInvoice()">Print Invoice</button>
+      </div>
+    </div>
+  \`;
+  document.body.appendChild(modal);
+};
+
+window.printInvoice = function() {
+  const printContent = document.getElementById('print-area').innerHTML;
+  const originalContent = document.body.innerHTML;
+  document.body.innerHTML = '<div style="padding:40px; color:black; background:white;">' + printContent.replace(/<button.*?>.*?<\\/button>/g, '') + '</div>';
+  window.print();
+  document.body.innerHTML = originalContent;
+  window.location.reload();
+};
+
 } // End initialization guard
 

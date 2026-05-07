@@ -93,6 +93,7 @@ async function handleAuth0Callback() {
       // Clear URL params
       window.history.replaceState({}, document.title, window.location.origin + window.location.pathname + target);
       
+      if (window.updateAuthUI) window.updateAuthUI();
       return user;
     } catch (err) {
       console.error('[Auth0] Callback error:', err);

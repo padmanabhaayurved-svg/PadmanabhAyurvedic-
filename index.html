@@ -72,7 +72,7 @@
     <li><button class="nav-link" data-route="home" data-nav="home" data-i18n="nav.home">Home</button></li>
     <li><button class="nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button></li>
     <li><button class="nav-link" data-route="catalog" data-nav="catalog" data-i18n="nav.catalog">Shop</button></li>
-    <li><button class="nav-link" data-route="dashboard" data-nav="dashboard" data-i18n="nav.dashboard">My Orders</button></li>
+    <li><button class="nav-link" onclick="openUserDrawer()" data-i18n="nav.dashboard">My Orders</button></li>
   </ul>
 
   <div class="nav-actions">
@@ -105,7 +105,7 @@
   <button class="mobile-nav-link" data-route="home" data-nav="home" data-i18n="nav.home">Home</button>
   <button class="mobile-nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button>
   <button class="mobile-nav-link" data-route="catalog" data-nav="catalog" data-i18n="nav.catalog">Shop</button>
-  <button class="mobile-nav-link" data-route="dashboard" data-nav="dashboard" data-i18n="nav.dashboard">My Orders</button>
+  <button class="mobile-nav-link" onclick="openUserDrawer()" data-i18n="nav.dashboard">My Orders</button>
 </div>
 
 <!-- ══ APP MOUNT ═════════════════════════════════════════════ -->
@@ -140,7 +140,7 @@
           <a data-nav="home" onclick="navigate('home')" data-i18n="nav.home">Home</a>
           <a data-nav="about" onclick="navigate('about')" data-i18n="nav.about">About</a>
           <a data-nav="catalog" onclick="navigate('catalog')" data-i18n="nav.catalog">Shop</a>
-          <a data-nav="dashboard" onclick="navigate('dashboard')" data-i18n="nav.dashboard">My Orders</a>
+          <a onclick="openUserDrawer()" data-i18n="nav.dashboard" style="cursor:pointer">My Orders</a>
         </nav>
       </div>
 
@@ -234,6 +234,21 @@
     </div>
   </div>
 </div>
+
+<!-- ══ USER PROFILE DRAWER ═══════════════════════════════════ -->
+<div class="drawer-overlay" id="user-drawer-overlay"></div>
+<div class="side-drawer" id="user-drawer">
+  <div class="side-drawer-header">
+    <h3 class="side-drawer-title" id="user-drawer-title">My Account</h3>
+    <button class="btn btn-ghost" id="user-drawer-close" style="padding:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+  <div class="side-drawer-body" id="user-drawer-body">
+    <!-- Rendered by JS -->
+  </div>
+</div>
+
 
 <!-- ══ TOAST ═════════════════════════════════════════════════ -->
 <div id="toast-container" aria-live="polite"></div>

@@ -193,7 +193,11 @@ function renderCartPage() {
       btn.disabled = true;
       btn.textContent = 'Processing...';
 
-      const user = getCurrentUser();
+      let user = getCurrentUser();
+      if (!user && window.Auth0Helper) {
+        const auth0User = await Auth0Helper.getUser();
+        if (auth0User) user = { uid: auth0User.sub };
+      }
       const address = {
         name:    document.getElementById('co-name').value,
         phone:   document.getElementById('co-phone').value,
