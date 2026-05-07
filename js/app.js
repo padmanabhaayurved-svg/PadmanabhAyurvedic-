@@ -960,3 +960,5 @@ window.printInvoice = function() {
 
 } // End initialization guard
 
+
+document.addEventListener('DOMContentLoaded', runInitializationSequence);
