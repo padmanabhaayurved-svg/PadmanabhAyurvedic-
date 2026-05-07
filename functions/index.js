@@ -77,7 +77,7 @@ exports.shiprocket = onRequest({ secrets: ["SHIPROCKET_EMAIL", "SHIPROCKET_PASSW
  * SHIPROCKET WEBHOOK
  * Listens for tracking updates from Shiprocket and updates Firestore.
  */
-exports.shiprocketWebhook = onRequest((req, res) => {
+exports.trackingWebhook = onRequest((req, res) => {
   // 1. Verify Authentication Token
   const token = req.headers["x-api-key"];
   const EXPECTED_TOKEN = "pa_webhook_secret_2026"; // The token to paste in Shiprocket UI
