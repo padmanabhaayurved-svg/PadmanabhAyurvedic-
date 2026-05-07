@@ -36,15 +36,19 @@ const SR = {
 
   async authenticate() {
     try {
-      const res = await fetch(`${this.BASE}/auth/login`, {
+      const res = await fetch('/api/shiprocket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: this.CREDENTIALS.email, password: this.CREDENTIALS.password })
+        body: JSON.stringify({ 
+          endpoint: '/auth/login', 
+          method: 'POST', 
+          body: { email: this.CREDENTIALS.email, password: this.CREDENTIALS.password } 
+        })
       });
       const data = await res.json();
       if (data.token) {
         this._setToken(data.token);
-        console.log('[Shiprocket] Authenticated successfully');
+        console.log('[Shiprocket] Authenticated successfully via Proxy');
         return data.token;
       }
       throw new Error(data.message || 'Authentication failed');
@@ -65,17 +69,21 @@ const SR = {
   async _request(endpoint, method = 'GET', body = null) {
     const token = await this._ensureToken();
     const opts = {
-      method,
+      method: 'POST', // Proxy always receives POST
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        endpoint,
+        method,
+        body,
+        token
+      })
     };
-    if (body) opts.body = JSON.stringify(body);
 
     let res;
     try {
-      res = await fetch(`${this.BASE}${endpoint}`, opts);
+      res = await fetch('/api/shiprocket', opts);
     } catch (e) {
       throw new Error(`Network error: ${e.message}`);
     }
