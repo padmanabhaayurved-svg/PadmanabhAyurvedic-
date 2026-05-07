@@ -162,16 +162,19 @@ document.addEventListener('page:about', async () => {
     const featured = teammates.filter(t => t.featured && t.status === 'active');
     
     if (featured.length > 0) {
-      grid.innerHTML = featured.map(tm => `
-        <div class="team-card animate-on-scroll">
-          <div class="team-avatar" style="${tm.photo ? `background-image:url('${tm.photo}');background-size:cover;background-position:center;color:transparent;` : `background:linear-gradient(135deg,var(--gold),var(--gold-dark))`}">
-            ${tm.photo ? '' : (tm.name ? tm.name.charAt(0) : 'T')}
+      grid.innerHTML = featured.map(tm => {
+        const photo = tm.photo ? (typeof convertGDriveUrl === 'function' ? convertGDriveUrl(tm.photo) : tm.photo) : '';
+        return `
+          <div class="team-card animate-on-scroll">
+            <div class="team-avatar" style="${photo ? `background-image:url('${photo}');background-size:cover;background-position:center;color:transparent;` : `background:linear-gradient(135deg,var(--gold),var(--gold-dark))`}">
+              ${photo ? '' : (tm.name ? tm.name.charAt(0) : 'T')}
+            </div>
+            <h4 class="team-name">${tm.name}</h4>
+            <p class="team-role">${tm.role}</p>
+            <p class="team-bio">${tm.bio || ''}</p>
           </div>
-          <h4 class="team-name">${tm.name}</h4>
-          <p class="team-role">${tm.role}</p>
-          <p class="team-bio">${tm.bio || ''}</p>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
   } catch (err) {
     console.warn('[About] Failed to load dynamic team', err);

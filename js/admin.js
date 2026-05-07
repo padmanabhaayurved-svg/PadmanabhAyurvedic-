@@ -3008,8 +3008,9 @@ function renderTeammates() {
   body.innerHTML = _teammates.map(tm => `
     <tr>
       <td>
-        <img src="${tm.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(tm.name) + '&background=random'}" 
-             style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" />
+        <img src="${convertGDriveUrl(tm.photo) || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(tm.name) + '&background=random'}" 
+             style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" 
+             referrerpolicy="no-referrer" />
       </td>
       <td><strong>${tm.name}</strong></td>
       <td><span class="badge badge-outline">${tm.role}</span></td>
