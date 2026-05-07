@@ -616,9 +616,11 @@ function getMockAnalytics(days) {
 // Initialize on load
 document.addEventListener('DOMContentLoaded', initFirebase);
 
+
 /** ── Teammate Helpers ────────────────────────────────────────── **/
 
 async function getTeammates() {
+  console.log('[Firebase] getTeammates called. firebaseReady:', firebaseReady);
   if (!firebaseReady) return [];
   try {
     const snap = await _db.collection('teammates').orderBy('name', 'asc').get();
@@ -630,13 +632,19 @@ async function getTeammates() {
 }
 
 async function saveTeammateToDB(id, payload) {
-  if (!firebaseReady) return null;
+  console.log('[Firebase] saveTeammateToDB called for id:', id, 'payload:', payload);
+  if (!firebaseReady) {
+    console.warn('[Firebase] Firebase not ready, returning null');
+    return null;
+  }
   try {
     if (id) {
       await _db.collection('teammates').doc(id).set(payload, { merge: true });
+      console.log('[Firebase] Teammate updated successfully');
       return id;
     } else {
       const docRef = await _db.collection('teammates').add({ ...payload, createdAt: new Date().toISOString() });
+      console.log('[Firebase] Teammate added successfully, id:', docRef.id);
       return docRef.id;
     }
   } catch (err) {
@@ -654,3 +662,8 @@ async function deleteTeammateFromDB(id) {
     throw err;
   }
 }
+
+// Explicitly attach to window
+window.getTeammates = getTeammates;
+window.saveTeammateToDB = saveTeammateToDB;
+window.deleteTeammateFromDB = deleteTeammateFromDB;

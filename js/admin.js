@@ -2931,6 +2931,17 @@ document.addEventListener('page:admin', () => {
 });
 
 
+
+function saveToLocalTeammate(id, payload) {
+  let data = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
+  if (id) {
+    data = data.map(t => t.id === id ? { ...t, ...payload } : t);
+  } else {
+    data.push({ id: 'tm_' + Date.now(), ...payload, createdAt: new Date().toISOString() });
+  }
+  localStorage.setItem('pa_teammates', JSON.stringify(data));
+}
+
 /** ── TEAMMATES & EMPLOYEES ─────────────────────────────────── **/
 let _teammates = [];
 
@@ -3044,17 +3055,11 @@ window.saveTeammate = async function() {
   btn.textContent = 'Saving...';
 
   try {
-    if (window.saveTeammateToDB) {
-      await saveTeammateToDB(id, payload);
+    if (typeof window.saveTeammateToDB === 'function') {
+      const result = await window.saveTeammateToDB(id, payload);
+      if (result === null) saveToLocalTeammate(id, payload);
     } else {
-      // Local Fallback
-      let data = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
-      if (id) {
-        data = data.map(t => t.id === id ? { ...t, ...payload } : t);
-      } else {
-        data.push({ id: 'tm_' + Date.now(), ...payload, createdAt: new Date().toISOString() });
-      }
-      localStorage.setItem('pa_teammates', JSON.stringify(data));
+      saveToLocalTeammate(id, payload);
     }
 
     showToast('Teammate saved successfully', 'success');
