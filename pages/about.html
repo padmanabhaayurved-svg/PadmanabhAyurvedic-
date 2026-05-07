@@ -114,7 +114,7 @@
       <p class="mt-16" style="color:var(--text-muted);max-width:600px;margin:16px auto">Our dedicated team combines generations of Ayurvedic wisdom with modern business practices to bring you the best of traditional healthcare.</p>
     </div>
     <div class="grid grid-3 gap-32 stagger" id="team-grid">
-      <!-- Populated by JS or fallback -->
+      <!-- Populated dynamically by JS -->
       <div class="team-card animate-on-scroll">
         <div class="team-avatar" style="background:linear-gradient(135deg,#c9a84c,#8b7230)">V</div>
         <h4 class="team-name">Vaidya Padmanabh Shinde</h4>
@@ -147,11 +147,43 @@
 </section>
 
 <script>
-document.addEventListener('page:about', () => {
+document.addEventListener('page:about', async () => {
+  const grid = document.getElementById('team-grid');
+  
+  // Dynamic fetch
+  try {
+    let teammates = [];
+    if (window.getTeammates) {
+      teammates = await getTeammates();
+    } else {
+      teammates = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
+    }
+
+    const featured = teammates.filter(t => t.featured && t.status === 'active');
+    
+    if (featured.length > 0) {
+      grid.innerHTML = featured.map(tm => `
+        <div class="team-card animate-on-scroll">
+          <div class="team-avatar" style="${tm.photo ? `background-image:url('${tm.photo}');background-size:cover;background-position:center;color:transparent;` : `background:linear-gradient(135deg,var(--gold),var(--gold-dark))`}">
+            ${tm.photo ? '' : (tm.name ? tm.name.charAt(0) : 'T')}
+          </div>
+          <h4 class="team-name">${tm.name}</h4>
+          <p class="team-role">${tm.role}</p>
+          <p class="team-bio">${tm.bio || ''}</p>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    console.warn('[About] Failed to load dynamic team', err);
+  }
+
   // Intersection observer for scroll animations
   const observer = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('animate-in'); });
   }, { threshold: 0.1 });
+  
+  // Re-observe after dynamic injection
+  document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
   document.querySelectorAll('.timeline-item, .card').forEach(el => observer.observe(el));
 });
 </script>

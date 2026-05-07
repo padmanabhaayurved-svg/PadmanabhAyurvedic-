@@ -2954,6 +2954,8 @@ window.openTeammateModal = function(id = null) {
       document.getElementById('tm-email').value = tm.email || '';
       document.getElementById('tm-phone').value = tm.phone || '';
       document.getElementById('tm-photo').value = tm.photo || '';
+      document.getElementById('tm-bio').value = tm.bio || '';
+      document.getElementById('tm-featured').checked = tm.featured || false;
     }
   }
 
@@ -3006,6 +3008,7 @@ function renderTeammates() {
       </td>
       <td>
         <span class="badge ${tm.status === 'active' ? 'badge-success' : 'badge-ghost'}">${tm.status}</span>
+        ${tm.featured ? '<div style="font-size:0.7rem;color:var(--gold);margin-top:4px">★ Featured</div>' : ''}
       </td>
       <td style="text-align:right">
         <button class="btn btn-ghost btn-sm" onclick="openTeammateModal('${tm.id}')">Edit</button>
@@ -3027,6 +3030,8 @@ window.saveTeammate = async function() {
     email: document.getElementById('tm-email').value,
     phone: document.getElementById('tm-phone').value,
     photo: document.getElementById('tm-photo').value,
+    bio: document.getElementById('tm-bio').value,
+    featured: document.getElementById('tm-featured').checked,
     updatedAt: new Date().toISOString()
   };
 

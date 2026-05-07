@@ -1234,3 +1234,61 @@
 
 <!-- Chart.js (CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Teammate Modal -->
+<div id="teammate-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="tm-title">Add Teammate</h3>
+      <button class="modal-close" onclick="closeTeammateModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="teammate-form" class="form-group" style="gap:20px">
+        <input type="hidden" id="tm-id"/>
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" class="form-input" id="tm-name" required placeholder="e.g. John Doe"/>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Role / Designation *</label>
+            <input type="text" class="form-input" id="tm-role" required placeholder="e.g. CEO, Manager"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="tm-status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" class="form-input" id="tm-email" required placeholder="e.g. john@example.com"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone / WhatsApp</label>
+            <input type="text" class="form-input" id="tm-phone" placeholder="e.g. +91 98765 43210"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Photo URL (G-Drive / Image URL)</label>
+          <input type="text" class="form-input" id="tm-photo" placeholder="Paste link to teammate photo..."/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Short Bio (For About Page)</label>
+          <textarea class="form-textarea" id="tm-bio" style="min-height:80px" placeholder="Tell something about this teammate..."></textarea>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" id="tm-featured" style="width:20px;height:20px"/>
+          <label class="form-label" for="tm-featured" style="margin-bottom:0">Show on "Meet Our Team" section (About Page)</label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeTeammateModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-teammate" onclick="saveTeammate()">Save Teammate</button>
+    </div>
+  </div>
+</div>
