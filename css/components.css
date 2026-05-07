@@ -322,6 +322,9 @@
   cursor: pointer;
   transition: var(--transition);
   padding: 8px 24px;
+  background: transparent;
+  border: none;
+  outline: none;
 }
 
 .mobile-nav-link:hover, .mobile-nav-link.active {

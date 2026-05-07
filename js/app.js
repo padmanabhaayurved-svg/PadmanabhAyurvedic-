@@ -240,6 +240,12 @@ async function navigate(hash, force = false) {
     // Update nav active state
     updateNavActive(route);
 
+    // Toggle floating cart
+    const floatCart = document.getElementById('floating-cart-btn');
+    if (floatCart) {
+      floatCart.style.display = route === 'cart' ? 'none' : 'flex';
+    }
+
     // Run page init
     const inits = {
       '':          initHome,
