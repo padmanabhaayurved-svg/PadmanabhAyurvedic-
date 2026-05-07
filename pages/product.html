@@ -68,7 +68,7 @@ function renderProductDetail(p) {
   const lang    = localStorage.getItem('pa_lang') || 'en';
   const name    = lang === 'hi' ? (p.nameHi || p.name) : lang === 'mr' ? (p.nameMr || p.name) : p.name;
   const savings = Store.getSavings(p.price, p.mrp);
-  const images  = p.images?.length ? p.images : ['https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80'];
+  const images  = p.images?.length ? p.images.map(img => Store.convertDriveLink(img)) : ['https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80'];
 
   document.getElementById('product-breadcrumb').textContent = name;
   document.title = `${name} — Padmanabh Ayurvedics`;
@@ -76,13 +76,13 @@ function renderProductDetail(p) {
   document.getElementById('product-content').innerHTML = `
     <!-- Gallery -->
     <div class="product-gallery">
-      <div class="gallery-main" id="gallery-main">
-        <img src="${images[0]}" alt="${name}" id="gallery-main-img" loading="eager"/>
+      <div class="gallery-main loading-skeleton" id="gallery-main">
+        <img src="${images[0]}" alt="${name}" id="gallery-main-img" loading="eager" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton')"/>
       </div>
       <div class="gallery-thumbnails" id="gallery-thumbs">
         ${images.map((img, i) => `
-          <div class="gallery-thumb ${i===0?'active':''}" data-idx="${i}" onclick="selectGalleryImage(${i})">
-            <img src="${img}" alt="${name} ${i+1}" loading="lazy"/>
+          <div class="gallery-thumb loading-skeleton ${i===0?'active':''}" data-idx="${i}" onclick="selectGalleryImage(${i})">
+            <img src="${img}" alt="${name} ${i+1}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton')"/>
           </div>`).join('')}
       </div>
     </div>
@@ -163,7 +163,7 @@ function selectGalleryImage(idx) {
   _selectedImageIdx = idx;
   const images = _currentProduct?.images;
   if (!images) return;
-  document.getElementById('gallery-main-img').src = images[idx];
+  document.getElementById('gallery-main-img').src = Store.convertDriveLink(images[idx]);
   document.querySelectorAll('.gallery-thumb').forEach((t, i) => t.classList.toggle('active', i === idx));
 }
 window.selectGalleryImage = selectGalleryImage;

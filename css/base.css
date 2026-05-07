@@ -152,6 +152,7 @@ p { color: var(--text-secondary); line-height: 1.8; }
 }
 
 #page-loader.hidden {
+  display: none !important;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -221,6 +222,7 @@ p { color: var(--text-secondary); line-height: 1.8; }
 }
 
 #lang-splash.hidden {
+  display: none !important;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;

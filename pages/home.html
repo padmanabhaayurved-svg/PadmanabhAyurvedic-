@@ -155,71 +155,106 @@
 </section>
 
 <script>
-document.addEventListener('page:home', async () => {
-  // Load hero config
-  const config = await getHeroConfig().catch(() => getDefaultHeroConfig());
-  const isMobile = window.innerWidth < 768;
+const initHero = async () => {
+  console.log('%c[Home] 🚀 Initializing Hero Banner...', 'color: #ffcc00; font-weight: bold; font-size: 1.2rem;');
   const carousel = document.getElementById('hero-carousel');
+  if (!carousel) return;
+
+  const isMobile = window.innerWidth < 768;
   
-  if (carousel) {
-    const images = isMobile 
-      ? [
-          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&q=80',
-          'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1000&q=80',
-          'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1000&q=80'
-        ]
-      : [
-          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1600&q=80',
-          'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1600&q=80',
-          'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1600&q=80'
-        ];
-      
-    carousel.innerHTML = images.map((src, i) => `
+  // 1. IMMEDIATE RENDER (Optimistic)
+  // Show high-quality fallbacks right away so the user never sees a black screen
+  const fallbackImages = isMobile 
+    ? [
+        'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&q=80',
+        'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1000&q=80'
+      ]
+    : [
+        'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1600&q=80',
+        'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1600&q=80'
+      ];
+
+  const renderImages = (imgs) => {
+    console.log('[Home] Rendering hero images:', imgs.length);
+    carousel.innerHTML = imgs.map((src, i) => `
       <img src="${src}" alt="Ayurvedic wellness" class="carousel-img" loading="${i === 0 ? 'eager' : 'lazy'}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0 ? 0.55 : 0};transition:opacity 2s ease-in-out;"/>
     `).join('');
     
+    // Restart Interval
     let currentIndex = 0;
     const imgElements = carousel.querySelectorAll('.carousel-img');
-    
     if (window.heroInterval) clearInterval(window.heroInterval);
-    window.heroInterval = setInterval(() => {
-      if(imgElements.length === 0) return;
-      imgElements[currentIndex].style.opacity = '0';
-      currentIndex = (currentIndex + 1) % imgElements.length;
-      imgElements[currentIndex].style.opacity = '0.55';
-    }, 5000);
-  }
+    if (imgElements.length > 1) {
+      window.heroInterval = setInterval(() => {
+        imgElements[currentIndex].style.opacity = '0';
+        currentIndex = (currentIndex + 1) % imgElements.length;
+        imgElements[currentIndex].style.opacity = '0.55';
+      }, 5000);
+    }
+  };
 
-  // Render collections
-  const grid = document.getElementById('collections-grid');
-  if (grid && config.collections) {
-    const lang = localStorage.getItem('pa_lang') || 'en';
-    const labels = { en: 'Shop Collection', hi: 'संग्रह खरीदें', mr: 'संग्रह खरेदी करा' };
-    grid.innerHTML = config.collections.map(c => `
-      <div class="collection-card animate-in" onclick="navigate('catalog')">
-        <img src="${c.image}" alt="${c.title}" loading="lazy"/>
-        <div class="collection-card-overlay">
-          <div class="collection-card-title">${c.title}</div>
-          <div class="collection-card-label">${labels[lang] || labels.en} →</div>
+  // Initial render with fallbacks
+  renderImages(fallbackImages);
+
+  // 2. BACKGROUND FETCH
+  // Update with custom banners from DB if they exist
+  try {
+    const config = await getHeroConfig().catch(() => getDefaultHeroConfig());
+    console.log('[Home] DB Config received:', config);
+
+    const normalize = (val) => {
+      if (Array.isArray(val)) return val.filter(v => typeof v === 'string' && v.length > 0);
+      if (typeof val === 'string' && val.length > 0) return [val];
+      return [];
+    };
+
+    let mImages = normalize(config.mobileBanner).map(u => Store.convertDriveLink(u));
+    let dImages = normalize(config.desktopBanner).map(u => Store.convertDriveLink(u));
+    let dbImages = isMobile ? mImages : dImages;
+
+    // Only re-render if we found custom images in the DB
+    if (dbImages.length > 0) {
+      console.log('[Home] Updating with custom DB images');
+      renderImages(dbImages);
+    }
+
+    // Render collections from config
+    const grid = document.getElementById('collections-grid');
+    if (grid && config.collections) {
+      const lang = localStorage.getItem('pa_lang') || 'en';
+      const labels = { en: 'Shop Collection', hi: 'संग्रह खरीदें', mr: 'संग्रह खरेदी करा' };
+      grid.innerHTML = config.collections.map(c => `
+        <div class="collection-card animate-in loading-skeleton" onclick="navigate('catalog')">
+          <img src="${Store.convertDriveLink(c.image)}" alt="${c.title}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton')"/>
+          <div class="collection-card-overlay">
+            <div class="collection-card-title">${c.title}</div>
+            <div class="collection-card-label">${labels[lang] || labels.en} →</div>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
+  } catch (err) {
+    console.warn('[Home] Background config update failed:', err);
   }
 
   // Load featured products (first 3)
-  const prods = await Store.loadProducts().catch(() => []);
-  const homeGrid = document.getElementById('home-products-grid');
-  if (homeGrid) {
-    homeGrid.innerHTML = prods.slice(0, 3).map(p => renderProductCard(p)).join('');
-  }
+  Store.loadProducts().then(prods => {
+    const homeGrid = document.getElementById('home-products-grid');
+    if (homeGrid) homeGrid.innerHTML = prods.slice(0, 3).map(p => renderProductCard(p)).join('');
+  }).catch(() => {});
 
   // Trigger cinematic hero animation
   const heroSection = document.getElementById('hero-section');
   if (heroSection) {
     heroSection.classList.remove('play-anim');
-    setTimeout(() => {
-      heroSection.classList.add('play-anim');
-    }, 100);
+    setTimeout(() => heroSection.classList.add('play-anim'), 100);
   }
-});
+};
+
+// Run immediately
+initHero();
+
+// Also listen for navigation events
+document.removeEventListener('page:home', initHero); // Prevent duplicates
+document.addEventListener('page:home', initHero);
 </script>

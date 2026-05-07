@@ -6,6 +6,11 @@
 </div>
 
 <script>
+let _courierOptions = [];
+let _selectedCourierIdx = 0;
+let _courierCharge = 60;
+let _serviceabilityLoading = false;
+
 document.addEventListener('page:cart', renderCartPage);
 document.addEventListener('cart:updated', () => {
   if (_currentRoute === 'cart') renderCartPage();
@@ -14,6 +19,10 @@ document.addEventListener('cart:updated', () => {
 function renderCartPage() {
   const container = document.getElementById('cart-container');
   if (!container) return;
+
+  _courierOptions = [];
+  _selectedCourierIdx = 0;
+  _courierCharge = 60;
 
   const cart = Store.getCart();
   if (cart.length === 0) {
@@ -29,9 +38,8 @@ function renderCartPage() {
   }
 
   const subtotal = Store.getCartTotal();
-  const shipping = subtotal >= 499 ? 0 : 60;
   const tax      = Math.round(subtotal * 0.18);
-  const total    = subtotal + shipping + tax;
+  const total    = subtotal + _courierCharge + tax;
   const lang     = localStorage.getItem('pa_lang') || 'en';
 
   container.innerHTML = `
@@ -44,7 +52,7 @@ function renderCartPage() {
           return `
             <div class="cart-item">
               <div class="cart-item-image">
-                <img src="${item.image}" alt="${name}" loading="lazy"/>
+                <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
               </div>
               <div>
                 <div class="cart-item-name">${name}</div>
@@ -76,7 +84,7 @@ function renderCartPage() {
           </div>
           <div class="order-summary-row">
             <span data-i18n="cart.shipping">Shipping</span>
-            <span>${shipping === 0 ? '<span class="text-gold" data-i18n="cart.shipping.free">Free</span>' : Store.formatPrice(shipping)}</span>
+            <span id="summary-shipping">${_courierCharge === 0 ? '<span class="text-gold" data-i18n="cart.shipping.free">Free</span>' : Store.formatPrice(_courierCharge)}</span>
           </div>
           <div class="order-summary-row">
             <span data-i18n="cart.tax">GST (18%)</span>
@@ -84,7 +92,7 @@ function renderCartPage() {
           </div>
           <div class="order-summary-row total">
             <span data-i18n="cart.total">Total</span>
-            <span>${Store.formatPrice(total)}</span>
+            <span id="summary-total">${Store.formatPrice(total)}</span>
           </div>
         </div>
       </div>
@@ -124,11 +132,31 @@ function renderCartPage() {
         </div>
         <div class="form-group" style="max-width:200px">
           <label class="form-label" data-i18n="checkout.pincode">Pincode</label>
-          <input type="text" class="form-input" id="co-pin" required pattern="[0-9]{6}"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" class="form-input" id="co-pin" required pattern="[0-9]{6}" style="flex:1" onblur="checkCourierServiceability()"/>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-check-couriers" onclick="checkCourierServiceability()" style="white-space:nowrap">Check</button>
+          </div>
+        </div>
+
+        <!-- Courier Selection -->
+        <div id="courier-section" style="display:none">
+          <div class="checkout-section-title" style="margin-bottom:16px">
+            🚚 Select Delivery Partner
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;margin-left:8px">Shipping charge will be added to your total</span>
+          </div>
+          <div id="courier-options" style="display:flex;flex-direction:column;gap:10px;max-width:600px">
+            <!-- Rendered by JS -->
+          </div>
+          <div id="courier-loading" style="display:none;padding:24px;text-align:center;color:var(--text-muted)">
+            <div class="spinner" style="display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin-right:8px"></div>
+            Checking available couriers...
+          </div>
+          <div id="courier-error" style="display:none;padding:12px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:var(--error);font-size:0.85rem;max-width:600px">
+          </div>
         </div>
 
         <div style="margin-top:32px;display:flex;flex-direction:column;align-items:flex-start;gap:12px">
-          <button type="submit" class="btn btn-primary btn-lg" id="pay-btn">
+          <button type="submit" class="btn btn-primary btn-lg" id="pay-btn" disabled>
             <span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}
           </button>
           <span style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:6px">
@@ -141,12 +169,27 @@ function renderCartPage() {
 
   applyStrings();
 
+  // Pincode enter key triggers check
+  const pinInput = document.getElementById('co-pin');
+  if (pinInput) {
+    pinInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        checkCourierServiceability();
+      }
+    });
+  }
+
   // Handle Checkout
   const form = document.getElementById('checkout-form');
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('pay-btn');
+      if (btn.disabled || _courierOptions.length === 0) {
+        showToast('Please select a delivery partner first', 'warning');
+        return;
+      }
       btn.disabled = true;
       btn.textContent = 'Processing...';
 
@@ -161,7 +204,18 @@ function renderCartPage() {
         pincode: document.getElementById('co-pin').value
       };
 
-      const orderPayload = Store.buildOrderPayload({ address, userId: user?.uid });
+      const subtotal = Store.getCartTotal();
+      const tax      = Math.round(subtotal * 0.18);
+      const total    = subtotal + _courierCharge + tax;
+
+      const selectedCourier = _courierOptions[_selectedCourierIdx];
+
+      const orderPayload = {
+        ...Store.buildOrderPayload({ address, userId: user?.uid }),
+        courierCompany: selectedCourier.name || selectedCourier.company || selectedCourier.courier_name || '',
+        courierCharge:  _courierCharge,
+        total:          total
+      };
 
       // Initiate Razorpay
       await RazorpayHelper.initiatePayment({
@@ -170,23 +224,111 @@ function renderCartPage() {
         email:        address.email,
         phone:        address.phone
       }, async (res) => {
-        // Success
         try {
           orderPayload.paymentId = res.paymentId;
           const orderId = await createOrder(orderPayload);
 
-          // Attempt Shiprocket creation
-          const shp = await ShiprocketHelper.createShipment({ id: orderId, ...orderPayload });
-          await updateOrderTracking(orderId, shp.awb, shp.shipmentId);
+          // Save to localStorage for admin panel
+          const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+          const localOrder = {
+            id: orderId,
+            customerName: address.name,
+            customerPhone: address.phone,
+            email: address.email,
+            address: address,
+            items: orderPayload.items,
+            subtotal: orderPayload.subtotal,
+            shipping: orderPayload.courierCharge,
+            tax: orderPayload.tax,
+            total: orderPayload.total,
+            payment: 'Razorpay',
+            paymentId: res.paymentId,
+            status: 'processing',
+            courierCompany: orderPayload.courierCompany,
+            courierCharge: orderPayload.courierCharge,
+            createdAt: new Date().toISOString(),
+            srStatus: null,
+            trackingId: null,
+            awb: null,
+            srOrderId: null,
+            shipmentId: null
+          };
+          localOrders.push(localOrder);
+          localStorage.setItem('pa_orders', JSON.stringify(localOrders));
+
+          // Attempt Shiprocket order creation
+          try {
+            const srResult = await Shiprocket.createOrder({
+              orderId:       orderId,
+              orderDate:     new Date().toISOString().slice(0, 10),
+              customerName:  address.name,
+              address:       address.address,
+              city:          address.city,
+              pincode:       address.pincode,
+              state:         address.state,
+              country:       'India',
+              email:         address.email,
+              phone:         address.phone,
+              items:         orderPayload.items,
+              paymentMethod: 'Prepaid',
+              subtotal:      orderPayload.subtotal,
+              courierCompany: orderPayload.courierCompany,
+              weight:        Store.getCartWeight() || 0.5,
+              length:        Shiprocket.PICKUP?.length || 15,
+              breadth:       Shiprocket.PICKUP?.breadth || 10,
+              height:        Shiprocket.PICKUP?.height || 10
+            });
+
+            localOrder.srOrderId = srResult.srOrderId;
+            localOrder.shipmentId = srResult.shipmentId;
+            localOrder.srStatus = 'created';
+
+            // Assign AWB
+            try {
+              const awbResult = await Shiprocket.assignAWB(srResult.shipmentId, orderPayload.courierCompany);
+              localOrder.awb = awbResult.awb;
+              localOrder.trackingId = awbResult.awb;
+              localOrder.courierName = awbResult.courierName;
+              localOrder.srStatus = 'awb_assigned';
+
+              // Generate pickup
+              try {
+                await Shiprocket.generatePickup(srResult.shipmentId);
+                localOrder.srStatus = 'pickup_done';
+              } catch (pe) { console.warn('[Shiprocket] Pickup gen failed:', pe.message); }
+            } catch (ae) { console.warn('[Shiprocket] AWB assign failed:', ae.message); }
+
+            // Update localStorage
+            const idx = localOrders.findIndex(o => o.id === orderId);
+            if (idx >= 0) localOrders[idx] = localOrder;
+            localStorage.setItem('pa_orders', JSON.stringify(localOrders));
+
+            // Update Firebase
+            await updateOrderTracking(orderId, localOrder.trackingId || '', localOrder.shipmentId || '', {
+              courierCompany: localOrder.courierCompany,
+              courierCharge:  localOrder.courierCharge,
+              srOrderId:      localOrder.srOrderId,
+              shipmentId:     localOrder.shipmentId,
+              awb:            localOrder.awb,
+              courierName:    localOrder.courierName,
+              srStatus:       localOrder.srStatus
+            });
+          } catch (srErr) {
+            console.warn('[Shiprocket] Order creation failed:', srErr.message);
+            // Order is still saved, just without SR integration
+          }
 
           Store.clearCart();
-          showOrderSuccess();
+          showOrderSuccess(orderId, {
+            awb: localOrder.awb || 'Processing',
+            courierName: localOrder.courierName || localOrder.courierCompany || '',
+            shipmentId: localOrder.shipmentId
+          });
         } catch (err) {
           console.error('Order save error:', err);
           showToast('Payment successful, but order save failed. Contact support.', 'error');
         }
       }, (err) => {
-        // Failure
         btn.disabled = false;
         btn.innerHTML = `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
       });
@@ -194,13 +336,189 @@ function renderCartPage() {
   }
 }
 
-function showOrderSuccess() {
+async function checkCourierServiceability() {
+  const pinInput = document.getElementById('co-pin');
+  const pincode = pinInput?.value?.trim();
+  if (!pincode || pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
+    showToast('Enter a valid 6-digit pincode', 'warning');
+    return;
+  }
+
+  const section   = document.getElementById('courier-section');
+  const optionsEl = document.getElementById('courier-options');
+  const loadingEl = document.getElementById('courier-loading');
+  const errorEl   = document.getElementById('courier-error');
+
+  section.style.display   = 'block';
+  loadingEl.style.display = 'block';
+  optionsEl.style.display = 'none';
+  errorEl.style.display   = 'none';
+
+  _serviceabilityLoading = true;
+
+  try {
+    const pickupPin = (window.Shiprocket?.PICKUP?.pincode) || '414001';
+    const weight = Store.getCartWeight() || 0.5;
+
+    const couriers = await Shiprocket.checkServiceability(pickupPin, pincode, weight);
+
+    if (!couriers || couriers.length === 0) {
+      throw new Error('No couriers available for this pincode. Please check the pincode or contact support.');
+    }
+
+    // Parse courier data — SR returns various formats
+    _courierOptions = couriers.map(c => ({
+      name:       c.courier_name || c.name || c.company || 'Standard',
+      charge:     Number(c.freight_charge || c.charge || c.rate || 60),
+      etamin:     Number(c.etamin || c.eta_min || 2),
+      etamax:     Number(c.etamax || c.eta_max || 5),
+      cod:        c.cod === 1 || c.cod === true,
+      prepaid:    c.prepaid === 1 || c.prepaid === true,
+      weightTier: c.weight || weight
+    }));
+
+    // Sort by charge, cheapest first
+    _courierOptions.sort((a, b) => a.charge - b.charge);
+
+    // Pre-select cheapest
+    _selectedCourierIdx = 0;
+    _courierCharge = _courierOptions[0].charge;
+
+    // Update summary
+    updateCheckoutSummary();
+
+    // Render options
+    renderCourierOptions();
+
+    loadingEl.style.display = 'none';
+    optionsEl.style.display = 'flex';
+
+  } catch (err) {
+    console.error('[Shiprocket] Serviceability check failed:', err.message);
+    loadingEl.style.display = 'none';
+    errorEl.style.display   = 'block';
+    errorEl.innerHTML       = `⚠️ ${err.message}<br><span style="font-size:0.8rem;opacity:0.7">Using standard shipping at ${Store.formatPrice(60)}</span>`;
+
+    // Fallback: use default shipping
+    _courierOptions = [{ name: 'Standard Shipping', charge: 60, etamin: 3, etamax: 7, cod: true, prepaid: true }];
+    _selectedCourierIdx = 0;
+    _courierCharge = 60;
+    updateCheckoutSummary();
+  }
+
+  _serviceabilityLoading = false;
+}
+
+function renderCourierOptions() {
+  const optionsEl = document.getElementById('courier-options');
+  if (!optionsEl || _courierOptions.length === 0) return;
+
+  const courierIcons = {
+    'delhivery':    '🚚',
+    'ecom':         '📦',
+    'shadowfax':    '🚛',
+    'blue':         '📮',
+    'dtdc':         '🚐',
+    'fedex':        '✈️',
+    'amazon':       '📫',
+    'standard':     ''
+  };
+
+  const getIcon = (name) => {
+    const lower = (name || '').toLowerCase();
+    for (const [key, icon] of Object.entries(courierIcons)) {
+      if (lower.includes(key)) return icon;
+    }
+    return '';
+  };
+
+  const subtotal = Store.getCartTotal();
+  const tax      = Math.round(subtotal * 0.18);
+
+  optionsEl.innerHTML = _courierOptions.map((c, i) => {
+    const totalWithCourier = subtotal + c.charge + tax;
+    const isSelected = i === _selectedCourierIdx;
+    return `
+      <label style="
+        display:flex;align-items:center;gap:16px;padding:16px 20px;
+        border:2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'};
+        border-radius:12px;cursor:pointer;
+        background:${isSelected ? 'rgba(245,165,0,0.05)' : 'transparent'};
+        transition:all 0.2s ease;
+        ${_courierOptions.length > 1 ? '' : 'pointer-events:none;'}
+      " onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="if(${i}!==_selectedCourierIdx)this.style.borderColor='var(--border)'">
+        <input type="radio" name="courier" value="${i}" ${isSelected ? 'checked' : ''}
+          onchange="selectCourier(${i})"
+          style="accent-color:var(--gold);width:18px;height:18px;flex-shrink:0"/>
+        <span style="font-size:1.5rem;flex-shrink:0">${getIcon(c.name)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:var(--text-primary);font-size:0.95rem">${c.name}</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">
+            Est. ${c.etamin}–${c.etamax} days
+            ${c.cod ? ' · COD Available' : ''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-weight:700;color:var(--gold);font-size:1rem">${Store.formatPrice(c.charge)}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted)">Total: ${Store.formatPrice(totalWithCourier)}</div>
+        </div>
+      </label>
+    `;
+  }).join('');
+}
+
+function selectCourier(idx) {
+  _selectedCourierIdx = idx;
+  _courierCharge = _courierOptions[idx].charge;
+  updateCheckoutSummary();
+  renderCourierOptions();
+}
+
+function updateCheckoutSummary() {
+  const subtotal = Store.getCartTotal();
+  const tax      = Math.round(subtotal * 0.18);
+  const total    = subtotal + _courierCharge + tax;
+
+  const shippingEl = document.getElementById('summary-shipping');
+  const totalEl    = document.getElementById('summary-total');
+  const payBtn     = document.getElementById('pay-btn');
+
+  if (shippingEl) {
+    shippingEl.innerHTML = _courierCharge === 0
+      ? '<span class="text-gold" data-i18n="cart.shipping.free">Free</span>'
+      : Store.formatPrice(_courierCharge);
+  }
+  if (totalEl) totalEl.textContent = Store.formatPrice(total);
+  if (payBtn) {
+    payBtn.disabled = _courierOptions.length === 0;
+    payBtn.innerHTML = `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
+  }
+}
+
+function showOrderSuccess(orderId, shiprocketData) {
   const container = document.getElementById('cart-container');
+  const awb = shiprocketData?.awb || 'Processing';
+  const courier = shiprocketData?.courierName || _courierOptions[_selectedCourierIdx]?.name || '';
+
   container.innerHTML = `
     <div class="order-success">
       <div class="order-success-icon">✨</div>
       <h1 class="mb-16" data-i18n="order.success.title">Order Placed!</h1>
-      <p style="color:var(--text-secondary);margin-bottom:32px" data-i18n="order.success.desc">Thank you for your purchase. Your order is confirmed.</p>
+      <p style="color:var(--text-secondary);margin-bottom:24px" data-i18n="order.success.desc">Thank you for your purchase. Your order is confirmed.</p>
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:400px;margin:0 auto 32px;text-align:left">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="color:var(--text-muted);font-size:0.85rem">Order #</span>
+          <span style="font-weight:600;color:var(--gold)">${orderId?.slice(-6)?.toUpperCase() || '—'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="color:var(--text-muted);font-size:0.85rem">Courier</span>
+          <span style="font-weight:500">${courier || '—'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--text-muted);font-size:0.85rem">AWB / Tracking</span>
+          <span style="font-weight:500;font-family:monospace">${awb}</span>
+        </div>
+      </div>
       <button class="btn btn-primary" onclick="navigate('dashboard')" data-i18n="order.success.cta">View My Orders</button>
     </div>
   `;

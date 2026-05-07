@@ -792,3 +792,191 @@
   padding-top: 8px;
 }
 
+/* ── Printer Module ─────────────────────────────────────────── */
+
+/* Sidebar status dot */
+.printer-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b7280; /* grey = disconnected */
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.printer-status-dot.connected {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34,197,94,0.7);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+.printer-status-dot.error {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239,68,68,0.6);
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 4px rgba(34,197,94,0.5); }
+  50%       { box-shadow: 0 0 12px rgba(34,197,94,0.9); }
+}
+
+/* Connection status banner */
+.printer-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 20px 24px;
+  margin-bottom: 4px;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+.printer-status-banner.connected {
+  border-color: rgba(34,197,94,0.4);
+  background: rgba(34,197,94,0.05);
+}
+.printer-status-banner.error {
+  border-color: rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.05);
+}
+
+.printer-banner-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6b7280;
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.printer-status-banner.connected .printer-banner-dot {
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34,197,94,0.7);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+.printer-status-banner.error .printer-banner-dot {
+  background: #ef4444;
+}
+
+.printer-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.printer-banner-text strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+.printer-banner-text span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Printer info card */
+.printer-info-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: var(--radius-lg, 12px);
+  padding: 16px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 24px;
+  margin-bottom: 4px;
+}
+.printer-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.printer-info-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.printer-info-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Toggle rows inside printer panels */
+.printer-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.printer-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.printer-toggle-row:last-child { border-bottom: none; }
+
+.printer-chk {
+  width: 38px;
+  height: 20px;
+  appearance: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+}
+.printer-chk::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+.printer-chk:checked {
+  background: rgba(100,164,53,0.25);
+  border-color: var(--gold);
+}
+.printer-chk:checked::after {
+  transform: translateX(18px);
+  background: var(--gold);
+}
+
+/* Print log table status badges */
+.badge-print-ok {
+  background: rgba(34,197,94,0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.badge-print-fail {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.badge-print-queued {
+  background: rgba(245,158,11,0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+

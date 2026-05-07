@@ -56,6 +56,7 @@ const Store = (() => {
         price: product.price,
         mrp:   product.mrp,
         image: product.images?.[0] || '',
+        weight: product.weight || 0.5,
         qty
       });
     }
@@ -101,6 +102,11 @@ const Store = (() => {
   function getCartCount() {
     _loadCart();
     return _cart.reduce((s, i) => s + i.qty, 0);
+  }
+
+  function getCartWeight() {
+    _loadCart();
+    return _cart.reduce((s, i) => s + (i.weight || 0.5) * i.qty, 0);
   }
 
   // ── Product Helpers ───────────────────────────────────────────
@@ -154,6 +160,29 @@ const Store = (() => {
 
   // ── Price Formatting ──────────────────────────────────────────
 
+  function convertDriveLink(url) {
+    if (!url) return url;
+    if (url.includes('lh3.googleusercontent.com')) return url;
+    if (url.includes('drive.google.com/thumbnail')) return url;
+    if (url.includes('drive.usercontent.google.com')) return url;
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}=s800`;
+    }
+    return url;
+  }
+
+  function imgOnError(img, fallback) {
+    if (!fallback || img.src === fallback) {
+      img.onerror = null;
+      img.src = 'https://via.placeholder.com/400x400?text=Image+Unavailable';
+      img.parentElement?.classList?.remove('loading-skeleton');
+      return;
+    }
+    img.onerror = null;
+    img.src = fallback;
+  }
+
   function formatPrice(amount) {
     return '₹' + Math.round(amount).toLocaleString('en-IN');
   }
@@ -205,13 +234,15 @@ const Store = (() => {
     getCart,
     getCartTotal,
     getCartCount,
+    getCartWeight,
     loadProducts,
     getCachedProducts,
     filterProducts,
     getRelatedProducts,
     formatPrice,
     getSavings,
-    buildOrderPayload
+    buildOrderPayload,
+    convertDriveLink
   };
 })();
 
@@ -221,8 +252,8 @@ window.renderProductCard = function(p) {
   const name = lang === 'hi' ? (p.nameHi || p.name) : lang === 'mr' ? (p.nameMr || p.name) : p.name;
   return `
     <div class="product-card" onclick="navigate('product/${p.id}')" style="opacity:1;transform:none">
-      <div class="product-card-image">
-        <img src="${p.images?.[0] || 'https://via.placeholder.com/400x400?text=Padmanabh+Ayurvedics'}" alt="${p.name}" loading="lazy"/>
+      <div class="product-card-image loading-skeleton">
+        <img src="${Store.convertDriveLink(p.images?.[0]) || 'https://via.placeholder.com/400x400?text=Padmanabh+Ayurvedics'}" alt="${p.name}" referrerpolicy="no-referrer" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton')"/>
         ${savings > 0 ? `<span class="product-card-badge badge-sale">${savings}% OFF</span>` : '<span class="product-card-badge badge-new">New</span>'}
         <div class="product-card-quick-add">
           <button class="btn btn-primary btn-sm btn-full" onclick="event.stopPropagation();addToCartFromCard('${p.id}')">Add to Cart</button>

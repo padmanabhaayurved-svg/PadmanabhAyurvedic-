@@ -1,3 +1,11 @@
+console.log('[App] Script loaded and executing...');
+if (window.__PA_INITIALIZED__) {
+  console.log('[App] Already initialized. Skipping duplicate execution.');
+  // Do not exit early if we need to export functions, but we don't.
+} else {
+  window.__PA_INITIALIZED__ = true;
+
+
 /* ============================================================
    PADMANABH AYURVEDICS — APP.JS
    SPA Router · i18n · Toast · Page Loader · Nav
@@ -81,50 +89,57 @@ window.closeModal = closeModal;
 
 // ── Cinematic Boot Sequence ───────────────────────────────────
 function runInitializationSequence() {
+  console.log('[App] Starting initialization sequence...');
   const loader = document.getElementById('page-loader');
-  const quoteEl = document.getElementById('loader-quote');
   const splash = document.getElementById('lang-splash');
-  
+
+  // ── Returning visitor: lang already chosen — go straight to app ──
+  const langAlreadySet = localStorage.getItem('pa_lang');
+  if (langAlreadySet) {
+    console.log('[App] Returning visitor (' + langAlreadySet + ') — skipping intro, loading app.');
+    // Both elements start as display:none in HTML — nothing to hide
+    startApp();
+    return;
+  }
+
+  // ── First-time visitor: reveal loader, then lang splash ──
+  const quoteEl = document.getElementById('loader-quote');
   if (loader && quoteEl && splash) {
+    // Show the loader (it starts hidden in HTML)
+    loader.style.display = 'flex';
+
     const quotes = [
       "\"Health is a state of complete harmony of the body, mind and spirit.\"",
       "\"When diet is wrong, medicine is of no use. When diet is correct, medicine is of no need.\"",
       "\"The groundwork of all happiness is health.\"",
-      "\"To ensure good health: eat lightly, breathe deeply, live moderately, cultivate cheerfulness, and maintain an interest in life.\""
+      "\"To ensure good health: eat lightly, breathe deeply, live moderately, cultivate cheerfulness.\""
     ];
     quoteEl.textContent = quotes[Math.floor(Math.random() * quotes.length)];
-    
-    // Fade in quote shortly after page load
     setTimeout(() => { quoteEl.style.opacity = '1'; }, 500);
 
-    // Keep loader for 8 seconds total, then show language splash
+    // After 3.5 s hide loader and show language picker
     setTimeout(() => {
-      loader.classList.add('hidden');
-      setTimeout(() => loader.remove(), 800);
-      
-      splash.classList.remove('hidden');
-      
-      // Bind splash language buttons
+      console.log('[App] Hiding loader, showing lang splash...');
+      loader.style.display = 'none';
+      if (loader.parentNode) loader.remove();
+
+      splash.style.display = 'flex';
+
       document.querySelectorAll('.splash-lang-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
+          console.log('[App] Language selected:', btn.dataset.lang);
+          splash.style.display = 'none';
+          if (splash.parentNode) splash.remove();
           await setLang(btn.dataset.lang);
-          splash.classList.add('hidden');
-          setTimeout(() => {
-            splash.remove();
-            window.scrollTo({ top: 0, behavior: 'instant' });
-          }, 800);
+          window.scrollTo({ top: 0, behavior: 'instant' });
           startApp();
         });
       });
-    }, 8000);
+    }, 3500);
+
   } else {
-    if (loader) {
-      loader.classList.add('hidden');
-      setTimeout(() => {
-        loader.remove();
-        window.scrollTo({ top: 0, behavior: 'instant' });
-      }, 800);
-    }
+    // Elements missing — just start the app immediately
+    console.log('[App] Overlay elements missing, starting app directly.');
     startApp();
   }
 }
@@ -190,7 +205,21 @@ async function navigate(hash, force = false) {
       _pageCache[src] = html;
     }
 
+    if (html.trim().toLowerCase().startsWith('<!doctype') || html.toLowerCase().includes('<html')) {
+      console.error('[Router] Security Alert: Server returned full index.html instead of partial:', src);
+      app.innerHTML = '<div class="container section text-center"><h2>Routing Error</h2><p>The server returned a full page instead of a content snippet. Please check your local server configuration.</p></div>';
+      app.classList.remove('transitioning');
+      return;
+    }
+
     app.innerHTML = html;
+    app.classList.remove('transitioning');
+    _currentRoute = route;
+
+    // Update URL hash without triggering another navigation
+    if (window.location.hash !== '#' + hash) {
+      window.history.pushState(null, '', '#' + hash);
+    }
 
     // Execute inline <script> tags (innerHTML does not run scripts)
     app.querySelectorAll('script').forEach(oldScript => {
@@ -287,19 +316,38 @@ window.navigate = navigate;
 
 // ── Boot ──────────────────────────────────────────────────────
 async function boot() {
-  await loadStrings(_lang);
-  initNavbar();
-  applyStrings();
+  console.log('[App] Booting...');
+  try {
+    await loadStrings(_lang);
+    initNavbar();
+    applyStrings();
 
-  // Cart icon click
-  const cartBtn = document.getElementById('cart-btn');
-  if (cartBtn) cartBtn.addEventListener('click', () => navigate('cart'));
-
-  // Start cinematic initialization sequence
-  runInitializationSequence();
+    // Cart icon click
+    const cartBtn = document.getElementById('cart-btn');
+    if (cartBtn) cartBtn.addEventListener('click', () => navigate('cart'));
+  } catch (e) {
+    console.error('[App] Boot error:', e);
+  } finally {
+    // Start cinematic initialization sequence (always runs)
+    runInitializationSequence();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', boot);
+
+// Handle Hash Change (Back/Forward buttons)
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash || '#home';
+  navigate(hash);
+});
+
+// Intercept all form submissions to prevent accidental reloads in SPA
+document.addEventListener('submit', e => {
+  if (e.target.closest('#admin-login-form') || e.target.closest('#product-form')) {
+    e.preventDefault();
+    console.log('[App] Intercepted form submit for:', e.target.id);
+  }
+});
 
 // ── Animations & Tracking ─────────────────────────────────────
 function initScrollAnimations() {
@@ -479,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBody.scrollTop = chatBody.scrollHeight;
 
     // Process State
-    setTimeout(() => {
+    setTimeout(async () => {
       switch(chatState) {
         case 'ASK_NAME':
           chatData.name = text;
@@ -577,3 +625,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+} // End initialization guard
+

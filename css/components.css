@@ -1026,3 +1026,13 @@
     bottom: 160px;
   }
 }
+
+/* Engaging Image Skeleton */
+.loading-skeleton { position: relative; overflow: hidden; background-color: #e2e8f0; border-radius: inherit; }
+.loading-skeleton::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); animation: skeleton-shimmer 1.5s infinite linear; }
+@keyframes skeleton-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.loading-skeleton img { opacity: 0; }
+.loading-skeleton:not(.loading-skeleton) img { opacity: 1; transition: opacity 0.3s; }
+
+img { transition: opacity 0.3s ease-in-out; }
+.loading-skeleton img { opacity: 0 !important; }

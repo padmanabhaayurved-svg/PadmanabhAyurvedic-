@@ -48,9 +48,9 @@ async function getProducts() {
   try {
     const snap = await _db.collection('products')
       .where('deleted', '==', false)
-      .orderBy('sortOrder', 'asc')
       .get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return products.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   } catch (e) {
     console.warn('[Firebase] getProducts error:', e);
     return getSampleProducts();
@@ -78,9 +78,13 @@ async function getDeletedProducts() {
   try {
     const snap = await _db.collection('products')
       .where('deleted', '==', true)
-      .orderBy('updatedAt', 'desc')
       .get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return products.sort((a, b) => {
+      const tA = a.updatedAt?.toMillis?.() || 0;
+      const tB = b.updatedAt?.toMillis?.() || 0;
+      return tB - tA;
+    });
   } catch (e) {
     console.warn('[Firebase] getDeletedProducts error:', e);
     return [];
@@ -111,7 +115,7 @@ async function updateProduct(id, data) {
     return;
   }
   const now = firebase.firestore.FieldValue.serverTimestamp();
-  await _db.collection('products').doc(id).update({ ...data, updatedAt: now });
+  await _db.collection('products').doc(id).set({ ...data, updatedAt: now }, { merge: true });
 }
 
 /** Soft delete product */
@@ -121,7 +125,7 @@ async function deleteProduct(id) {
     return;
   }
   const now = firebase.firestore.FieldValue.serverTimestamp();
-  await _db.collection('products').doc(id).update({ deleted: true, updatedAt: now });
+  await _db.collection('products').doc(id).set({ deleted: true, updatedAt: now }, { merge: true });
 }
 
 /** Republish (restore) deleted product */
@@ -131,7 +135,7 @@ async function republishProduct(id) {
     return;
   }
   const now = firebase.firestore.FieldValue.serverTimestamp();
-  await _db.collection('products').doc(id).update({ deleted: false, updatedAt: now });
+  await _db.collection('products').doc(id).set({ deleted: false, updatedAt: now }, { merge: true });
 }
 
 /** Permanently delete product */
@@ -151,21 +155,29 @@ async function updateProductOrder(orderedIds) {
   }
   const batch = _db.batch();
   orderedIds.forEach((id, idx) => {
-    batch.update(_db.collection('products').doc(id), { sortOrder: idx });
+    batch.set(_db.collection('products').doc(id), { sortOrder: idx }, { merge: true });
   });
   await batch.commit();
 }
 
 /** Get hero config */
 async function getHeroConfig() {
-  if (!firebaseReady) return getDefaultHeroConfig();
+  const defaults = getDefaultHeroConfig();
+  if (!firebaseReady) return defaults;
   try {
     const doc = await _db.collection('heroConfig').doc('main').get();
-    if (!doc.exists) return getDefaultHeroConfig();
-    return doc.data();
+    if (!doc.exists) return defaults;
+    const data = doc.data();
+    // Merge with defaults to ensure all fields exist
+    return {
+      ...defaults,
+      ...data,
+      desktopBanner: data.desktopBanner || defaults.desktopBanner,
+      mobileBanner:  data.mobileBanner  || defaults.mobileBanner
+    };
   } catch (e) {
     console.warn('[Firebase] getHeroConfig error:', e);
-    return getDefaultHeroConfig();
+    return defaults;
   }
 }
 
@@ -181,9 +193,15 @@ async function createOrder(orderData) {
   const now = firebase.firestore.FieldValue.serverTimestamp();
   const ref = await _db.collection('orders').add({
     ...orderData,
-    status:    'pending',
-    createdAt: now,
-    updatedAt: now
+    status:        'pending',
+    courierCompany: orderData.courierCompany || '',
+    courierCharge:  orderData.courierCharge || 0,
+    srOrderId:      null,
+    shipmentId:     null,
+    awb:            null,
+    srStatus:       null,
+    createdAt:     now,
+    updatedAt:     now
   });
   return ref.id;
 }
@@ -204,12 +222,19 @@ async function getUserOrders(uid) {
 }
 
 /** Update order tracking */
-async function updateOrderTracking(orderId, trackingId, shipmentId) {
+async function updateOrderTracking(orderId, trackingId, shipmentId, extra = {}) {
   if (!firebaseReady) return;
   await _db.collection('orders').doc(orderId).update({
     trackingId,
     shipmentId,
     status: 'processing',
+    courierCompany: extra.courierCompany || '',
+    courierCharge:  extra.courierCharge || 0,
+    srOrderId:      extra.srOrderId || null,
+    awb:            extra.awb || null,
+    courierName:    extra.courierName || '',
+    srStatus:       extra.srStatus || null,
+    ...extra,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
@@ -394,8 +419,8 @@ function getSampleProducts() {
       mrp: 499,
       category: 'digestive',
       images: [
-        'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&q=80',
-        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&q=80'
+        'https://drive.google.com/file/d/1-JKNg6MKfAsAvWHHCh1Kd_q-xZcIU_Sc/view?usp=sharing',
+        'https://drive.google.com/file/d/1-JKNg6MKfAsAvWHHCh1Kd_q-xZcIU_Sc/view?usp=sharing'
       ],
       description: 'A popular digestive powder used for managing gas, acidity, bloating, and maintaining oral hygiene. Fast-acting relief with a refreshing herbal taste.',
       usage: 'Mix ½ teaspoon in warm water and drink after meals. Can also be used as a mouth freshener after meals.',
