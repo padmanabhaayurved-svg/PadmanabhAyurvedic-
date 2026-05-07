@@ -163,21 +163,42 @@ const initHero = async () => {
   const isMobile = window.innerWidth < 768;
   
   // 1. IMMEDIATE RENDER (Optimistic)
-  // Show high-quality fallbacks right away so the user never sees a black screen
-  const fallbackImages = isMobile 
-    ? [
-        'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&q=80',
-        'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1000&q=80'
-      ]
-    : [
-        'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1600&q=80',
-        'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1600&q=80'
-      ];
+  // Check local storage for cached config first
+  let cachedConfig = null;
+  try {
+    cachedConfig = JSON.parse(localStorage.getItem('pa_hero_config'));
+  } catch (e) {}
+
+  const normalize = (val) => {
+    if (Array.isArray(val)) return val.filter(v => typeof v === 'string' && v.length > 0);
+    if (typeof val === 'string' && val.length > 0) return [val];
+    return [];
+  };
+
+  let initialImages = [];
+  if (cachedConfig) {
+    let mImgs = normalize(cachedConfig.mobileBanner).map(u => Store.convertDriveLink(u));
+    let dImgs = normalize(cachedConfig.desktopBanner).map(u => Store.convertDriveLink(u));
+    initialImages = isMobile ? mImgs : dImgs;
+  }
+
+  // Fallback if no cache or empty
+  if (!initialImages.length) {
+    initialImages = isMobile 
+      ? [
+          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&q=80',
+          'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1000&q=80'
+        ]
+      : [
+          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1600&q=80',
+          'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1600&q=80'
+        ];
+  }
 
   const renderImages = (imgs) => {
     console.log('[Home] Rendering hero images:', imgs.length);
     carousel.innerHTML = imgs.map((src, i) => `
-      <img src="${src}" alt="Ayurvedic wellness" class="carousel-img" loading="${i === 0 ? 'eager' : 'lazy'}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0 ? 0.55 : 0};transition:opacity 2s ease-in-out;"/>
+      <img src="${src}" alt="Ayurvedic wellness" referrerpolicy="no-referrer" class="carousel-img" loading="${i === 0 ? 'eager' : 'lazy'}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0 ? 0.55 : 0};transition:opacity 2s ease-in-out;"/>
     `).join('');
     
     // Restart Interval
@@ -193,27 +214,24 @@ const initHero = async () => {
     }
   };
 
-  // Initial render with fallbacks
-  renderImages(fallbackImages);
+  // Initial render with cache or fallbacks
+  renderImages(initialImages);
 
   // 2. BACKGROUND FETCH
   // Update with custom banners from DB if they exist
   try {
     const config = await getHeroConfig().catch(() => getDefaultHeroConfig());
     console.log('[Home] DB Config received:', config);
-
-    const normalize = (val) => {
-      if (Array.isArray(val)) return val.filter(v => typeof v === 'string' && v.length > 0);
-      if (typeof val === 'string' && val.length > 0) return [val];
-      return [];
-    };
+    
+    // Cache the config for next time
+    localStorage.setItem('pa_hero_config', JSON.stringify(config));
 
     let mImages = normalize(config.mobileBanner).map(u => Store.convertDriveLink(u));
     let dImages = normalize(config.desktopBanner).map(u => Store.convertDriveLink(u));
     let dbImages = isMobile ? mImages : dImages;
 
-    // Only re-render if we found custom images in the DB
-    if (dbImages.length > 0) {
+    // Only re-render if the new images are different from initial
+    if (dbImages.length > 0 && JSON.stringify(dbImages) !== JSON.stringify(initialImages)) {
       console.log('[Home] Updating with custom DB images');
       renderImages(dbImages);
     }
