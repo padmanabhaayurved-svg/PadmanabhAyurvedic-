@@ -32,68 +32,19 @@ async function renderDashboard() {
   if (!user) {
     // Show Auth Forms
     container.innerHTML = `
-      <div class="auth-card">
-        <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" style="height: 60px; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto 16px auto; display: block;" />
-        <h2 class="admin-login-title" style="margin-bottom:8px" id="auth-title" data-i18n="dashboard.login.title">Welcome Back</h2>
-        <p class="auth-subtitle">Sign in to track your orders and manage your account.</p>
+      <div class="auth-card" style="text-align: center; padding: 40px 20px;">
+        <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" style="height: 80px; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto 24px auto; display: block;" />
+        <h2 class="admin-login-title" style="margin-bottom:12px" data-i18n="dashboard.login.title">My Orders & Account</h2>
+        <p class="auth-subtitle" style="margin-bottom:32px; color:var(--text-muted);">Sign in or create a secure account to track your orders, view invoices, and manage your profile.</p>
 
-        <form id="auth-form" class="form-group" style="gap:20px">
-          <div class="form-group" id="name-group" style="display:none">
-            <label class="form-label" data-i18n="dashboard.register.name">Full Name</label>
-            <input type="text" class="form-input" id="auth-name"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="dashboard.login.email">Email Address</label>
-            <input type="email" class="form-input" id="auth-email" required/>
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="dashboard.login.password">Password</label>
-            <input type="password" class="form-input" id="auth-pass" required/>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full mt-8" id="auth-submit" data-i18n="dashboard.login.submit">Sign In</button>
-        </form>
-
-        <div class="text-center mt-24">
-          <button class="btn btn-ghost btn-sm" id="auth-toggle" onclick="toggleAuthMode()" data-i18n="dashboard.login.register">New here? Create account</button>
-        </div>
-
-        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); text-center: center;">
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Or use secure social login:</p>
-          <button type="button" class="btn btn-outline btn-full" onclick="Auth0Helper.login('#dashboard')" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <img src="https://auth0.com/favicon.ico" style="width: 16px; height: 16px;" alt="Auth0" />
-            Login with Auth0
-          </button>
-        </div>
+        <button type="button" class="btn btn-primary btn-full" onclick="Auth0Helper.login('#dashboard')" style="display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1rem; padding: 16px;">
+          <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Secure Login / Sign Up
+        </button>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 16px;">Powered by Enterprise Security</p>
       </div>
     `;
     applyStrings();
-
-    document.getElementById('auth-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const isReg = document.getElementById('name-group').style.display !== 'none';
-      const email = document.getElementById('auth-email').value;
-      const pass  = document.getElementById('auth-pass').value;
-      const btn   = document.getElementById('auth-submit');
-
-      btn.disabled = true;
-      btn.textContent = 'Please wait...';
-
-      try {
-        if (isReg) {
-          const res = await signUp(email, pass);
-          const name = document.getElementById('auth-name').value;
-          if (name) await res.user.updateProfile({ displayName: name });
-        } else {
-          await signIn(email, pass);
-        }
-        showToast('Successfully signed in', 'success');
-        renderDashboard(); // Re-render as logged in
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = isReg ? 'Create Account' : 'Sign In';
-        showToast(err.message, 'error');
-      }
-    });
     return;
   }
 
