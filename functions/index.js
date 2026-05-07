@@ -2,6 +2,10 @@ const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const axios = require("axios");
 const cors = require("cors")({ origin: true });
+const admin = require("firebase-admin");
+
+admin.initializeApp();
+const db = admin.firestore();
 
 /**
  * SHIPROCKET PROXY FUNCTION
@@ -67,4 +71,73 @@ exports.shiprocket = onRequest({ secrets: ["SHIPROCKET_EMAIL", "SHIPROCKET_PASSW
       return res.status(status).json({ error: message });
     }
   });
+});
+
+/**
+ * SHIPROCKET WEBHOOK
+ * Listens for tracking updates from Shiprocket and updates Firestore.
+ */
+exports.shiprocketWebhook = onRequest((req, res) => {
+  // 1. Verify Authentication Token
+  const token = req.headers["x-api-key"];
+  const EXPECTED_TOKEN = "pa_webhook_secret_2026"; // The token to paste in Shiprocket UI
+
+  if (token !== EXPECTED_TOKEN) {
+    logger.warn("Webhook unauthorized request with token:", token);
+    return res.status(401).send("Unauthorized");
+  }
+
+  // 2. Parse Payload
+  const payload = req.body;
+  logger.info("Received Shiprocket Webhook Payload:", payload);
+
+  const awb = payload.awb;
+  const currentStatus = payload.current_status;
+  const srOrderId = payload.order_id || payload.sr_order_id;
+
+  if (!awb && !srOrderId) {
+    return res.status(400).send("Bad Request: Missing AWB or Order ID");
+  }
+
+  // 3. Find and update the order in Firestore
+  return (async () => {
+    try {
+      let ordersRef = db.collection("orders");
+      let querySnapshot;
+
+      if (awb) {
+        querySnapshot = await ordersRef.where("awb", "==", awb).get();
+      }
+      
+      if (!querySnapshot || querySnapshot.empty) {
+        if (srOrderId) {
+          // Fallback to srOrderId search
+          querySnapshot = await ordersRef.where("srOrderId", "==", String(srOrderId)).get();
+        }
+      }
+
+      if (!querySnapshot || querySnapshot.empty) {
+        logger.warn(`Order not found for AWB: ${awb} or SR Order ID: ${srOrderId}`);
+        return res.status(404).send("Order not found");
+      }
+
+      // Update the matched document(s)
+      const batch = db.batch();
+      querySnapshot.forEach((doc) => {
+        batch.update(doc.ref, {
+          srStatus: currentStatus,
+          status: currentStatus.toLowerCase() === 'delivered' ? 'delivered' : 'processing',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      });
+
+      await batch.commit();
+      logger.info(`Successfully updated status to ${currentStatus} for AWB: ${awb}`);
+      return res.status(200).send("Success");
+
+    } catch (error) {
+      logger.error("Error processing webhook:", error);
+      return res.status(500).send("Internal Server Error");
+    }
+  })();
 });
