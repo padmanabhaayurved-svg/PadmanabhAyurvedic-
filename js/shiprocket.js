@@ -8,7 +8,7 @@ const SR = {
   BASE: 'https://apiv2.shiprocket.in/v1/external',
   CREDENTIALS: {
     email:    'padmanabhaayurved@gmail.com',
-    password: 'Padmanabh@848587'
+    password: 'I5#6ASqv5flJN7j0TMgbRGRoI$fqvZO4'
   },
   // Pickup location defaults — update these in admin settings later
   PICKUP: {
