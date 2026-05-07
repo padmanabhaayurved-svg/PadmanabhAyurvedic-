@@ -1,7 +1,5 @@
-console.log('[App] Script loaded and executing...');
 if (window.__PA_INITIALIZED__) {
   console.log('[App] Already initialized. Skipping duplicate execution.');
-  // Do not exit early if we need to export functions, but we don't.
 } else {
   window.__PA_INITIALIZED__ = true;
 
@@ -681,14 +679,13 @@ window.updateAuthUI = async function() {
   }
 }
 
-  if (chatSend) chatSend.addEventListener('click', sendChatMessage);
-  if (chatInput) {
-    chatInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendChatMessage();
-    });
-  }
-});
-});
+    if (chatSend) chatSend.addEventListener('click', sendChatMessage);
+    if (chatInput) {
+      chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendChatMessage();
+      });
+    }
+  });
 
 // ── USER PROFILE DRAWER ───────────────────────────────────────
 window.openUserDrawer = async function() {
@@ -830,27 +827,27 @@ window.trackOrder = async function(awb) {
   }
 
   const activities = data?.shipment_track_activities || [];
-  const listHtml = activities.map(a => \`
+  const listHtml = activities.map(a => `
     <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-      <div style="font-size:0.75rem;color:var(--text-muted)">\${a.date}</div>
-      <div style="font-weight:500;margin:4px 0">\${a.activity}</div>
-      <div style="font-size:0.8rem;color:var(--text-secondary)">\${a.location}</div>
+      <div style="font-size:0.75rem;color:var(--text-muted)">${a.date}</div>
+      <div style="font-weight:500;margin:4px 0">${a.activity}</div>
+      <div style="font-size:0.8rem;color:var(--text-secondary)">${a.location}</div>
     </div>
-  \`).join('');
+  `).join('');
 
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
-  modal.innerHTML = \`
+  modal.innerHTML = `
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title">Tracking: \${awb}</h3>
+        <h3 class="modal-title">Tracking: ${awb}</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
       <div class="modal-body">
-        \${listHtml || '<p>No tracking updates available yet.</p>'}
+        ${listHtml || '<p>No tracking updates available yet.</p>'}
       </div>
     </div>
-  \`;
+  `;
   document.body.appendChild(modal);
 };
 
@@ -859,22 +856,22 @@ window.viewOrderDetails = function(orderId) {
   if (!o) return;
 
   const d = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'Just now';
-  const itemsHtml = (o.items || []).map(i => \`
+  const itemsHtml = (o.items || []).map(i => `
     <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;">
       <div>
-        <div style="font-weight:500">\${i.name}</div>
-        <div style="font-size:0.8rem; color:var(--text-muted)">Qty: \${i.qty}</div>
+        <div style="font-weight:500">${i.name}</div>
+        <div style="font-size:0.8rem; color:var(--text-muted)">Qty: ${i.qty}</div>
       </div>
-      <div style="font-weight:500">₹\${i.price * i.qty}</div>
+      <div style="font-weight:500">₹${i.price * i.qty}</div>
     </div>
-  \`).join('');
+  `).join('');
 
   const modal = document.createElement('div');
   modal.className = 'modal-overlay active';
-  modal.innerHTML = \`
+  modal.innerHTML = `
     <div class="modal" id="print-area">
       <div class="modal-header">
-        <h3 class="modal-title">Order #\${o.id.slice(-6).toUpperCase()}</h3>
+        <h3 class="modal-title">Order #${o.id.slice(-6).toUpperCase()}</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
       <div class="modal-body" style="font-family:var(--font-sans); font-size:0.9rem;">
@@ -882,40 +879,40 @@ window.viewOrderDetails = function(orderId) {
         <div style="margin-bottom:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px;">
           <div>
             <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Date</div>
-            <div style="font-weight:500">\${d}</div>
+            <div style="font-weight:500">${d}</div>
           </div>
           <div>
             <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Status</div>
-            <span class="pill pill-gold">\${(o.status || 'PENDING').toUpperCase()}</span>
+            <span class="pill pill-gold">${(o.status || 'PENDING').toUpperCase()}</span>
           </div>
         </div>
 
         <div style="margin-bottom:24px;">
           <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Shipping Address</div>
           <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
-            \${o.address ? \`
-              <div style="font-weight:500">\${o.address.name || o.customerName}</div>
-              <div>\${o.address.phone || o.customerPhone}</div>
-              <div style="margin-top:4px; color:var(--text-secondary)">\${o.address.address}, \${o.address.city}, \${o.address.state} - \${o.address.pincode}</div>
-            \` : 'No address provided'}
+            ${o.address ? `
+              <div style="font-weight:500">${o.address.name || o.customerName}</div>
+              <div>${o.address.phone || o.customerPhone}</div>
+              <div style="margin-top:4px; color:var(--text-secondary)">${o.address.address}, ${o.address.city}, ${o.address.state} - ${o.address.pincode}</div>
+            ` : 'No address provided'}
           </div>
         </div>
 
         <div style="margin-bottom:24px;">
           <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Items Ordered</div>
           <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
-            \${itemsHtml}
+            ${itemsHtml}
             <div style="display:flex; justify-content:space-between; margin-top:12px; font-size:0.85rem;">
               <span style="color:var(--text-muted)">Subtotal</span>
-              <span>₹\${o.subtotal || o.total}</span>
+              <span>₹${o.subtotal || o.total}</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:0.85rem;">
               <span style="color:var(--text-muted)">Shipping</span>
-              <span>₹\${o.shipping || 0}</span>
+              <span>₹${o.shipping || 0}</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:8px; font-weight:600; font-size:1.1rem; border-top:1px solid var(--border); padding-top:8px;">
               <span>Total</span>
-              <span style="color:var(--gold)">₹\${o.total}</span>
+              <span style="color:var(--gold)">₹${o.total}</span>
             </div>
           </div>
         </div>
@@ -925,18 +922,18 @@ window.viewOrderDetails = function(orderId) {
           <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
             <div style="display:flex; justify-content:space-between;">
               <span style="color:var(--text-muted)">Method</span>
-              <span style="font-weight:500">\${o.paymentMethod || 'COD'}</span>
+              <span style="font-weight:500">${o.paymentMethod || 'COD'}</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:4px;">
               <span style="color:var(--text-muted)">Status</span>
-              <span style="font-weight:500; color:\${o.paymentMethod === 'Online' ? 'var(--success)' : 'var(--warning)'}">\${o.paymentMethod === 'Online' ? 'Paid' : 'Pending (COD)'}</span>
+              <span style="font-weight:500; color:${o.paymentMethod === 'Online' ? 'var(--success)' : 'var(--warning)'}">${o.paymentMethod === 'Online' ? 'Paid' : 'Pending (COD)'}</span>
             </div>
-            \${o.paymentId ? \`
+            ${o.paymentId ? `
               <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:0.8rem;">
                 <span style="color:var(--text-muted)">Transaction ID</span>
-                <span>\${o.paymentId}</span>
+                <span>${o.paymentId}</span>
               </div>
-            \` : ''}
+            ` : ''}
           </div>
         </div>
 
@@ -945,20 +942,22 @@ window.viewOrderDetails = function(orderId) {
         <button class="btn btn-outline" onclick="printInvoice()">Print Invoice</button>
       </div>
     </div>
-  \`;
+  `;
   document.body.appendChild(modal);
 };
 
 window.printInvoice = function() {
   const printContent = document.getElementById('print-area').innerHTML;
   const originalContent = document.body.innerHTML;
-  document.body.innerHTML = '<div style="padding:40px; color:black; background:white;">' + printContent.replace(/<button.*?>.*?<\\/button>/g, '') + '</div>';
+  document.body.innerHTML = '<div style="padding:40px; color:black; background:white;">' + printContent.replace(/<button.*?>.*?<\/button>/g, '') + '</div>';
   window.print();
   document.body.innerHTML = originalContent;
   window.location.reload();
 };
 
-} // End initialization guard
 
+
+
+}
 
 document.addEventListener('DOMContentLoaded', runInitializationSequence);
