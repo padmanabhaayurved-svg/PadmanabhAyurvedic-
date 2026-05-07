@@ -883,7 +883,7 @@ async function permDeleteProduct(id) {
 window.permDeleteProduct = permDeleteProduct;
 
 // ── 5. Orders Management ─────────────────────────────────────
-function loadAdminOrders() {
+async function loadAdminOrders() {
   const tbody = document.getElementById('admin-orders-body');
   if (!tbody) return;
 
@@ -895,26 +895,57 @@ function loadAdminOrders() {
     return;
   }
 
-  tbody.innerHTML = orders.map(o => {
-    const d = new Date(o.createdAt).toLocaleDateString();
-    const statusClass = o.status === 'delivered' ? 'pill-success' : o.status === 'shipped' ? 'pill-gold' : o.status === 'processing' ? 'pill-warning' : 'pill-muted';
-    return `
-      <tr>
-        <td style="font-weight:600;color:var(--gold)">#${o.id.slice(-6).toUpperCase()}</td>
-        <td>${o.customerName || 'Guest'}<br><span style="font-size:0.75rem;color:var(--text-muted)">${o.customerPhone || ''}</span></td>
-        <td>${d}</td>
-        <td>₹${o.total}</td>
-        <td><span style="font-size:0.8rem">${o.payment || 'COD'}</span></td>
-        <td><span class="pill ${statusClass}">${(o.status || 'pending').toUpperCase()}</span></td>
-        <td>
-          <div style="display:flex;gap:6px;justify-content:flex-end">
-            <button class="tbl-btn tbl-btn-edit" onclick="adminViewOrder('${o.id}')">Details</button>
-            <button class="tbl-btn" style="background:rgba(100,164,53,0.15);color:var(--gold)" onclick="generateInvoice('${o.id}')">Invoice</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+  const renderOrders = (orderList) => {
+    tbody.innerHTML = orderList.map(o => {
+      const d = new Date(o.createdAt).toLocaleDateString();
+      const statusClass = o.status === 'delivered' ? 'pill-success' : (o.status === 'shipped' || o.status === 'in transit') ? 'pill-gold' : o.status === 'processing' ? 'pill-warning' : 'pill-muted';
+      return `
+        <tr>
+          <td style="font-weight:600;color:var(--gold)">#${o.id.slice(-6).toUpperCase()}</td>
+          <td>${o.customerName || 'Guest'}<br><span style="font-size:0.75rem;color:var(--text-muted)">${o.customerPhone || ''}</span></td>
+          <td>${d}</td>
+          <td>₹${o.total}</td>
+          <td><span style="font-size:0.8rem">${o.payment || 'COD'}</span></td>
+          <td><span class="pill ${statusClass}">${(o.status || 'pending').toUpperCase()}</span></td>
+          <td>
+            <div style="display:flex;gap:6px;justify-content:flex-end">
+              <button class="tbl-btn tbl-btn-edit" onclick="adminViewOrder('${o.id}')">Details</button>
+              <button class="tbl-btn" style="background:rgba(100,164,53,0.15);color:var(--gold)" onclick="generateInvoice('${o.id}')">Invoice</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  // Immediate render
+  renderOrders(orders);
+
+  // Background sync tracking
+  let changed = false;
+  if (window.Shiprocket) {
+    await Promise.allSettled(orders.map(async (o) => {
+      if (o.trackingId && !['delivered', 'cancelled', 'rto'].includes(o.status?.toLowerCase())) {
+        try {
+          const trackData = await window.Shiprocket.trackAWB(o.trackingId);
+          if (trackData && trackData.statusText) {
+            const newStatus = trackData.delivered ? 'delivered' : trackData.statusText.toLowerCase();
+            if (o.status !== newStatus) {
+              o.status = newStatus;
+              changed = true;
+            }
+          }
+        } catch (e) {
+          console.warn('[Sync] Tracking failed for', o.trackingId);
+        }
+      }
+    }));
+    
+    if (changed) {
+      localStorage.setItem('pa_orders', JSON.stringify(orders));
+      renderOrders(orders); // Re-render with updated statuses
+    }
+  }
 }
 window.loadAdminOrders = loadAdminOrders;
 
