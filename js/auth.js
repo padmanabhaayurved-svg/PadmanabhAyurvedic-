@@ -4,9 +4,9 @@
    ============================================================ */
 
 const AUTH0_CONFIG = {
-  domain:   'dev-7c0nglnmb4cv228b.us.auth0.com',
-  clientId: 'B4XFDFFGu1emngk9Yv4upDM51HZddskq', // "My App" SPA
-  audience: 'https://dev-7c0nglnmb4cv228b.us.auth0.com/api/v2/'
+  domain:   'dev-8pt6my3gim10snxd.us.auth0.com',
+  clientId: 'GFlUDtgFfoeLjgi2QiUGTx1o2ALdWVfs', 
+  audience: 'https://dev-8pt6my3gim10snxd.us.auth0.com/api/v2/'
 };
 
 let _auth0Client = null;
