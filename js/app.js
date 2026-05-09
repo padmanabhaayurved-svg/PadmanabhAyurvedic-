@@ -85,9 +85,57 @@ function closeModal(id) {
 }
 window.closeModal = closeModal;
 
+// ── Global Image Reliability System ──────────────────────────
+function initImageFixer() {
+  console.log('[ImageFixer] Active — Watching for broken renders.');
+  // Capture image errors globally
+  window.addEventListener('error', (e) => {
+    if (e.target.tagName === 'IMG') {
+      fixBrokenImage(e.target);
+    }
+  }, true);
+
+  // Periodic check for broken images (naturalWidth === 0)
+  setInterval(() => {
+    document.querySelectorAll('img').forEach(img => {
+      if (img.complete && img.naturalWidth === 0 && img.src && !img.dataset.fixing) {
+        fixBrokenImage(img);
+      }
+    });
+  }, 5000);
+}
+
+function fixBrokenImage(img) {
+  if (img.dataset.fixing === 'done') return;
+  img.dataset.fixing = 'true';
+  
+  const original = img.src;
+  const fallback = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80'; // Calm Ayurvedic fallback
+
+  // 1. Try to fix Google Drive links if they aren't already converted
+  if (original.includes('drive.google.com') && !original.includes('lh3.googleusercontent.com')) {
+    if (window.Store && Store.convertDriveLink) {
+      const fixed = Store.convertDriveLink(original);
+      if (fixed !== original) {
+        img.src = fixed;
+        return;
+      }
+    }
+  }
+
+  // 2. Apply fallback
+  img.src = fallback;
+  img.dataset.fixing = 'done';
+  
+  // 3. Clean up UI states
+  img.parentElement?.classList?.remove('loading-skeleton');
+  img.style.filter = 'grayscale(0.2)'; 
+}
+
 // ── Cinematic Boot Sequence ───────────────────────────────────
 function runInitializationSequence() {
   console.log('[App] Starting initialization sequence...');
+  initImageFixer(); // Start watching early
   const loader = document.getElementById('page-loader');
   const splash = document.getElementById('lang-splash');
 

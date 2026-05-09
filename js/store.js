@@ -165,22 +165,31 @@ const Store = (() => {
     if (url.includes('lh3.googleusercontent.com')) return url;
     if (url.includes('drive.google.com/thumbnail')) return url;
     if (url.includes('drive.usercontent.google.com')) return url;
-    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}=s800`;
+    
+    // Handle view links, download links, and direct IDs
+    const driveRegex = [
+      /\/d\/([a-zA-Z0-9_-]+)/,
+      /id=([a-zA-Z0-9_-]+)/,
+      /file\/d\/([a-zA-Z0-9_-]+)/,
+      /^([a-zA-Z0-9_-]{25,})$/ // Pure ID
+    ];
+
+    for (let reg of driveRegex) {
+      const match = url.match(reg);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}=s1200`; // High quality thumbnail
+      }
     }
     return url;
   }
 
   function imgOnError(img, fallback) {
-    if (!fallback || img.src === fallback) {
-      img.onerror = null;
-      img.src = 'https://via.placeholder.com/400x400?text=Image+Unavailable';
-      img.parentElement?.classList?.remove('loading-skeleton');
-      return;
-    }
+    if (img.dataset.fixing === 'done') return;
+    img.dataset.fixing = 'true';
     img.onerror = null;
-    img.src = fallback;
+    img.src = fallback || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80';
+    img.parentElement?.classList?.remove('loading-skeleton');
+    img.dataset.fixing = 'done';
   }
 
   function formatPrice(amount) {

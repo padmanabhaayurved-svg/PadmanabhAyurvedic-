@@ -1094,14 +1094,13 @@
           </div>
         </div>
         <div class="sys-panel">
-          <div class="sys-panel-icon">📥</div>
-          <h3 class="sys-panel-title">Import / Restore</h3>
-          <p class="sys-panel-desc">Restore from a previous backup JSON file. <strong style="color:var(--error)">Overwrites existing data!</strong></p>
-          <div style="margin-top:16px">
-            <input type="file" id="restore-file-input" class="hidden" accept=".json" onchange="handleRestoreFile(event)">
-            <button class="btn btn-outline" onclick="document.getElementById('restore-file-input').click()">📂 Choose Backup File</button>
-            <div id="restore-status" style="margin-top:8px;font-size:0.82rem;color:var(--text-muted)"></div>
+          <div class="sys-panel-icon">🖼️</div>
+          <h3 class="sys-panel-title">Image Integrity</h3>
+          <p class="sys-panel-desc">Scan all products for broken image links and automatically attempt to fix Drive URLs.</p>
+          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="btn-scan-images" onclick="scanProductImages()">🔍 Scan & Fix Images</button>
           </div>
+          <div id="scan-status" style="margin-top:12px;font-size:0.82rem;color:var(--text-muted)"></div>
         </div>
       </div>
 

@@ -3240,3 +3240,74 @@ window.seedRequestedEmployee = async function() {
     btn.innerHTML = oldText;
   }
 };
+
+// ── Image Integrity Scanner ───────────────────────────────────
+async function scanProductImages() {
+  const btn = document.getElementById('btn-scan-images');
+  const status = document.getElementById('scan-status');
+  if (!btn || !status) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Scanning...';
+  status.textContent = 'Checking product images...';
+
+  const products = await getProducts();
+  let brokenCount = 0;
+  let fixedCount = 0;
+  let totalChecked = 0;
+
+  for (let p of products) {
+    if (!p.images || !p.images.length) continue;
+    
+    let updatedImages = [];
+    let changed = false;
+
+    for (let imgUrl of p.images) {
+      totalChecked++;
+      // 1. Convert if it's a raw Drive link
+      const converted = Store.convertDriveLink(imgUrl);
+      if (converted !== imgUrl) {
+        updatedImages.push(converted);
+        changed = true;
+        fixedCount++;
+        continue;
+      }
+
+      // 2. Test if image is reachable
+      try {
+        const isOk = await checkImageReachable(imgUrl);
+        if (!isOk) {
+          brokenCount++;
+        }
+        updatedImages.push(imgUrl);
+      } catch(e) {
+        brokenCount++;
+        updatedImages.push(imgUrl);
+      }
+    }
+
+    if (changed) {
+      await updateProduct(p.id, { images: updatedImages });
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔍 Scan & Fix Images';
+  status.innerHTML = `Scan complete!<br>✅ Total Checked: ${totalChecked}<br>✨ Auto-Fixed: ${fixedCount} links<br>⚠️ Broken/Unreachable: ${brokenCount}`;
+  showToast('Image integrity scan complete', 'info');
+}
+
+async function checkImageReachable(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    // Timeout after 5s
+    const timeout = setTimeout(() => {
+      img.src = "";
+      resolve(false);
+    }, 5000);
+    img.src = url;
+  });
+}
+window.scanProductImages = scanProductImages;
