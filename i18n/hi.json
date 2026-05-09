@@ -4,9 +4,10 @@
   "nav.shop": "शॉप",
   "nav.admin": "एडमिन",
   "nav.cart": "कार्ट",
-  "nav.dashboard": "मेरे ऑर्डर्स",
-  "nav.tagline": "शुद्ध आयुर्वेदिक स्वास्थ्य",
+  "nav.dashboard": "मेरे ऑर्डर",
+  "nav.tagline": "शुद्ध आयुर्वेदिक वेलनेस",
   "nav.catalog": "शॉप",
+  "nav.earn": "कमाएं",
 
   "footer.tagline": "पीढ़ियों से शुद्ध आयुर्वेदिक स्वास्थ्य।",
   "footer.links": "महत्वपूर्ण लिंक्स",
@@ -92,6 +93,7 @@
   "checkout.state": "राज्य",
   "checkout.pincode": "पिनकोड",
   "checkout.pay": "पेमेंट करें",
+  "checkout.place_order": "ऑर्डर प्लेस करें",
   "checkout.secure": "रेज़रपे द्वारा सिक्योर्ड पेमेंट्स",
 
   "order.success.title": "ऑर्डर प्लेस हो गया!",

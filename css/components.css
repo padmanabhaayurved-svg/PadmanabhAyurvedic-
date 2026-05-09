@@ -761,7 +761,7 @@
 
 .footer-links a, .footer-link-item {
   display: block;
-  font-size: 0.87rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
   padding: 4px 0;
   cursor: pointer;
@@ -832,6 +832,7 @@
   .nav-links { display: none; }
   .hamburger { display: flex; }
   #navbar { padding: 0 20px; }
+  .nav-actions .lang-switcher { display: none; }
 }
 
 @media (max-width: 768px) {
@@ -1020,7 +1021,7 @@
   margin-bottom: 12px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 0px) {
   .fab-container {
     bottom: 16px;
     right: 16px;
@@ -1127,6 +1128,16 @@ img { transition: opacity 0.3s ease-in-out; }
 /* Extra Mobile Spacing for FABs */
 @media (max-width: 768px) {
   #site-footer {
-    padding-bottom: 80px;
+    padding-bottom: 100px;
+  }
+  .fab-container {
+    bottom: 24px;
+    right: 16px;
+  }
+  .chatbot-window {
+    right: 8px;
+    left: 8px;
+    width: auto;
+    bottom: 96px;
   }
 }

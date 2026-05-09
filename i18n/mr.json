@@ -6,7 +6,8 @@
   "nav.cart": "कार्ट",
   "nav.dashboard": "माझे ऑर्डर्स",
   "nav.tagline": "शुद्ध आयुर्वेदिक आरोग्य",
-  "nav.catalog": "शॉप",
+  "nav.catalog": "दुकान",
+  "nav.earn": "कमवा",
 
   "footer.tagline": "पिढ्यानपिढ्या शुद्ध आयुर्वेदिक आरोग्य.",
   "footer.links": "महत्वाचे दुवे",
@@ -92,6 +93,7 @@
   "checkout.state": "राज्य",
   "checkout.pincode": "पिनकोड",
   "checkout.pay": "पेमेंट करा",
+  "checkout.place_order": "ऑर्डर प्लेस करा",
   "checkout.secure": "रेझरपे द्वारे सुरक्षित पेमेंट्स",
 
   "order.success.title": "ऑर्डर कन्फर्म झाली!",

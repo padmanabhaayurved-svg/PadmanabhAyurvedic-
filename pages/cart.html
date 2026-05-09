@@ -155,7 +155,27 @@ function renderCartPage() {
           </div>
         </div>
 
-        <div style="margin-top:32px;display:flex;flex-direction:column;align-items:flex-start;gap:12px">
+        <div class="checkout-section-title" style="margin-top:24px; margin-bottom:16px">
+          💳 Payment Method
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom: 32px;" id="payment-methods-container">
+          <label style="flex:1; display:flex; align-items:center; gap:12px; padding:16px; border:2px solid var(--gold); border-radius:12px; cursor:pointer; background:rgba(245,165,0,0.05);" id="pm-online-label">
+            <input type="radio" name="paymentMethod" value="online" checked onchange="updatePaymentUI()" style="accent-color:var(--gold);width:18px;height:18px;">
+            <div>
+              <div style="font-weight:600;">Online Payment</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">UPI, Cards, Netbanking via Razorpay</div>
+            </div>
+          </label>
+          <label style="flex:1; display:flex; align-items:center; gap:12px; padding:16px; border:2px solid var(--border); border-radius:12px; cursor:pointer;" id="pm-cod-label">
+            <input type="radio" name="paymentMethod" value="cod" onchange="updatePaymentUI()" style="accent-color:var(--gold);width:18px;height:18px;">
+            <div>
+              <div style="font-weight:600;">Cash on Delivery</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Pay when you receive the order</div>
+            </div>
+          </label>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px">
           <button type="submit" class="btn btn-primary btn-lg" id="pay-btn" disabled>
             <span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}
           </button>
@@ -179,6 +199,24 @@ function renderCartPage() {
       }
     });
   }
+
+  // Define payment UI toggler locally
+  window.updatePaymentUI = function() {
+    const isOnline = document.querySelector('input[name="paymentMethod"]:checked').value === 'online';
+    document.getElementById('pm-online-label').style.borderColor = isOnline ? 'var(--gold)' : 'var(--border)';
+    document.getElementById('pm-online-label').style.background = isOnline ? 'rgba(245,165,0,0.05)' : 'transparent';
+    document.getElementById('pm-cod-label').style.borderColor = !isOnline ? 'var(--gold)' : 'var(--border)';
+    document.getElementById('pm-cod-label').style.background = !isOnline ? 'rgba(245,165,0,0.05)' : 'transparent';
+    
+    const payBtn = document.getElementById('pay-btn');
+    if (payBtn) {
+      const total = Store.getCartTotal() + _courierCharge + Math.round(Store.getCartTotal() * 0.18);
+      payBtn.innerHTML = !isOnline 
+        ? `<span data-i18n="checkout.place_order">Place Order (COD)</span> ${Store.formatPrice(total)}`
+        : `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
+      applyStrings();
+    }
+  };
 
   // Handle Checkout
   const form = document.getElementById('checkout-form');
@@ -237,123 +275,142 @@ function renderCartPage() {
         total:          total
       };
 
-      // Initiate Razorpay
-      await RazorpayHelper.initiatePayment({
-        amount:       orderPayload.total,
-        customerName: address.name,
-        email:        address.email,
-        phone:        address.phone
-      }, async (res) => {
+      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+      if (paymentMethod === 'cod') {
+        orderPayload.payment = 'COD';
+        orderPayload.paymentId = 'COD_' + Date.now();
+        
         try {
-          orderPayload.paymentId = res.paymentId;
           const orderId = await createOrder(orderPayload);
-
-          // Save to localStorage for admin panel
-          const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
-          const localOrder = {
-            id: orderId,
-            customerName: address.name,
-            customerPhone: address.phone,
-            email: address.email,
-            address: address,
-            items: orderPayload.items,
-            subtotal: orderPayload.subtotal,
-            shipping: orderPayload.courierCharge,
-            tax: orderPayload.tax,
-            total: orderPayload.total,
-            payment: 'Razorpay',
-            paymentId: res.paymentId,
-            status: 'processing',
-            courierCompany: orderPayload.courierCompany,
-            courierCharge: orderPayload.courierCharge,
-            createdAt: new Date().toISOString(),
-            srStatus: null,
-            trackingId: null,
-            awb: null,
-            srOrderId: null,
-            shipmentId: null
-          };
-          localOrders.push(localOrder);
-          localStorage.setItem('pa_orders', JSON.stringify(localOrders));
-
-          // Attempt Shiprocket order creation
-          try {
-            const srResult = await Shiprocket.createOrder({
-              orderId:       orderId,
-              orderDate:     new Date().toISOString().slice(0, 10),
-              customerName:  address.name,
-              address:       address.address,
-              city:          address.city,
-              pincode:       address.pincode,
-              state:         address.state,
-              country:       'India',
-              email:         address.email,
-              phone:         address.phone,
-              items:         orderPayload.items,
-              paymentMethod: 'Prepaid',
-              subtotal:      orderPayload.subtotal,
-              courierCompany: orderPayload.courierCompany,
-              weight:        Store.getCartWeight() || 0.5,
-              length:        Shiprocket.PICKUP?.length || 15,
-              breadth:       Shiprocket.PICKUP?.breadth || 10,
-              height:        Shiprocket.PICKUP?.height || 10
-            });
-
-            localOrder.srOrderId = srResult.srOrderId;
-            localOrder.shipmentId = srResult.shipmentId;
-            localOrder.srStatus = 'created';
-
-            // Assign AWB
-            try {
-              const awbResult = await Shiprocket.assignAWB(srResult.shipmentId, orderPayload.courierCompany);
-              localOrder.awb = awbResult.awb;
-              localOrder.trackingId = awbResult.awb;
-              localOrder.courierName = awbResult.courierName;
-              localOrder.srStatus = 'awb_assigned';
-
-              // Generate pickup
-              try {
-                await Shiprocket.generatePickup(srResult.shipmentId);
-                localOrder.srStatus = 'pickup_done';
-              } catch (pe) { console.warn('[Shiprocket] Pickup gen failed:', pe.message); }
-            } catch (ae) { console.warn('[Shiprocket] AWB assign failed:', ae.message); }
-
-            // Update localStorage
-            const idx = localOrders.findIndex(o => o.id === orderId);
-            if (idx >= 0) localOrders[idx] = localOrder;
-            localStorage.setItem('pa_orders', JSON.stringify(localOrders));
-
-            // Update Firebase
-            await updateOrderTracking(orderId, localOrder.trackingId || '', localOrder.shipmentId || '', {
-              courierCompany: localOrder.courierCompany,
-              courierCharge:  localOrder.courierCharge,
-              srOrderId:      localOrder.srOrderId,
-              shipmentId:     localOrder.shipmentId,
-              awb:            localOrder.awb,
-              courierName:    localOrder.courierName,
-              srStatus:       localOrder.srStatus
-            });
-          } catch (srErr) {
-            console.warn('[Shiprocket] Order creation failed:', srErr.message);
-            // Order is still saved, just without SR integration
-          }
-
-          Store.clearCart();
-          showOrderSuccess(orderId, {
-            awb: localOrder.awb || 'Processing',
-            courierName: localOrder.courierName || localOrder.courierCompany || '',
-            shipmentId: localOrder.shipmentId
-          });
+          await processOrderAfterCreation(orderId, address, orderPayload, { paymentId: orderPayload.paymentId });
         } catch (err) {
-          console.error('Order save error:', err);
-          showToast('Payment successful, but order save failed. Contact support.', 'error');
+          console.error('COD Order Error:', err);
+          showToast('Order creation failed. Contact support.', 'error');
+          btn.disabled = false;
+          btn.innerHTML = `Place Order (COD) ${Store.formatPrice(total)}`;
         }
-      }, (err) => {
-        btn.disabled = false;
-        btn.innerHTML = `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
-      });
+      } else {
+        // Initiate Razorpay
+        await RazorpayHelper.initiatePayment({
+          amount:       orderPayload.total,
+          customerName: address.name,
+          email:        address.email,
+          phone:        address.phone
+        }, async (res) => {
+          try {
+            orderPayload.paymentId = res.paymentId;
+            const orderId = await createOrder(orderPayload);
+            await processOrderAfterCreation(orderId, address, orderPayload, res);
+          } catch (err) {
+            console.error('Order save error:', err);
+            showToast('Payment successful, but order save failed. Contact support.', 'error');
+          }
+        }, (err) => {
+          btn.disabled = false;
+          btn.innerHTML = `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
+        });
+      }
     });
   }
+}
+
+// Extracted to avoid duplicating SR logic for both COD and Razorpay
+async function processOrderAfterCreation(orderId, address, orderPayload, res) {
+  const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+  const localOrder = {
+    id: orderId,
+    customerName: address.name,
+    customerPhone: address.phone,
+    email: address.email,
+    address: address,
+    items: orderPayload.items,
+    subtotal: orderPayload.subtotal,
+    shipping: orderPayload.courierCharge,
+    tax: orderPayload.tax,
+    total: orderPayload.total,
+    payment: orderPayload.payment || 'Razorpay',
+    paymentId: res.paymentId,
+    status: 'processing',
+    courierCompany: orderPayload.courierCompany,
+    courierCharge: orderPayload.courierCharge,
+    createdAt: new Date().toISOString(),
+    srStatus: null,
+    trackingId: null,
+    awb: null,
+    srOrderId: null,
+    shipmentId: null
+  };
+  localOrders.push(localOrder);
+  localStorage.setItem('pa_orders', JSON.stringify(localOrders));
+
+  // Attempt Shiprocket order creation
+  try {
+    const srResult = await Shiprocket.createOrder({
+      orderId:       orderId,
+      orderDate:     new Date().toISOString().slice(0, 10),
+      customerName:  address.name,
+      address:       address.address,
+      city:          address.city,
+      pincode:       address.pincode,
+      state:         address.state,
+      country:       'India',
+      email:         address.email,
+      phone:         address.phone,
+      items:         orderPayload.items,
+      paymentMethod: orderPayload.payment === 'COD' ? 'COD' : 'Prepaid',
+      subtotal:      orderPayload.subtotal,
+      courierCompany: orderPayload.courierCompany,
+      weight:        Store.getCartWeight() || 0.5,
+      length:        Shiprocket.PICKUP?.length || 15,
+      breadth:       Shiprocket.PICKUP?.breadth || 10,
+      height:        Shiprocket.PICKUP?.height || 10
+    });
+
+    localOrder.srOrderId = srResult.srOrderId;
+    localOrder.shipmentId = srResult.shipmentId;
+    localOrder.srStatus = 'created';
+
+    // Assign AWB
+    try {
+      const awbResult = await Shiprocket.assignAWB(srResult.shipmentId, orderPayload.courierCompany);
+      localOrder.awb = awbResult.awb;
+      localOrder.trackingId = awbResult.awb;
+      localOrder.courierName = awbResult.courierName;
+      localOrder.srStatus = 'awb_assigned';
+
+      // Generate pickup
+      try {
+        await Shiprocket.generatePickup(srResult.shipmentId);
+        localOrder.srStatus = 'pickup_done';
+      } catch (pe) { console.warn('[Shiprocket] Pickup gen failed:', pe.message); }
+    } catch (ae) { console.warn('[Shiprocket] AWB assign failed:', ae.message); }
+
+    // Update localStorage
+    const idx = localOrders.findIndex(o => o.id === orderId);
+    if (idx >= 0) localOrders[idx] = localOrder;
+    localStorage.setItem('pa_orders', JSON.stringify(localOrders));
+
+    // Update Firebase
+    await updateOrderTracking(orderId, localOrder.trackingId || '', localOrder.shipmentId || '', {
+      courierCompany: localOrder.courierCompany,
+      courierCharge:  localOrder.courierCharge,
+      srOrderId:      localOrder.srOrderId,
+      shipmentId:     localOrder.shipmentId,
+      awb:            localOrder.awb,
+      courierName:    localOrder.courierName,
+      srStatus:       localOrder.srStatus
+    });
+  } catch (srErr) {
+    console.warn('[Shiprocket] Order creation failed:', srErr.message);
+  }
+
+  Store.clearCart();
+  showOrderSuccess(orderId, {
+    awb: localOrder.awb || 'Processing',
+    courierName: localOrder.courierName || localOrder.courierCompany || '',
+    shipmentId: localOrder.shipmentId
+  });
 }
 
 async function checkCourierServiceability() {
@@ -511,7 +568,10 @@ function updateCheckoutSummary() {
   if (totalEl) totalEl.textContent = Store.formatPrice(total);
   if (payBtn) {
     payBtn.disabled = _courierOptions.length === 0;
-    payBtn.innerHTML = `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
+    const isOnline = document.querySelector('input[name="paymentMethod"]:checked')?.value === 'online';
+    payBtn.innerHTML = !isOnline 
+      ? `<span data-i18n="checkout.place_order">Place Order (COD)</span> ${Store.formatPrice(total)}`
+      : `<span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}`;
   }
 }
 

@@ -82,6 +82,7 @@ body {
 
 body.lang-hi, body.lang-mr {
   font-family: var(--font-deva);
+  font-size: 0.95rem;
 }
 
 img, video {

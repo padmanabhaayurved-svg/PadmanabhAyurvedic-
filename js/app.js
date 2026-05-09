@@ -176,7 +176,7 @@ async function startApp() {
   document.dispatchEvent(new Event('app:ready'));
   
   // Start lead catcher timer after app has actually started
-  initLeadCatcherTimer();
+  // initLeadCatcherTimer(); // Disabled to prevent popup issues
 }
 
 // ── Router ────────────────────────────────────────────────────
@@ -189,6 +189,7 @@ const ROUTES = {
   'about':     'pages/about.html',
   'catalog':   'pages/catalog.html',
   'product':   'pages/product.html',
+  'earn':      'pages/earn.html',
   'cart':      'pages/cart.html',
   'admin':     'pages/admin.html'
 };
@@ -272,11 +273,52 @@ async function navigate(hash, force = false) {
       'about':     initAbout,
       'catalog':   initCatalog,
       'product':   () => initProduct(param),
+      'earn':      () => {},
       'cart':      initCart,
       'dashboard': initDashboard,
       'admin':     initAdmin
     };
-    if (inits[route]) inits[route]();
+    if (inits[route]) {
+      if (route === 'admin') {
+        import('./admin.js').then(mod => {
+          if(mod.initAdmin) mod.initAdmin();
+        }).catch(err => console.error("Admin module not available locally:", err));
+      }
+      
+      if (route === 'earn') {
+        const earnForm = document.getElementById('earn-form');
+        if (earnForm) {
+          earnForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+            
+            const data = {
+              name: document.getElementById('earn-name').value,
+              email: document.getElementById('earn-email').value,
+              phone: document.getElementById('earn-phone').value,
+              city: document.getElementById('earn-city').value,
+              experience: document.getElementById('earn-experience').value,
+              timestamp: new Date().toISOString()
+            };
+            
+            try {
+              await window.pa_db.collection('earnLeads').add(data);
+              showToast('Application submitted successfully!', 'success');
+              earnForm.reset();
+            } catch (error) {
+              console.error('Error submitting earn application', error);
+              showToast('Failed to submit application', 'error');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = 'Submit Application';
+            }
+          });
+        }
+      }
+      inits[route]();
+    }
 
     applyStrings();
     initScrollAnimations();
@@ -426,7 +468,7 @@ function initLeadCatcherTimer() {
         leadModal.classList.remove('hidden');
         sessionStorage.setItem('pa_lead_shown', 'true');
       }
-    }, 10000);
+    }, 60000);
   }
 }
 
@@ -564,8 +606,8 @@ document.addEventListener('DOMContentLoaded', () => {
           chatState = 'ASK_PRODUCT';
           appendBotMessage(`Got it! What product or service are you looking for today?`, [
             'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
-            'Bone Setting Relief Oil', 'Ashwagandha Vitality Capsules',
-            'Joint Care Combo Pack', 'Consultation / Bone Setting'
+            'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
+            'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
           ]);
           break;
         case 'ASK_PRODUCT':

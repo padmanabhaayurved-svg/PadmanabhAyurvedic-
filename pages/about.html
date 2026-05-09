@@ -3,8 +3,8 @@
   <div class="container">
     <p class="section-label animate-on-scroll">Welcome To</p>
     <span class="accent-line"></span>
-    <h1 class="animate-on-scroll" style="transition-delay:0.1s">Padmanabh Ayurved &<br>Bone Setting</h1>
-    <p class="hero-subtitle animate-on-scroll" style="transition-delay:0.2s;max-width:600px">A premier wellness center and Ayurvedic retail firm based in Ahilyanagar (Ahmednagar), bridging the gap between traditional bone-setting expertise and modern natural wellness with a "Local-First" approach.</p>
+    <h1 id="dyn-about-title" class="animate-on-scroll" style="transition-delay:0.1s">Padmanabh Ayurved</h1>
+    <p id="dyn-about-text" class="hero-subtitle animate-on-scroll" style="transition-delay:0.2s;max-width:600px">A premier wellness center and Ayurvedic retail firm based in Ahilyanagar (Ahmednagar), bridging the gap between traditional Ayurvedic expertise and modern natural wellness with a "Local-First" approach.</p>
   </div>
 </section>
 
@@ -20,7 +20,7 @@
     <div class="grid grid-3 gap-32 stagger">
       <div class="card animate-on-scroll text-center">
         <div style="font-size:2.5rem;margin-bottom:16px">🦴</div>
-        <h4>Traditional Bone Setting</h4>
+        <h4>Traditional Ayurvedic Therapy</h4>
         <p class="mt-8" style="font-size:0.85rem">Expert manual therapy for joint alignment and musculoskeletal issues.</p>
       </div>
       <div class="card animate-on-scroll text-center">
@@ -95,7 +95,7 @@
         <h3 class="mt-16">Digital Engagement</h3>
         <p class="mt-16 text-muted">Join our active community on Facebook <a href="https://facebook.com/padmanabh.ayurved" target="_blank" style="color:var(--gold);text-decoration:none;"><strong>@padmanabh.ayurved</strong></a>, where we regularly share:</p>
         <ul class="mt-16" style="list-style:none;padding:0;display:flex;flex-direction:column;gap:12px;">
-          <li><strong>⭐ Patient Testimonials:</strong> Real-world results from bone-setting and pain relief sessions.</li>
+          <li><strong>⭐ Patient Testimonials:</strong> Real-world results from Ayurvedic therapies and pain relief sessions.</li>
           <li><strong>📚 Educational Content:</strong> Insights into the benefits of various Ayurvedic herbs and lifestyle tips.</li>
           <li><strong>💬 Direct Support:</strong> A streamlined process for remote product orders and consultation bookings.</li>
         </ul>
@@ -119,7 +119,7 @@
         <div class="team-avatar" style="background:linear-gradient(135deg,#c9a84c,#8b7230)">V</div>
         <h4 class="team-name">Vaidya Padmanabh Shinde</h4>
         <p class="team-role">Owner &amp; Head Practitioner</p>
-        <p class="team-bio">With over 20 years of expertise in traditional bone-setting and Ayurvedic medicine, Vaidya Padmanabh founded this center with a vision to make authentic Ayurvedic care accessible to every family in Ahilyanagar.</p>
+        <p class="team-bio">With over 20 years of expertise in traditional Ayurvedic therapies and natural medicine, Vaidya Padmanabh founded this center with a vision to make authentic Ayurvedic care accessible to every family in Ahilyanagar.</p>
       </div>
       <div class="team-card animate-on-scroll">
         <div class="team-avatar" style="background:linear-gradient(135deg,#4caf50,#2e7d32)">R</div>
@@ -133,6 +133,20 @@
         <p class="team-role">Co-Founder &amp; Product Development</p>
         <p class="team-bio">Priya heads the formulation and research wing, working closely with Ayurvedic scholars to develop the signature product line. Her passion for natural wellness and consumer education drives the brand's digital presence.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. FAQ SECTION -->
+<section class="section">
+  <div class="container">
+    <div class="text-center mb-48 animate-on-scroll">
+      <p class="section-label">Have Questions?</p>
+      <span class="accent-line centered"></span>
+      <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="faq-container" id="faq-container" style="max-width:800px; margin:0 auto; display:flex; flex-direction:column; gap:16px;">
+      <!-- Populated dynamically by JS -->
     </div>
   </div>
 </section>
@@ -178,6 +192,31 @@ document.addEventListener('page:about', async () => {
     }
   } catch (err) {
     console.warn('[About] Failed to load dynamic team', err);
+  }
+
+  // Load Content from CMS
+  try {
+    const docRef = window.pa_db.collection('config').doc('content');
+    const snap = await docRef.get();
+    if (snap.exists) {
+      const content = snap.data();
+      if (content.about?.title) document.getElementById('dyn-about-title').textContent = content.about.title;
+      if (content.about?.text) document.getElementById('dyn-about-text').textContent = content.about.text;
+
+      const faqContainer = document.getElementById('faq-container');
+      if (content.faq && content.faq.length > 0 && faqContainer) {
+        faqContainer.innerHTML = content.faq.map(f => `
+          <div class="card animate-on-scroll" style="text-align:left; padding:24px;">
+            <h4 style="margin-bottom:8px; color:var(--text-primary);">${f.q}</h4>
+            <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.5;">${f.a}</p>
+          </div>
+        `).join('');
+      } else if (faqContainer) {
+        faqContainer.innerHTML = '<p class="text-center text-muted">No FAQs available at the moment.</p>';
+      }
+    }
+  } catch (err) {
+    console.warn('[About] Failed to load CMS content', err);
   }
 
   // Intersection observer for scroll animations

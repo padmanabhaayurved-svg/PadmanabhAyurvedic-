@@ -13,6 +13,7 @@
   "nav.dashboard": "My Orders",
   "nav.tagline": "Pure Ayurvedic Wellness",
   "nav.catalog": "Shop",
+  "nav.earn": "Earn",
 
   "footer.tagline": "Pure Ayurvedic Wellness since generations.",
   "footer.links": "Quick Links",
@@ -92,6 +93,7 @@
   "checkout.state": "State",
   "checkout.pincode": "Pincode",
   "checkout.pay": "Pay",
+  "checkout.place_order": "Place Order",
   "checkout.secure": "Payments secured by Razorpay",
 
   "order.success.title": "Order Placed!",

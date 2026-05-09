@@ -17,10 +17,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <!-- CSS -->
-  <link rel="stylesheet" href="css/base.css?v=4"/>
-  <link rel="stylesheet" href="css/components.css?v=4"/>
-  <link rel="stylesheet" href="css/pages.css?v=4"/>
-  <link rel="stylesheet" href="css/admin.css?v=4"/>
+  <link rel="stylesheet" href="css/base.css?v=5"/>
+  <link rel="stylesheet" href="css/components.css?v=5"/>
+  <link rel="stylesheet" href="css/pages.css?v=5"/>
+  <link rel="stylesheet" href="css/admin.css?v=5"/>
 
   <!-- Schema.org -->
   <script type="application/ld+json">
@@ -64,14 +64,15 @@
 
 <!-- ══ NAVBAR ════════════════════════════════════════════════ -->
 <nav id="navbar" aria-label="Main navigation">
-  <div class="nav-brand" data-nav="home" id="nav-brand" style="display: flex; align-items: center;">
-    <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" style="height: 56px; width: auto; max-width: 100%; object-fit: contain;" />
+  <div class="nav-brand" data-nav="home" id="nav-brand" style="display: flex; align-items: center; padding: 4px 0;">
+    <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" style="height: 44px; width: auto; flex-shrink: 0; object-fit: contain;" />
   </div>
 
   <ul class="nav-links" role="list">
     <li><button class="nav-link" data-route="home" data-nav="home" data-i18n="nav.home">Home</button></li>
-    <li><button class="nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button></li>
     <li><button class="nav-link" data-route="catalog" data-nav="catalog" data-i18n="nav.catalog">Shop</button></li>
+    <li><button class="nav-link" data-route="earn" data-nav="earn" data-i18n="nav.earn">Earn</button></li>
+    <li><button class="nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button></li>
     <li><button class="nav-link" onclick="openUserDrawer()" data-i18n="nav.dashboard">My Orders</button></li>
   </ul>
 
@@ -102,9 +103,15 @@
 
 <!-- ══ MOBILE NAV ════════════════════════════════════════════ -->
 <div id="mobile-nav" aria-hidden="true">
+  <div class="lang-switcher" role="group" aria-label="Language selection" style="margin-bottom: 24px; padding: 6px;">
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="hi">हि</button>
+    <button class="lang-btn" data-lang="mr">म</button>
+  </div>
   <button class="mobile-nav-link" data-route="home" data-nav="home" data-i18n="nav.home">Home</button>
-  <button class="mobile-nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button>
   <button class="mobile-nav-link" data-route="catalog" data-nav="catalog" data-i18n="nav.catalog">Shop</button>
+  <button class="mobile-nav-link" data-route="earn" data-nav="earn" data-i18n="nav.earn">Earn</button>
+  <button class="mobile-nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button>
   <button class="mobile-nav-link" onclick="openUserDrawer()" data-i18n="nav.dashboard">My Orders</button>
 </div>
 
@@ -149,7 +156,7 @@
         <nav class="footer-links">
           <a href="mailto:hello@padmanabhayurvedics.com">hello@padmanabhayurvedics.com</a>
           <a href="tel:+919876543210">+91 98765 43210</a>
-          <span style="color:var(--text-muted);font-size:0.82rem;line-height:1.6">Maharashtra, India</span>
+          <span style="color:var(--text-muted);font-size:0.95rem;line-height:1.6">Maharashtra, India</span>
         </nav>
       </div>
 
@@ -206,7 +213,7 @@
 <div class="modal-overlay hidden" id="lead-modal">
   <div class="modal lead-catcher-modal">
     <div class="modal-content">
-      <button class="modal-close" onclick="closeModal('lead-modal')" style="position:absolute;top:16px;right:16px">×</button>
+      <button class="modal-close" onclick="closeModal('lead-modal')" style="position:absolute;top:16px;right:16px;width:40px;height:40px;font-size:1.5rem;">×</button>
       <h2>Claim Your Free Consultation</h2>
       <p style="margin-bottom:24px; color:var(--text-secondary); font-size:0.9rem">Get personalized Ayurvedic advice from our experts.</p>
       <form id="lead-form">
@@ -257,13 +264,13 @@
 <!-- Auth0 SPA SDK -->
 <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
 
-<script src="js/firebase.js?v=4"></script>
-<script src="js/auth.js?v=4"></script>
-<script src="js/store.js?v=4"></script>
-<script src="js/razorpay.js?v=4"></script>
-<script src="js/shiprocket.js?v=4"></script>
-<script src="js/admin.js?v=4"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/firebase.js?v=5"></script>
+<script src="js/auth.js?v=5"></script>
+<script src="js/store.js?v=5"></script>
+<script src="js/razorpay.js?v=5"></script>
+<script src="js/shiprocket.js?v=5"></script>
+<script src="js/admin.js?v=5"></script>
+<script src="js/app.js?v=5"></script>
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();

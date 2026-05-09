@@ -114,7 +114,8 @@
       <span class="accent-line centered"></span>
       <h2 data-i18n="home.testimonials.title">Voices of Wellness</h2>
     </div>
-    <div class="testimonials-track stagger">
+    <div class="testimonials-track stagger" id="dyn-reviews-track">
+      <!-- Fallback Reviews if CMS is empty -->
       <div class="testimonial-card animate-in">
         <div class="testimonial-stars">★★★★★</div>
         <p class="testimonial-text">"The Ashwagandha capsules transformed my energy levels within 3 weeks. Absolutely genuine Ayurvedic quality — I can feel the difference."</p>
@@ -250,7 +251,61 @@ const initHero = async () => {
           </div>
         </div>
       `).join('');
+      }
     }
+
+    // Load CMS Content for Voices of Wellness (Reviews)
+    if (config && config.content && config.content.reviews && config.content.reviews.length > 0) {
+      renderReviews(config.content.reviews);
+    } else {
+      window.pa_db.collection('config').doc('content').get().then(snap => {
+        if(snap.exists && snap.data().reviews && snap.data().reviews.length > 0) {
+          renderReviews(snap.data().reviews);
+        }
+      });
+    }
+
+    function renderReviews(reviews) {
+      const track = document.getElementById('dyn-reviews-track');
+      if (!track) return;
+      track.innerHTML = reviews.map(r => {
+        const hasImage = r.dp && r.dp.length > 5;
+        const avatarHtml = hasImage 
+          ? `<div class="testimonial-avatar" style="background-image:url('${r.dp}'); background-size:cover; background-position:center; color:transparent;"></div>`
+          : `<div class="testimonial-avatar" style="background:linear-gradient(135deg,var(--gold),var(--gold-dark))">${r.name.charAt(0)}</div>`;
+        return `
+          <div class="testimonial-card animate-in" style="min-width:300px; flex-shrink:0;">
+            <div class="testimonial-stars">★★★★★</div>
+            <p class="testimonial-text">"${r.text}"</p>
+            <div class="testimonial-author">
+              ${avatarHtml}
+              <div><div class="testimonial-name">${r.name}</div><div class="testimonial-location">Verified Buyer</div></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Auto-scrolling carousel effect if many reviews
+      if (reviews.length > 3) {
+        track.style.display = 'flex';
+        track.style.overflowX = 'auto';
+        track.style.scrollBehavior = 'smooth';
+        track.style.paddingBottom = '16px';
+        track.style.gap = '24px';
+        
+        let scrollAmount = 0;
+        setInterval(() => {
+          if (track.scrollLeft >= track.scrollWidth - track.clientWidth) {
+            scrollAmount = 0; // Reset
+            track.scrollTo({ left: 0, behavior: 'smooth' });
+          } else {
+            scrollAmount += 320; // card width + gap
+            track.scrollBy({ left: 320, behavior: 'smooth' });
+          }
+        }, 3000);
+      }
+    }
+
   } catch (err) {
     console.warn('[Home] Background config update failed:', err);
   }

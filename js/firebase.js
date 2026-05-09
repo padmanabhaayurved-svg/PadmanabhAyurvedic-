@@ -430,8 +430,8 @@ function getSampleProducts() {
       deleted: false
     },
     {
-      id: 'pa-bone-set-oil',
-      name: 'Bone Setting Relief Oil',
+      id: 'pa-ortho-relief-oil',
+      name: 'Ortho Relief Oil',
       nameHi: 'बोन सेटिंग रिलीफ ऑयल',
       nameMr: 'बोन सेटिंग रिलीफ ऑइल',
       price: 599,
@@ -441,7 +441,7 @@ function getSampleProducts() {
         'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=600&q=80',
         'https://images.unsplash.com/photo-1526045612212-70caf35c14df?w=600&q=80'
       ],
-      description: 'A proprietary medicated oil blend developed at our bone-setting clinic. Used externally for fast pain relief in joint pain, muscle stiffness, sciatica, and spondylitis.',
+      description: 'A proprietary medicated oil blend developed at our Ayurvedic clinic. Used externally for fast pain relief in joint pain, muscle stiffness, sciatica, and spondylitis.',
       usage: 'Warm the oil slightly. Massage gently on affected area for 10–15 minutes. Use 2–3 times daily.',
       ingredients: 'Mahanarayan Oil Base, Nirgundi Extract, Shallaki Oil, Camphor, Wintergreen Oil, Til (Sesame) Oil',
       inStock: true,
@@ -555,7 +555,7 @@ function getSampleProducts() {
         'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&q=80',
         'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=80'
       ],
-      description: 'Complete joint care bundle: Ortho Secure Capsules (60 tabs) + Bone Setting Relief Oil (100ml) + Pain Relief Balm (25g). A 45-day complete program recommended by our clinical team.',
+      description: 'Complete joint care bundle: Ortho Secure Capsules (60 tabs) + Ortho Relief Oil (100ml) + Pain Relief Balm (25g). A 45-day complete program recommended by our clinical team.',
       usage: 'Use all three products as per individual directions. Ideal 3-month course for chronic joint issues.',
       ingredients: 'Combination of Ortho Secure, Relief Oil, and Pain Balm — refer individual products.',
       inStock: true,

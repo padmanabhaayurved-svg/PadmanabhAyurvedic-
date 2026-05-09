@@ -67,6 +67,8 @@ document.addEventListener('page:product', async (e) => {
 function renderProductDetail(p) {
   const lang    = localStorage.getItem('pa_lang') || 'en';
   const name    = lang === 'hi' ? (p.nameHi || p.name) : lang === 'mr' ? (p.nameMr || p.name) : p.name;
+  const desc    = lang === 'hi' ? (p.descriptionHi || p.description) : lang === 'mr' ? (p.descriptionMr || p.description) : (p.description || '');
+  
   const savings = Store.getSavings(p.price, p.mrp);
   const images  = p.images?.length ? p.images.map(img => Store.convertDriveLink(img)) : ['https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80'];
 
@@ -127,7 +129,7 @@ function renderProductDetail(p) {
         <button class="tab-btn" data-tab="ingredients" data-i18n="product.tab.ingredients">Ingredients</button>
       </div>
       <div id="tab-content" style="padding:20px 0;color:var(--text-secondary);font-size:0.9rem;line-height:1.8">
-        ${p.description || ''}
+        ${desc}
       </div>
 
       <hr class="product-divider"/>
@@ -154,7 +156,7 @@ function renderProductDetail(p) {
     document.querySelectorAll('#product-tabs .tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const tab = btn.dataset.tab;
-    const content = { about: p.description, usage: p.usage, ingredients: p.ingredients };
+    const content = { about: desc, usage: p.usage, ingredients: p.ingredients };
     document.getElementById('tab-content').textContent = content[tab] || 'Coming soon.';
   });
 }

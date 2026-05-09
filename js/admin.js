@@ -228,6 +228,7 @@ async function loadAdminData() {
   loadShipmentTracker();
   loadProductsTable();
   loadHeroConfig();
+  loadContentConfig();
   loadLeads();
   loadAdminOrders();
   loadAdminUsers();
@@ -542,6 +543,8 @@ function editProduct(id) {
   document.getElementById('pm-stock').value = p.inStock ? 'true' : 'false';
   if(document.getElementById('pm-weight')) document.getElementById('pm-weight').value = p.weight || 0.5;
   if(document.getElementById('pm-desc')) document.getElementById('pm-desc').value = p.description || '';
+  if(document.getElementById('pm-desc-hi')) document.getElementById('pm-desc-hi').value = p.descriptionHi || '';
+  if(document.getElementById('pm-desc-mr')) document.getElementById('pm-desc-mr').value = p.descriptionMr || '';
   if(document.getElementById('pm-usage')) document.getElementById('pm-usage').value = p.usage || '';
   if(document.getElementById('pm-ing')) document.getElementById('pm-ing').value = p.ingredients || '';
 
@@ -624,6 +627,8 @@ async function saveProduct() {
     weight:      Number(document.getElementById('pm-weight')?.value) || 0.5,
     inStock:     document.getElementById('pm-stock').value === 'true',
     description: document.getElementById('pm-desc')?.value || '',
+    descriptionHi: document.getElementById('pm-desc-hi')?.value || '',
+    descriptionMr: document.getElementById('pm-desc-mr')?.value || '',
     usage:       document.getElementById('pm-usage')?.value || '',
     ingredients: document.getElementById('pm-ing')?.value || '',
     images:      _adminImages
@@ -827,6 +832,108 @@ window.updateBannerPreview = function(type) {
     document.getElementById(`preview-${type}`).innerHTML = '';
   }
 };
+
+// ── 3.5 Content Config ─────────────────────────────────────────
+
+async function loadContentConfig() {
+  let content = { about: {}, faq: [], reviews: [] };
+  try {
+    const docRef = window.pa_db.collection('config').doc('content');
+    const snap = await docRef.get();
+    if (snap.exists) content = snap.data();
+  } catch(e) { console.error('Error loading content', e); }
+
+  const titleEl = document.getElementById('cms-about-title');
+  if(titleEl) titleEl.value = content.about?.title || 'Our Story';
+  
+  const textEl = document.getElementById('cms-about-text');
+  if(textEl) textEl.value = content.about?.text || '';
+
+  const faqContainer = document.getElementById('faq-list-container');
+  if(faqContainer) {
+    faqContainer.innerHTML = '';
+    (content.faq || []).forEach(f => addFaqItem(f.q, f.a));
+  }
+
+  const reviewsContainer = document.getElementById('reviews-list-container');
+  if(reviewsContainer) {
+    reviewsContainer.innerHTML = '';
+    (content.reviews || []).forEach(r => addReviewItem(r.name, r.text, r.dp));
+  }
+}
+window.loadContentConfig = loadContentConfig;
+
+window.addFaqItem = function(q = '', a = '') {
+  const container = document.getElementById('faq-list-container');
+  if(!container) return;
+  const div = document.createElement('div');
+  div.className = 'faq-item-row';
+  div.style = 'display:flex; gap:8px; align-items:flex-start;';
+  div.innerHTML = `
+    <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+      <input type="text" class="form-input faq-q" placeholder="Question" value="${q}"/>
+      <textarea class="form-textarea faq-a" placeholder="Answer" style="min-height:60px">${a}</textarea>
+    </div>
+    <button class="btn btn-outline" style="color:var(--error);" onclick="this.parentElement.remove()">X</button>
+  `;
+  container.appendChild(div);
+}
+
+window.addReviewItem = function(name = '', text = '', dp = '') {
+  const container = document.getElementById('reviews-list-container');
+  if(!container) return;
+  const div = document.createElement('div');
+  div.className = 'review-item-row';
+  div.style = 'display:flex; gap:8px; align-items:flex-start;';
+  div.innerHTML = `
+    <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; gap:8px;">
+        <input type="text" class="form-input review-name" placeholder="Customer Name" value="${name}" style="flex:1"/>
+        <input type="text" class="form-input review-dp" placeholder="DP Link (Optional)" value="${dp}" style="flex:1" onchange="this.value = convertGDriveUrl(this.value)"/>
+      </div>
+      <textarea class="form-textarea review-text" placeholder="Review Content" style="min-height:60px">${text}</textarea>
+    </div>
+    <button class="btn btn-outline" style="color:var(--error);" onclick="this.parentElement.remove()">X</button>
+  `;
+  container.appendChild(div);
+}
+
+window.saveContentConfig = async function() {
+  const btn = document.getElementById('btn-save-content');
+  if(!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Publishing...';
+
+  const aboutTitle = document.getElementById('cms-about-title').value;
+  const aboutText = document.getElementById('cms-about-text').value;
+
+  const faqs = Array.from(document.querySelectorAll('.faq-item-row')).map(row => ({
+    q: row.querySelector('.faq-q').value.trim(),
+    a: row.querySelector('.faq-a').value.trim()
+  })).filter(f => f.q && f.a);
+
+  const reviews = Array.from(document.querySelectorAll('.review-item-row')).map(row => ({
+    name: row.querySelector('.review-name').value.trim(),
+    dp: convertGDriveUrl(row.querySelector('.review-dp').value.trim()),
+    text: row.querySelector('.review-text').value.trim()
+  })).filter(r => r.name && r.text);
+
+  const data = {
+    about: { title: aboutTitle, text: aboutText },
+    faq: faqs,
+    reviews: reviews
+  };
+
+  try {
+    await window.pa_db.collection('config').doc('content').set(data, {merge:true});
+    showToast('Content published', 'success');
+  } catch(e) {
+    showToast('Failed to publish', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Publish Content';
+  }
+}
 
 // ── 4. History Archive ────────────────────────────────────────
 async function loadHistory() {
@@ -3101,7 +3208,7 @@ window.seedRequestedEmployee = async function() {
     email: "rajesh@padmanabhayurvedics.com",
     phone: "+91 98765 43210",
     photo: "https://drive.google.com/file/d/14LsaWlnAUiJjOMpGxkz31BhgUwfXTd4h/view?usp=sharing",
-    bio: "Lead practitioner specializing in bone-setting and traditional Ayurvedic healing methods.",
+    bio: "Lead practitioner specializing in traditional Ayurvedic healing methods and chronic pain management.",
     status: "active",
     featured: true,
     updatedAt: new Date().toISOString()
