@@ -798,9 +798,24 @@ window.openUserDrawer = async function() {
   }
 
   if (!user) {
-    // Force Login if not authenticated
-    closeUserDrawer();
-    if (window.Auth0Helper) Auth0Helper.login('#dashboard');
+    // Show Login Prompt instead of auto-redirecting
+    body.innerHTML = `
+      <div style="text-align:center; padding: 60px 20px;">
+        <div style="font-size:3.5rem; margin-bottom:24px;">🔐</div>
+        <h3 style="font-family:var(--font-serif); margin-bottom:12px;">Login Required</h3>
+        <p style="color:var(--text-muted); margin-bottom:32px; line-height:1.6;">Sign in to view your orders, track shipments, and manage your profile.</p>
+        
+        <button class="btn btn-primary btn-full" onclick="Auth0Helper.login('#dashboard')" style="margin-bottom:12px;">
+          <span style="display:flex;align-items:center;justify-content:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            Sign In with Secure Auth
+          </span>
+        </button>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:24px;">
+          Note: If you see an Auth0 'Dev Keys' warning, please configure your own Social Connection credentials in the Auth0 Dashboard for production use.
+        </p>
+      </div>
+    `;
     return;
   }
 
