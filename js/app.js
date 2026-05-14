@@ -86,6 +86,9 @@ function closeModal(id) {
 window.closeModal = closeModal;
 
 // ── Global Image Reliability System ──────────────────────────
+// Reliable SVG fallback — works 100% offline, no external dependency
+const FALLBACK_IMG = `data:image/svg+xml;base64,${btoa(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%231a1a1a'/><g fill='%23c9a84c' opacity='0.5'><circle cx='200' cy='160' r='50'/><path d='M130 270 Q200 220 270 270 Q200 310 130 270'/><path d='M170 130 Q200 100 230 130'/></g><text x='200' y='330' text-anchor='middle' fill='%23c9a84c' font-size='14' font-family='serif'>Padmanabh Ayurvedics</text></svg>`)}`;
+
 function initImageFixer() {
   console.log('[ImageFixer] Active — Watching for broken renders.');
   // Capture image errors globally
@@ -102,34 +105,37 @@ function initImageFixer() {
         fixBrokenImage(img);
       }
     });
-  }, 5000);
+  }, 3000);
 }
 
 function fixBrokenImage(img) {
   if (img.dataset.fixing === 'done') return;
   img.dataset.fixing = 'true';
   
-  const original = img.src;
-  const fallback = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80'; // Calm Ayurvedic fallback
+  const original = img.src || '';
 
-  // 1. Try to fix Google Drive links if they aren't already converted
+  // 1. Try to fix Google Drive links
   if (original.includes('drive.google.com') && !original.includes('lh3.googleusercontent.com')) {
     if (window.Store && Store.convertDriveLink) {
       const fixed = Store.convertDriveLink(original);
       if (fixed !== original) {
+        img.onerror = () => {
+          img.src = FALLBACK_IMG;
+          img.dataset.fixing = 'done';
+          img.parentElement?.classList?.remove('loading-skeleton');
+        };
         img.src = fixed;
         return;
       }
     }
   }
 
-  // 2. Apply fallback
-  img.src = fallback;
+  // 2. Apply guaranteed fallback (inline SVG — no network needed)
+  img.src = FALLBACK_IMG;
   img.dataset.fixing = 'done';
   
   // 3. Clean up UI states
   img.parentElement?.classList?.remove('loading-skeleton');
-  img.style.filter = 'grayscale(0.2)'; 
 }
 
 // ── Cinematic Boot Sequence ───────────────────────────────────

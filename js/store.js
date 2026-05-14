@@ -160,26 +160,38 @@ const Store = (() => {
 
   // ── Price Formatting ──────────────────────────────────────────
 
+  // Inline SVG fallback — zero network dependency, always works
+  const STORE_FALLBACK_IMG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="#1a1a1a"/><g fill="#c9a84c" opacity="0.5"><circle cx="200" cy="160" r="50"/><path d="M130 270 Q200 220 270 270 Q200 310 130 270"/><path d="M170 130 Q200 100 230 130"/></g><text x="200" y="330" text-anchor="middle" fill="#c9a84c" font-size="14" font-family="serif">Padmanabh Ayurvedics</text></svg>')}`;
+
   function convertDriveLink(url) {
-    if (!url) return url;
-    if (url.includes('lh3.googleusercontent.com')) return url;
+    if (!url) return STORE_FALLBACK_IMG;
+    // Already a data URI or Firebase Storage URL — use as-is
+    if (url.startsWith('data:')) return url;
+    if (url.includes('firebasestorage.googleapis.com')) return url;
+    // Already a working thumbnail URL — use as-is
     if (url.includes('drive.google.com/thumbnail')) return url;
-    if (url.includes('drive.usercontent.google.com')) return url;
-    
-    // Handle view links, download links, and direct IDs
+    if (url.includes('drive.usercontent.google.com/download')) return url;
+
+    // Extract Google Drive file ID from various link formats
     const driveRegex = [
       /\/d\/([a-zA-Z0-9_-]+)/,
       /id=([a-zA-Z0-9_-]+)/,
       /file\/d\/([a-zA-Z0-9_-]+)/,
-      /^([a-zA-Z0-9_-]{25,})$/ // Pure ID
+      /^([a-zA-Z0-9_-]{25,})$/  // Raw ID
     ];
 
     for (let reg of driveRegex) {
       const match = url.match(reg);
       if (match && match[1]) {
-        return `https://lh3.googleusercontent.com/d/${match[1]}=s1200`; // High quality thumbnail
+        // Use thumbnail API — more reliable than lh3.googleusercontent.com
+        // sz=800 gives good quality without CORS/hotlink blocks
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=800`;
       }
     }
+
+    // lh3.googleusercontent.com (old format) — keep as fallback try
+    if (url.includes('lh3.googleusercontent.com')) return url;
+
     return url;
   }
 
@@ -187,7 +199,8 @@ const Store = (() => {
     if (img.dataset.fixing === 'done') return;
     img.dataset.fixing = 'true';
     img.onerror = null;
-    img.src = fallback || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80';
+    // Use inline SVG — guaranteed to always render regardless of network
+    img.src = fallback || STORE_FALLBACK_IMG;
     img.parentElement?.classList?.remove('loading-skeleton');
     img.dataset.fixing = 'done';
   }
@@ -262,7 +275,7 @@ window.renderProductCard = function(p) {
   return `
     <div class="product-card" onclick="navigate('product/${p.id}')" style="opacity:1;transform:none">
       <div class="product-card-image loading-skeleton">
-        <img src="${Store.convertDriveLink(p.images?.[0]) || 'https://via.placeholder.com/400x400?text=Padmanabh+Ayurvedics'}" alt="${p.name}" referrerpolicy="no-referrer" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton')"/>
+        <img src="${Store.convertDriveLink(p.images?.[0])}" alt="${p.name}" referrerpolicy="no-referrer" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.dataset.fixing!='done'&&(this.dataset.fixing='done',this.parentElement.classList.remove('loading-skeleton'),this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0MDAnIGhlaWdodD0nNDAwJyB2aWV3Qm94PScwIDAgNDAwIDQwMCc+PHJlY3Qgd2lkdGg9JzQwMCcgaGVpZ2h0PSc0MDAnIGZpbGw9JyMxYTFhMWEnLz48ZyBmaWxsPScjYzlhODRjJyBvcGFjaXR5PScwLjUnPjxjaXJjbGUgY3g9JzIwMCcgY3k9JzE2MCcgcj0nNTAnLz48cGF0aCBkPSdNMTMwIDI3MCBRMjAwIDIyMCAyNzAgMjcwIFEyMDAgMzEwIDEzMCAyNzAnLz48L2c+PHRleHQgeD0nMjAwJyB5PSczMzAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNjOWE4NGMnIGZvbnQtc2l6ZT0nMTQnIGZvbnQtZmFtaWx5PSdzZXJpZic+UGFkbWFuYWJoIEF5dXJ2ZWRpY3M8L3RleHQ+PC9zdmc+')"/>
         ${savings > 0 ? `<span class="product-card-badge badge-sale">${savings}% OFF</span>` : '<span class="product-card-badge badge-new">New</span>'}
         <div class="product-card-quick-add">
           <button class="btn btn-primary btn-sm btn-full" onclick="event.stopPropagation();addToCartFromCard('${p.id}')">Add to Cart</button>

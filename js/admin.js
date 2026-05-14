@@ -433,18 +433,18 @@ async function renderAnalytics(type, customRange = null) {
 }
 
 async function calculateCustomAnalytics(startStr, endStr) {
-  // In a real app, this would be a Firestore query. 
+  // In a real app, this would be a Firestore query.
   // Here we simulate it by using getAnalyticsSummary and filtering.
   const summary = await getAnalyticsSummary(365);
   const start = new Date(startStr);
   const end = new Date(endStr);
-  
+
   const dailyViews = {};
   Object.keys(summary.dailyViews).forEach(date => {
     const d = new Date(date);
     if (d >= start && d <= end) dailyViews[date] = summary.dailyViews[date];
   });
-  
+
   return { ...summary, dailyViews };
 }
 
@@ -575,17 +575,28 @@ window.removeImage = removeImage;
 
 function convertGDriveUrl(url) {
   if (!url) return '';
-  // Already in a usable direct format — return as-is
-  if (url.includes('lh3.googleusercontent.com')) return url;
+  // Already a data URI or Firebase Storage — use as-is
+  if (url.startsWith('data:')) return url;
+  if (url.includes('firebasestorage.googleapis.com')) return url;
+  // Already a working thumbnail URL — use as-is
   if (url.includes('drive.google.com/thumbnail')) return url;
-  if (url.includes('drive.usercontent.google.com')) return url;
-  // Extract file ID from share link (/d/ID/) or query param (?id=ID or &id=ID)
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) {
-    // lh3.googleusercontent.com is confirmed working for public Drive files.
-    // img tags MUST have referrerpolicy="no-referrer" or Google blocks the request.
-    return `https://lh3.googleusercontent.com/d/${match[1]}=s800`;
+  if (url.includes('drive.usercontent.google.com/download')) return url;
+
+  // Extract Google Drive file ID from various link formats
+  const driveRegex = [
+    /\/d\/([a-zA-Z0-9_-]+)/,
+    /[?&]id=([a-zA-Z0-9_-]+)/,
+    /file\/d\/([a-zA-Z0-9_-]+)/
+  ];
+  for (let reg of driveRegex) {
+    const match = url.match(reg);
+    if (match && match[1]) {
+      // ✅ Use thumbnail API — works publicly without CORS/hotlink blocks
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=800`;
+    }
   }
+  // Old lh3 format — keep for backwards compatibility
+  if (url.includes('lh3.googleusercontent.com')) return url;
   return url;
 }
 window.convertGDriveUrl = convertGDriveUrl;
@@ -595,16 +606,17 @@ function addGDriveImage() {
   if (!input) return;
   const url = input.value.trim();
   if (!url) return;
-  
+
   if (_adminImages.length >= 4) {
-    showToast('Maximum 4 images allowed.');
+    showToast('Maximum 4 images allowed.', 'warning');
     return;
   }
-  
-  const directUrl = convertGDriveUrl(url);
-  _adminImages.push(directUrl);
+
+  const converted = convertGDriveUrl(url);
+  _adminImages.push(converted);
   input.value = '';
   renderImagePreview();
+  showToast('Image link added ✓', 'success');
 }
 window.addGDriveImage = addGDriveImage;
 
