@@ -226,6 +226,16 @@ async function startApp() {
 
   await navigate(hash);
   
+  // Hide loader for returning visitors now that the page is fully injected
+  const loader = document.getElementById('page-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      loader.style.display = 'none';
+      if (loader.parentNode) loader.remove();
+    }, 500);
+  }
+
   // Dispatch app:ready for animations (specifically hero)
   document.dispatchEvent(new Event('app:ready'));
   
