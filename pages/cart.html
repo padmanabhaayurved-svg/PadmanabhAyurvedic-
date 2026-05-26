@@ -223,6 +223,13 @@ function renderCartPage() {
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // Check if user is logged in via PhoneAuth
+      if (!PhoneAuth.isLoggedIn()) {
+        showPhoneAuthModal();
+        return;
+      }
+
       const btn = document.getElementById('pay-btn');
       if (btn.disabled || _courierOptions.length === 0) {
         showToast('Please select a delivery partner first', 'warning');
@@ -231,27 +238,6 @@ function renderCartPage() {
       btn.disabled = true;
       btn.textContent = 'Processing...';
 
-      let user = getCurrentUser();
-      if (!user && window.Auth0Helper) {
-        const auth0User = await Auth0Helper.getUser();
-        if (auth0User) {
-          user = { uid: auth0User.sub };
-        }
-      }
-
-      if (!user) {
-        showToast('Please login to place an order', 'warning');
-        btn.disabled = false;
-        btn.textContent = 'Place Order';
-        
-        // Optionally trigger login
-        setTimeout(() => {
-          if (confirm('You need to be logged in to track your orders. Login now?')) {
-            Auth0Helper.login(window.location.hash || '#cart');
-          }
-        }, 1000);
-        return;
-      }
       const address = {
         name:    document.getElementById('co-name').value,
         phone:   document.getElementById('co-phone').value,
@@ -268,8 +254,9 @@ function renderCartPage() {
 
       const selectedCourier = _courierOptions[_selectedCourierIdx];
 
+      const session = PhoneAuth.getUser();
       const orderPayload = {
-        ...Store.buildOrderPayload({ address, userId: user?.uid }),
+        ...Store.buildOrderPayload({ address, userId: session?.uid }),
         courierCompany: selectedCourier.name || selectedCourier.company || selectedCourier.courier_name || '',
         courierCharge:  _courierCharge,
         total:          total
@@ -291,7 +278,6 @@ function renderCartPage() {
           btn.innerHTML = `Place Order (COD) ${Store.formatPrice(total)}`;
         }
       } else {
-        // Initiate Razorpay
         await RazorpayHelper.initiatePayment({
           amount:       orderPayload.total,
           customerName: address.name,
@@ -299,6 +285,7 @@ function renderCartPage() {
           phone:        address.phone
         }, async (res) => {
           try {
+            orderPayload.payment = 'Razorpay';
             orderPayload.paymentId = res.paymentId;
             const orderId = await createOrder(orderPayload);
             await processOrderAfterCreation(orderId, address, orderPayload, res);
@@ -315,11 +302,14 @@ function renderCartPage() {
   }
 }
 
+
+
 // Extracted to avoid duplicating SR logic for both COD and Razorpay
 async function processOrderAfterCreation(orderId, address, orderPayload, res) {
   const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
   const localOrder = {
     id: orderId,
+    userId: orderPayload.userId,
     customerName: address.name,
     customerPhone: address.phone,
     email: address.email,

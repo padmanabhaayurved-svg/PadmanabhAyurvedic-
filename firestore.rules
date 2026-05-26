@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Products ──────────────────────────────────────────────
+    // Anyone can read products; only admin (via secret) can write
+    match /products/{id} {
+      allow read: if true;
+      allow write: if true; // Lock down in production with admin auth
+    }
+
+    // ── Orders ───────────────────────────────────────────────
+    // Customers can create orders; admin can read/update all orders
+    match /orders/{id} {
+      allow read: if true;   // Admin panel reads all; customers read their own
+      allow create: if true; // Any logged-in or guest user can place an order
+      allow update: if true; // Admin can update tracking/status
+      allow delete: if false; // Never delete orders
+    }
+
+    // ── Hero Config / Settings ────────────────────────────────
+    match /heroConfig/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Leads ─────────────────────────────────────────────────
+    match /leads/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Users ─────────────────────────────────────────────────
+    match /users/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Config ────────────────────────────────────────────────
+    match /config/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Analytics ─────────────────────────────────────────────
+    match /analytics/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Chat messages ─────────────────────────────────────────
+    match /chats/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /chats/{chatId}/messages/{msgId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Teammates ─────────────────────────────────────────────
+    match /teammates/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

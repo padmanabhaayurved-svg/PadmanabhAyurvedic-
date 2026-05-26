@@ -11,16 +11,6 @@ let _adminProducts = [];
 let _adminImages = []; 
 let _historyProducts = [];
 
-// Global Login Function (exposed early)
-window.loginWithAuth0 = async function() {
-  Auth0Helper.login('#admin');
-};
-
-async function logoutWithAuth0() {
-  Auth0Helper.logout('#admin');
-}
-window.logoutWithAuth0 = logoutWithAuth0;
-
 document.addEventListener('page:admin', initAdminHub);
 
 async function initAdminHub() {
@@ -37,45 +27,21 @@ async function initAdminHub() {
 
   document.title = 'Neural Hub — Padmanabh Ayurvedics';
 
-  try {
-    // Handle Auth0 Redirect Callback
-    const user = await Auth0Helper.handleCallback();
-    if (user) {
-      sessionStorage.setItem('pa_admin_auth', 'true');
-      sessionStorage.setItem('pa_auth_provider', 'auth0');
-    }
+  const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
+  const provider = sessionStorage.getItem('pa_auth_provider');
 
-    const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
-    const provider = sessionStorage.getItem('pa_auth_provider');
+  const loginView = document.getElementById('admin-login-view');
+  const shellView = document.getElementById('admin-shell');
 
-    // Verify Auth0 session if that was the provider
-    let finalAuth = isAuth;
-    if (isAuth && provider === 'auth0') {
-      const user = await Auth0Helper.getUser();
-      if (!user) {
-        sessionStorage.removeItem('pa_admin_auth');
-        finalAuth = false;
-      }
-    }
+  console.log('[Admin] Auth state:', { isAuth, provider });
 
-    const loginView = document.getElementById('admin-login-view');
-    const shellView = document.getElementById('admin-shell');
-
-    console.log('[Admin] Auth state:', { finalAuth, provider });
-
-    if (!finalAuth) {
-      if (loginView) loginView.style.display = 'flex';
-      if (shellView) shellView.style.display = 'none';
-    } else {
-      if (loginView) loginView.style.display = 'none';
-      if (shellView) shellView.style.display = 'flex';
-      loadAdminData();
-    }
-  } catch (err) {
-    console.error('[Admin] Init error:', err);
-    // Even if Auth0 fails, we should still show the login view
-    const loginView = document.getElementById('admin-login-view');
+  if (!isAuth) {
     if (loginView) loginView.style.display = 'flex';
+    if (shellView) shellView.style.display = 'none';
+  } else {
+    if (loginView) loginView.style.display = 'none';
+    if (shellView) shellView.style.display = 'flex';
+    loadAdminData();
   }
 
   // Sidebar Tabs
@@ -186,7 +152,7 @@ document.addEventListener('submit', e => {
     const loginView = document.getElementById('admin-login-view');
     const shellView = document.getElementById('admin-shell');
 
-    if (u === 'admin' && p === 'Inafa2026') {
+    if (u === 'admin' && p === 'padmanabh2026848587') {
       sessionStorage.setItem('pa_admin_auth', 'true');
       sessionStorage.setItem('pa_auth_provider', 'local');
       if (loginView) loginView.style.display = 'none';
@@ -200,14 +166,9 @@ document.addEventListener('submit', e => {
 });
 
 function adminLogout() {
-  const provider = sessionStorage.getItem('pa_auth_provider');
-  if (provider === 'auth0') {
-    logoutWithAuth0();
-  } else {
-    sessionStorage.removeItem('pa_admin_auth');
-    sessionStorage.removeItem('pa_auth_provider');
-    location.reload();
-  }
+  sessionStorage.removeItem('pa_admin_auth');
+  sessionStorage.removeItem('pa_auth_provider');
+  location.reload();
 }
 window.adminLogout = adminLogout;
 
@@ -232,6 +193,28 @@ async function loadAdminData() {
   loadLeads();
   loadAdminOrders();
   loadAdminUsers();
+
+  // ── Real-time cross-tab order sync ──────────────────────────
+  // The browser fires 'storage' events in OTHER tabs when localStorage changes.
+  // This ensures the admin auto-updates immediately when a customer places an order.
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'pa_orders') {
+      console.log('[Admin] New order detected in another tab — refreshing...');
+      loadAdminOrders();
+      loadAdminUsers();
+      renderOrderAnalytics(30);
+      loadShipmentTracker();
+      // Flash the Orders tab badge to alert admin
+      const ordersTab = document.querySelector('.sidebar-item[data-target="tab-orders"]');
+      if (ordersTab) {
+        ordersTab.style.boxShadow = '0 0 0 3px var(--gold)';
+        ordersTab.title = '🔔 New order received!';
+        setTimeout(() => {
+          ordersTab.style.boxShadow = '';
+        }, 4000);
+      }
+    }
+  });
 }
 
 // ── Order Analytics ────────────────────────────────────────────
@@ -1007,8 +990,31 @@ async function loadAdminOrders() {
   const tbody = document.getElementById('admin-orders-body');
   if (!tbody) return;
 
+  tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--text-muted)">
+    <div class="spinner" style="border-top-color:var(--gold);width:24px;height:24px;border-width:3px;margin:0 auto 12px;"></div>
+    Loading orders...
+  </td></tr>`;
+
   let orders = [];
-  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+
+  // ── Primary: Firestore ───────────────────────────────────────
+  // getAdminOrders() returns null on failure, signalling fallback to localStorage
+  if (typeof getAdminOrders === 'function') {
+    const firestoreOrders = await getAdminOrders();
+    if (firestoreOrders !== null) {
+      orders = firestoreOrders;
+      console.log('[Admin] Loaded', orders.length, 'orders from Firestore');
+
+      // Merge into localStorage so offline/print functions still work
+      try { localStorage.setItem('pa_orders', JSON.stringify(orders)); } catch(e) {}
+    }
+  }
+
+  // ── Fallback: localStorage ───────────────────────────────────
+  if (orders.length === 0) {
+    try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+    console.log('[Admin] Loaded', orders.length, 'orders from localStorage (fallback)');
+  }
 
   if (orders.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--text-muted)">No orders yet.</td></tr>`;
@@ -1017,18 +1023,21 @@ async function loadAdminOrders() {
 
   const renderOrders = (orderList) => {
     tbody.innerHTML = orderList.map(o => {
-      const d = new Date(o.createdAt).toLocaleDateString();
+      const d = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : '—';
       const statusClass = o.status === 'delivered' ? 'pill-success' : (o.status === 'shipped' || o.status === 'in transit') ? 'pill-gold' : o.status === 'processing' ? 'pill-warning' : 'pill-muted';
+      const name = o.customerName || o.address?.name || 'Guest';
+      const phone = o.customerPhone || o.address?.phone || '';
       return `
         <tr>
-          <td style="font-weight:600;color:var(--gold)">#${o.id.slice(-6).toUpperCase()}</td>
-          <td>${o.customerName || 'Guest'}<br><span style="font-size:0.75rem;color:var(--text-muted)">${o.customerPhone || ''}</span></td>
+          <td style="font-weight:600;color:var(--gold)">#${(o.id || '').slice(-6).toUpperCase()}</td>
+          <td>${name}<br><span style="font-size:0.75rem;color:var(--text-muted)">${phone}</span></td>
           <td>${d}</td>
-          <td>₹${o.total}</td>
+          <td>₹${o.total || 0}</td>
           <td><span style="font-size:0.8rem">${o.payment || 'COD'}</span></td>
           <td><span class="pill ${statusClass}">${(o.status || 'pending').toUpperCase()}</span></td>
           <td>
             <div style="display:flex;gap:6px;justify-content:flex-end">
+              ${(!o.status || o.status === 'pending') ? `<button class="tbl-btn" style="background:rgba(234, 179, 8, 0.15);color:var(--gold)" onclick="adminAcceptOrder('${o.id}')" id="btn-accept-${o.id}">Accept</button>` : ''}
               <button class="tbl-btn tbl-btn-edit" onclick="adminViewOrder('${o.id}')">Details</button>
               <button class="tbl-btn" style="background:rgba(100,164,53,0.15);color:var(--gold)" onclick="generateInvoice('${o.id}')">Invoice</button>
             </div>
@@ -1063,11 +1072,28 @@ async function loadAdminOrders() {
     
     if (changed) {
       localStorage.setItem('pa_orders', JSON.stringify(orders));
-      renderOrders(orders); // Re-render with updated statuses
+      renderOrders(orders);
     }
   }
 }
 window.loadAdminOrders = loadAdminOrders;
+
+async function adminAcceptOrder(orderId) {
+  if (!confirm('Are you sure you want to accept this order?')) return;
+  try {
+    const btn = document.getElementById(`btn-accept-${orderId}`);
+    if(btn) { btn.disabled = true; btn.textContent = 'Accepting...'; }
+    await window.updateOrderStatus(orderId, 'processing');
+    showToast('Order accepted successfully', 'success');
+    loadAdminOrders(); // Refresh table
+  } catch (error) {
+    console.error('Error accepting order:', error);
+    showToast('Failed to accept order', 'error');
+    const btn = document.getElementById(`btn-accept-${orderId}`);
+    if(btn) { btn.disabled = false; btn.textContent = 'Accept'; }
+  }
+}
+window.adminAcceptOrder = adminAcceptOrder;
 
 function adminViewOrder(orderId) {
   let orders = [];
@@ -1307,49 +1333,107 @@ function executePDFDownload(element, orderId, btn, originalText) {
 window.executePDFDownload = executePDFDownload;
 
 // ── 6. Users Database ─────────────────────────────────────────
-function loadAdminUsers() {
+async function loadAdminUsers() {
   const tbody = document.getElementById('admin-users-body');
   if (!tbody) return;
 
-  let users = [];
-  try { users = JSON.parse(localStorage.getItem('pa_user_db') || '[]'); } catch(e) {}
+  tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding:40px"><div class="spinner" style="border-top-color:var(--gold);width:30px;height:30px;border-width:3px;margin:0 auto;"></div><p style="margin-top:12px;color:var(--text-muted)">Loading users...</p></td></tr>`;
 
-  // Also extract users from orders (chatbot-created)
-  let orders = [];
-  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
-  
-  // Merge by phone
-  const phoneMap = {};
-  orders.forEach(o => {
-    if (o.customerPhone) {
-      if (!phoneMap[o.customerPhone]) {
-        phoneMap[o.customerPhone] = { name: o.customerName, phone: o.customerPhone, orderCount: 0, registeredOn: o.createdAt };
-      }
-      phoneMap[o.customerPhone].orderCount++;
+  try {
+    // 1. Fetch users from Firestore
+    let users = [];
+    if (typeof window.getAdminUsers === 'function') {
+      users = await window.getAdminUsers();
     }
-  });
-  users.forEach(u => {
-    if (!phoneMap[u.phone]) phoneMap[u.phone] = { ...u, orderCount: 0 };
-  });
 
-  const allUsers = Object.values(phoneMap);
+    // 2. Fetch orders to count orders
+    let orders = [];
+    if (typeof window.getAdminOrders === 'function') {
+      orders = await window.getAdminOrders();
+    }
 
-  if (allUsers.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="padding:40px;color:var(--text-muted)">No users yet. Users appear when orders are placed or leads are captured.</td></tr>`;
+    // 3. Build lookup maps and merge records
+    const phoneMap = {};
+    users.forEach(u => {
+      phoneMap[u.phone] = { ...u, orderCount: 0 };
+    });
+
+    // Also account for fallback orders with guest phone numbers not in users list
+    orders.forEach(o => {
+      const phone = o.customerPhone || o.phone;
+      if (phone) {
+        if (!phoneMap[phone]) {
+          phoneMap[phone] = { name: o.customerName || 'Guest User', phone, orderCount: 0, registeredAt: o.createdAt };
+        }
+        phoneMap[phone].orderCount++;
+      }
+    });
+
+    const allUsers = Object.values(phoneMap);
+
+    if (allUsers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--text-muted)">No users yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = allUsers.map(u => `
+      <tr>
+        <td style="font-weight:500;color:var(--text-primary)">${u.name || '-'}</td>
+        <td>${u.phone || '-'}</td>
+        <td style="color:var(--text-muted);font-size:0.82rem">${u.registeredAt ? new Date(u.registeredAt).toLocaleDateString() : 'Lead / Guest'}</td>
+        <td><span style="font-weight:600;color:var(--gold)">${u.orderCount || 0}</span></td>
+        <td><span class="pill pill-success">Active</span></td>
+        <td style="text-align:right">
+          <button class="btn btn-outline btn-xs" onclick="adminChangeUserPassword('${u.phone}')" style="padding: 4px 8px; font-size: 0.75rem;">Change Password</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    console.error('Error loading users:', e);
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--error)">Error loading users from database.</td></tr>`;
+  }
+}
+window.loadAdminUsers = loadAdminUsers;
+
+// ── Admin Reset Password Functionality ────────────────────────
+window.adminChangeUserPassword = function(phone) {
+  document.getElementById('rp-user-phone').value = phone;
+  document.getElementById('rp-new-pass').value = '';
+  document.getElementById('reset-password-modal').classList.remove('hidden');
+};
+
+window.closeResetPasswordModal = function() {
+  document.getElementById('reset-password-modal').classList.add('hidden');
+};
+
+window.saveAdminResetPassword = async function() {
+  const phone = document.getElementById('rp-user-phone').value;
+  const newPass = document.getElementById('rp-new-pass').value;
+
+  if (!newPass || newPass.length < 6) {
+    showToast('Password must be at least 6 characters', 'error');
     return;
   }
 
-  tbody.innerHTML = allUsers.map(u => `
-    <tr>
-      <td style="font-weight:500;color:var(--text-primary)">${u.name || '-'}</td>
-      <td>${u.phone || u.email || '-'}</td>
-      <td style="color:var(--text-muted);font-size:0.82rem">${u.registeredOn ? new Date(u.registeredOn).toLocaleDateString() : 'Lead Only'}</td>
-      <td><span style="font-weight:600;color:var(--gold)">${u.orderCount || 0}</span></td>
-      <td><span class="pill pill-success">Active</span></td>
-    </tr>
-  `).join('');
-}
-window.loadAdminUsers = loadAdminUsers;
+  try {
+    const btn = document.querySelector('#reset-password-modal .btn-primary');
+    const oldText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+
+    // Hash the password client-side using PhoneAuth helper
+    const newHash = await PhoneAuth.hashPassword(newPass);
+    await window.adminResetUserPassword(phone, newHash);
+
+    showToast('Password reset successfully for ' + phone, 'success');
+    closeResetPasswordModal();
+    btn.disabled = false;
+    btn.textContent = oldText;
+  } catch (e) {
+    console.error('Password reset failed:', e);
+    showToast('Failed to reset password. Check connection.', 'error');
+  }
+};
 
 // ══════════════════════════════════════════════════════════════
 // LIVE SHIPMENT TRACKER
@@ -1983,8 +2067,8 @@ window.cancelReset = cancelReset;
 
 function executeSystemReset() {
   const pass = document.getElementById('reset-admin-pass').value;
-  // Use the same admin password defined in login logic (Inafa2026)
-  if (pass !== 'Inafa2026') {
+  // Use the same admin password defined in login logic
+  if (pass !== 'padmanabh2026848587') {
     showToast('Incorrect admin password', 'error');
     return;
   }

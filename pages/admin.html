@@ -7,15 +7,8 @@
       <h1 class="admin-login-title" data-i18n="admin.login.title">Neural Hub</h1>
       <p class="admin-login-sub" data-i18n="admin.login.subtitle">Admin Access Only</p>
     </div>
-    <div id="auth0-login-container" style="margin-bottom: 24px;">
-      <button type="button" class="btn btn-primary btn-full" id="btn-auth0-login" onclick="loginWithAuth0()" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#eb5424; border-color:#eb5424">
-        <img src="https://cdn.worldvectorlogo.com/logos/auth0.svg" alt="" style="height:18px; filter:brightness(0) invert(1)"/>
-        Login with Auth0
-      </button>
-      <div class="admin-login-divider" style="text-align:center; margin:1.5rem 0; color:var(--text-muted); font-size:0.8rem; position:relative;">
-        <span style="background:var(--bg-card); padding:0 10px; position:relative; z-index:1;">OR USE TRADITIONAL ACCESS</span>
-        <div style="position:absolute; top:50%; left:0; right:0; height:1px; background:var(--border); z-index:0;"></div>
-      </div>
+    <div style="margin-bottom: 24px;">
+      <p style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-bottom:8px;">Enter your admin credentials below</p>
     </div>
 
     <form id="admin-login-form" class="form-group" style="gap:20px">
@@ -499,7 +492,10 @@
           <h2 class="admin-page-title">Order Management</h2>
           <p class="admin-page-subtitle">All customer orders. Enter tracking IDs and generate invoices.</p>
         </div>
-        <button class="btn btn-outline" onclick="addDummyOrder()">+ Add Dummy Order</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-outline" onclick="loadAdminOrders()" style="display:flex;align-items:center;gap:6px;">🔄 Refresh Orders</button>
+          <button class="btn btn-outline" onclick="addDummyOrder()">+ Add Dummy Order</button>
+        </div>
       </div>
       <div class="data-table-wrap">
         <table class="data-table" id="admin-orders-table">
@@ -525,7 +521,7 @@
     <div id="tab-users" class="admin-tab">
       <div class="admin-page-header">
         <h2 class="admin-page-title">User Database</h2>
-        <p class="admin-page-subtitle">Registered users. Auth0 integration coming soon.</p>
+        <p class="admin-page-subtitle">Registered users with phone-based accounts.</p>
       </div>
       <div class="data-table-wrap">
         <table class="data-table" id="admin-users-table">
@@ -536,10 +532,11 @@
               <th>Registered On</th>
               <th>Total Orders</th>
               <th>Status</th>
+              <th style="text-align:right">Actions</th>
             </tr>
           </thead>
           <tbody id="admin-users-body">
-            <tr><td colspan="5" class="text-center" style="padding:40px">Loading users...</td></tr>
+            <tr><td colspan="6" class="text-center" style="padding:40px">Loading users...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1104,14 +1101,10 @@
         </div>
         <div class="sys-panel">
           <div class="sys-panel-icon">🔐</div>
-          <h3 class="sys-panel-title">Auth Security</h3>
-          <p class="sys-panel-desc">Manage Auth0 configuration and social connections.</p>
+          <h3 class="sys-panel-title">Admin Access</h3>
+          <p class="sys-panel-desc">Admin authentication uses password-based login. Contact the site administrator for credentials.</p>
           <div style="margin-top:16px; background:rgba(255,193,7,0.1); border:1px solid #ffc107; padding:12px; border-radius:var(--radius-sm); font-size:0.85rem;">
-            <strong style="color:#ffc107">Auth0 Dev Keys Notice:</strong><br>
-            If you see "Development Keys" alerts, you must go to your <strong>Auth0 Dashboard > Authentication > Social</strong>, select your connection (e.g. Google), and provide your own <strong>Client ID</strong> and <strong>Client Secret</strong>.
-          </div>
-          <div style="margin-top:12px; display:flex; gap:8px;">
-            <a href="https://manage.auth0.com" target="_blank" class="btn btn-outline btn-sm">Open Auth0 Dashboard</a>
+            <strong style="color:#ffc107">Note:</strong> The admin password is configured in the application code. Change it before deploying to production.
           </div>
         </div>
       </div>
@@ -1357,6 +1350,32 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeTeammateModal()">Cancel</button>
       <button class="btn btn-primary" id="btn-save-teammate" onclick="saveTeammate()">Save Teammate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="reset-password-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 class="modal-title">Reset User Password</h3>
+      <button class="modal-close" onclick="closeResetPasswordModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px">
+        Set a secure new password for this user. The password must be at least 6 characters.
+      </p>
+      <form id="reset-password-form" class="form-group" onsubmit="event.preventDefault()">
+        <input type="hidden" id="rp-user-phone"/>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" class="form-input" id="rp-new-pass" placeholder="Enter new password" required minlength="6"/>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeResetPasswordModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAdminResetPassword()">Update Password</button>
     </div>
   </div>
 </div>

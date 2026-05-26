@@ -204,15 +204,7 @@ async function startApp() {
     btn.addEventListener('click', () => setLang(btn.dataset.lang));
   });
 
-  // 4. Handle Auth0 Callback if present
-  if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-    if (window.Auth0Helper) {
-      await Auth0Helper.handleCallback();
-      updateAuthUI();
-    }
-  }
-
-  // 5. Initial Auth UI update
+  // Initial Auth UI update
   updateAuthUI();
 
   // Navigate to initial route
@@ -324,10 +316,28 @@ async function navigate(hash, force = false) {
     // Update nav active state
     updateNavActive(route);
 
-    // Toggle floating cart
-    const floatCart = document.getElementById('floating-cart-btn');
-    if (floatCart) {
-      floatCart.style.display = route === 'cart' ? 'none' : 'flex';
+    // Toggle main site navigation and UI elements
+    const navbar = document.getElementById('navbar');
+    const mobileNav = document.getElementById('mobile-nav');
+    const siteFooter = document.getElementById('site-footer');
+    const fabContainer = document.querySelector('.fab-container');
+
+    if (route === 'admin') {
+      if (navbar) navbar.style.display = 'none';
+      if (mobileNav) mobileNav.style.display = 'none';
+      if (siteFooter) siteFooter.style.display = 'none';
+      if (fabContainer) fabContainer.style.display = 'none';
+    } else {
+      if (navbar) navbar.style.display = '';
+      if (mobileNav) mobileNav.style.display = '';
+      if (siteFooter) siteFooter.style.display = '';
+      if (fabContainer) fabContainer.style.display = '';
+
+      // Special case for cart FAB
+      const floatCart = document.getElementById('floating-cart-btn');
+      if (floatCart) {
+        floatCart.style.display = route === 'cart' ? 'none' : 'flex';
+      }
     }
 
     // Run page init
@@ -751,35 +761,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Update Navbar UI based on Auth state
 window.updateAuthUI = async function() {
-  let user = window.getCurrentUser ? getCurrentUser() : null;
-  if (!user && window.Auth0Helper) {
-    const auth0User = await Auth0Helper.getUser();
-    if (auth0User) {
-      user = { uid: auth0User.sub, email: auth0User.email, displayName: auth0User.name };
-    }
-  }
-
+  const session = PhoneAuth.getUser();
   const navDashBtn = document.querySelector('[data-i18n="nav.dashboard"]');
   const mobileDashBtn = document.querySelector('#mobile-nav [data-i18n="nav.dashboard"]');
 
-  if (user) {
-    const name = user.displayName || user.email.split('@')[0];
-    const label = `Hi, ${name}`;
+  if (session && session.phone) {
+    const label = session.name || session.phone;
     if (navDashBtn) {
-      navDashBtn.innerHTML = `<span style="display:flex;align-items:center;gap:6px">👤 ${label}</span>`;
+      navDashBtn.innerHTML = `<span style="display:flex;align-items:center;gap:6px">👤 Hi, ${label}</span>`;
       navDashBtn.classList.add('logged-in');
     }
     if (mobileDashBtn) {
-      mobileDashBtn.innerHTML = `👤 ${label}`;
+      mobileDashBtn.innerHTML = `👤 Hi, ${label}`;
       mobileDashBtn.classList.add('logged-in');
     }
   } else {
     if (navDashBtn) {
-      navDashBtn.textContent = 'My Orders';
+      navDashBtn.textContent = 'Login / Register';
       navDashBtn.classList.remove('logged-in');
     }
     if (mobileDashBtn) {
-      mobileDashBtn.textContent = 'My Orders';
+      mobileDashBtn.textContent = 'Login / Register';
       mobileDashBtn.classList.remove('logged-in');
     }
   }
@@ -799,57 +801,52 @@ window.openUserDrawer = async function() {
   const drawer = document.getElementById('user-drawer');
   const body = document.getElementById('user-drawer-body');
   
-  // Show spinner immediately
   overlay.classList.add('active');
   drawer.classList.add('open');
   body.innerHTML = `<div class="text-center" style="padding:40px;"><div class="spinner" style="border-top-color:var(--gold);width:30px;height:30px;border-width:3px;margin:0 auto;"></div><p style="margin-top:16px;color:var(--text-muted)">Loading Profile...</p></div>`;
 
-  // Get User
-  let user = window.getCurrentUser ? getCurrentUser() : null;
-  if (!user && window.Auth0Helper) {
-    const auth0User = await Auth0Helper.getUser();
-    if (auth0User) {
-      user = { uid: auth0User.sub, email: auth0User.email, displayName: auth0User.name, isAuth0: true };
-    }
-  }
+  const session = PhoneAuth.getUser();
 
-  if (!user) {
-    // Show Login Prompt instead of auto-redirecting
+  if (!session || !session.phone) {
     body.innerHTML = `
       <div style="text-align:center; padding: 60px 20px;">
         <div style="font-size:3.5rem; margin-bottom:24px;">🔐</div>
         <h3 style="font-family:var(--font-serif); margin-bottom:12px;">Login Required</h3>
         <p style="color:var(--text-muted); margin-bottom:32px; line-height:1.6;">Sign in to view your orders, track shipments, and manage your profile.</p>
-        
-        <button class="btn btn-primary btn-full" onclick="Auth0Helper.login('#dashboard')" style="margin-bottom:12px;">
-          <span style="display:flex;align-items:center;justify-content:center;gap:8px">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-            Sign In with Secure Auth
-          </span>
+        <p style="margin-bottom:16px; font-size:0.85rem; color:var(--text-secondary)">Use your phone number and password to login.</p>
+        <button class="btn btn-primary btn-full" onclick="closeUserDrawer(); showPhoneAuthModal();" style="margin-bottom:12px;">
+          Login to Continue
         </button>
-        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:24px;">
-          Note: If you see an Auth0 'Dev Keys' warning, please configure your own Social Connection credentials in the Auth0 Dashboard for production use.
-        </p>
       </div>
     `;
     return;
   }
 
-  // Fetch orders
+  const phone = session.phone;
+  const name = session.name || phone;
+
   let orders = [];
+  // Fallback to localStorage
   try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
-  if (window.getUserOrders) {
-    try {
-      const fbOrders = await getUserOrders(user.uid);
-      if (fbOrders && fbOrders.length > 0) {
-        const fbIds = fbOrders.map(o => o.id);
-        orders = orders.filter(o => !fbIds.includes(o.id));
-        orders = [...fbOrders, ...orders];
-      }
-    } catch(e) {}
+
+  // Fetch from Firestore to get latest status (including Admin Acceptances)
+  if (typeof window.getAdminOrders === 'function') {
+    const fsOrders = await window.getAdminOrders();
+    if (fsOrders && fsOrders.length > 0) {
+      orders = fsOrders;
+      // Sync back to local storage
+      try { localStorage.setItem('pa_orders', JSON.stringify(orders)); } catch(e) {}
+    }
   }
+
+  const normPhone = phone.replace(/\D/g, '').slice(-10);
+  orders = orders.filter(o => {
+    const oPhone = String(o.phone || o.customerPhone || '').replace(/\D/g, '').slice(-10);
+    return o.userId === session.uid || oPhone === normPhone;
+  });
+
   
-  window._currentUserOrders = orders; // For modal usage
+  window._currentUserOrders = orders;
 
   let ordersHtml = `
     <div style="text-align:center; padding: 40px 20px;">
@@ -899,9 +896,8 @@ window.openUserDrawer = async function() {
   body.innerHTML = `
     <div style="margin-bottom: 24px; padding: 24px; background:linear-gradient(135deg, var(--bg-surface), #1a1a1a); border:1px solid var(--border); border-radius:var(--radius-lg);">
       <div style="font-size:0.75rem; color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:8px;">Account Profile</div>
-      <div style="font-weight:600; font-size:1.2rem; color:var(--text-primary); margin-bottom:4px;">${user.displayName || user.email.split('@')[0]}</div>
-      <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">${user.email}</div>
-      <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace; margin-bottom:20px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:4px; display:inline-block;">ID: ${user.uid}</div>
+      <div style="font-weight:600; font-size:1.2rem; color:var(--text-primary); margin-bottom:4px;">${name}</div>
+      <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">${phone}</div>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="handleSignOut()" style="flex:1">Sign Out</button>
       </div>
@@ -928,14 +924,10 @@ document.getElementById('user-drawer-close')?.addEventListener('click', closeUse
 
 // ── EXTRACTED USER DASHBOARD FUNCTIONS ─────────────────────────
 window.handleSignOut = async function() {
-  const user = await Auth0Helper.getUser();
-  if (user) {
-    await Auth0Helper.logout('#');
-  } else {
-    if (window.signOut) await window.signOut();
-    navigate('home');
-    showToast('Signed out successfully');
-  }
+  await PhoneAuth.logout();
+  closeUserDrawer();
+  navigate('home');
+  showToast('Signed out successfully');
   if (window.updateAuthUI) updateAuthUI();
 };
 
@@ -1070,14 +1062,184 @@ window.viewOrderDetails = function(orderId) {
 window.printInvoice = function() {
   const printContent = document.getElementById('print-area').innerHTML;
   const originalContent = document.body.innerHTML;
-  document.body.innerHTML = '<div style="padding:40px; color:black; background:white;">' + printContent.replace(/<button.*?>.*?<\/button>/g, '') + '</div>';
+  document.body.innerHTML = '<div class="invoice-print-wrapper" style="padding:40px; color:black; background:white;">' + printContent.replace(/<button.*?>.*?<\/button>/g, '') + '</div>';
   window.print();
   document.body.innerHTML = originalContent;
   window.location.reload();
 };
 
+// ── Universal Phone Auth Modal ───────────────────────────────
+window.showPhoneAuthModal = function() {
+  const existing = document.getElementById('phone-auth-overlay');
+  if (existing) existing.remove();
 
+  const overlay = document.createElement('div');
+  overlay.id = 'phone-auth-overlay';
+  overlay.className = 'modal-overlay active';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3 class="modal-title" id="phone-auth-title">Login / Register</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted);margin-bottom:20px;font-size:0.9rem;">
+          Please login or create a new account to view your orders and checkout faster.
+        </p>
 
+        <!-- Login/Register Tabs -->
+        <div style="display:flex;gap:8px;margin-bottom:20px">
+          <button class="btn btn-outline btn-sm" id="pa-login-tab" onclick="switchPaAuthTab('login')" style="flex:1;border-color:var(--gold);color:var(--gold)">Login</button>
+          <button class="btn btn-outline btn-sm" id="pa-register-tab" onclick="switchPaAuthTab('register')" style="flex:1">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="pa-login-form">
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-input" id="pa-login-phone" placeholder="10-digit number" pattern="[0-9]{10}" required style="width:100%">
+          </div>
+          <div class="form-group" style="margin-bottom:20px">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="pa-login-pass" placeholder="Enter password" required style="width:100%">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="handlePaLogin()" id="pa-login-btn">Login</button>
+          <div id="pa-login-error" style="color:var(--error);font-size:0.85rem;margin-top:12px;display:none"></div>
+        </div>
+
+        <!-- Register Form -->
+        <div id="pa-register-form" style="display:none">
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-input" id="pa-reg-name" placeholder="Your name" required style="width:100%">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-input" id="pa-reg-phone" placeholder="10-digit number" pattern="[0-9]{10}" required style="width:100%">
+          </div>
+          <div class="form-group" style="margin-bottom:20px">
+            <label class="form-label">Create Password</label>
+            <input type="password" class="form-input" id="pa-reg-pass" placeholder="Min 6 characters" minlength="6" required style="width:100%">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="handlePaRegister()" id="pa-reg-btn">Create Account</button>
+          <div id="pa-reg-error" style="color:var(--error);font-size:0.85rem;margin-top:12px;display:none"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+};
+
+window.switchPaAuthTab = function(tab) {
+  const loginTab = document.getElementById('pa-login-tab');
+  const regTab = document.getElementById('pa-register-tab');
+  const loginForm = document.getElementById('pa-login-form');
+  const regForm = document.getElementById('pa-register-form');
+
+  if (tab === 'login') {
+    loginTab.style.borderColor = 'var(--gold)';
+    loginTab.style.color = 'var(--gold)';
+    regTab.style.borderColor = 'var(--border)';
+    regTab.style.color = 'var(--text-primary)';
+    loginForm.style.display = 'block';
+    regForm.style.display = 'none';
+  } else {
+    regTab.style.borderColor = 'var(--gold)';
+    regTab.style.color = 'var(--gold)';
+    loginTab.style.borderColor = 'var(--border)';
+    loginTab.style.color = 'var(--text-primary)';
+    loginForm.style.display = 'none';
+    regForm.style.display = 'block';
+  }
+  document.getElementById('pa-login-error').style.display = 'none';
+  document.getElementById('pa-reg-error').style.display = 'none';
+};
+
+window.handlePaLogin = async function() {
+  const phone = document.getElementById('pa-login-phone').value.trim();
+  const password = document.getElementById('pa-login-pass').value;
+  const btn = document.getElementById('pa-login-btn');
+  const errEl = document.getElementById('pa-login-error');
+
+  if (!phone || phone.length !== 10) {
+    errEl.textContent = 'Enter a valid 10-digit phone number';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!password || password.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Logging in...';
+  errEl.style.display = 'none';
+
+  try {
+    await PhoneAuth.login(phone, password);
+    document.getElementById('phone-auth-overlay')?.remove();
+    showToast('Logged in successfully!', 'success');
+    
+    const checkoutForm = document.getElementById('checkout-form');
+    if (checkoutForm) {
+      checkoutForm.requestSubmit();
+    } else {
+      openUserDrawer();
+    }
+  } catch (e) {
+    errEl.textContent = e.message || 'Login failed. Check your credentials.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Login';
+  }
+};
+
+window.handlePaRegister = async function() {
+  const name = document.getElementById('pa-reg-name').value.trim();
+  const phone = document.getElementById('pa-reg-phone').value.trim();
+  const password = document.getElementById('pa-reg-pass').value;
+  const btn = document.getElementById('pa-reg-btn');
+  const errEl = document.getElementById('pa-reg-error');
+
+  if (!name) {
+    errEl.textContent = 'Please enter your name';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!phone || phone.length !== 10) {
+    errEl.textContent = 'Enter a valid 10-digit phone number';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!password || password.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating account...';
+  errEl.style.display = 'none';
+
+  try {
+    await PhoneAuth.register(phone, name, password);
+    document.getElementById('phone-auth-overlay')?.remove();
+    showToast('Account created! Welcome ' + name, 'success');
+    
+    const checkoutForm = document.getElementById('checkout-form');
+    if (checkoutForm) {
+      checkoutForm.requestSubmit();
+    } else {
+      openUserDrawer();
+    }
+  } catch (e) {
+    errEl.textContent = e.message || 'Registration failed. Please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+};
 
 }
 

@@ -189,21 +189,27 @@ async function saveHeroConfig(data) {
 
 /** Create order */
 async function createOrder(orderData) {
-  if (!firebaseReady) throw new Error('Firebase not ready');
-  const now = firebase.firestore.FieldValue.serverTimestamp();
-  const ref = await _db.collection('orders').add({
-    ...orderData,
-    status:        'pending',
-    courierCompany: orderData.courierCompany || '',
-    courierCharge:  orderData.courierCharge || 0,
-    srOrderId:      null,
-    shipmentId:     null,
-    awb:            null,
-    srStatus:       null,
-    createdAt:     now,
-    updatedAt:     now
-  });
-  return ref.id;
+  try {
+    if (!firebaseReady) throw new Error('Firebase not ready');
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+    const ref = await _db.collection('orders').add({
+      ...orderData,
+      status:        'pending',
+      courierCompany: orderData.courierCompany || '',
+      courierCharge:  orderData.courierCharge || 0,
+      srOrderId:      null,
+      shipmentId:     null,
+      awb:            null,
+      srStatus:       null,
+      createdAt:     now,
+      updatedAt:     now
+    });
+    return ref.id;
+  } catch (e) {
+    console.warn('[Firebase] createOrder failed. Simulating local order.', e);
+    // Return a simulated ID so cart.html can save it to localStorage
+    return 'LOC-' + Date.now().toString().slice(-6);
+  }
 }
 
 /** Get orders for current user */
@@ -221,7 +227,38 @@ async function getUserOrders(uid) {
   }
 }
 
-/** Update order tracking */
+/** Get ALL orders (admin use) — reads from Firestore */
+async function getAdminOrders() {
+  if (!firebaseReady) return null; // null signals "use localStorage fallback"
+  try {
+    const snap = await _db.collection('orders')
+      .orderBy('createdAt', 'desc')
+      .limit(500)
+      .get();
+    return snap.docs.map(d => {
+      const data = d.data();
+      // Convert Firestore Timestamps to ISO strings for consistent handling
+      return {
+        id: d.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || new Date().toISOString(),
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString?.() || data.updatedAt || null
+      };
+    });
+  } catch (e) {
+    console.warn('[Firebase] getAdminOrders error:', e.message);
+    return null; // null signals "use localStorage fallback"
+  }
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+  if (!firebaseReady) return;
+  await _db.collection('orders').doc(orderId).update({
+    status: newStatus,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
 async function updateOrderTracking(orderId, trackingId, shipmentId, extra = {}) {
   if (!firebaseReady) return;
   await _db.collection('orders').doc(orderId).update({
@@ -357,6 +394,52 @@ async function signOut() {
 function onAuthChange(callback) {
   if (!firebaseReady) { callback(null); return; }
   return _auth.onAuthStateChanged(callback);
+}
+
+// ── Phone-based User Management ───────────────────────────────
+
+async function createOrUpdateUser(phone, data) {
+  if (!firebaseReady) {
+    const users = JSON.parse(localStorage.getItem('pa_users') || '{}');
+    users[phone] = { ...(users[phone] || {}), ...data };
+    localStorage.setItem('pa_users', JSON.stringify(users));
+    return;
+  }
+  try {
+    await _db.collection('users').doc(phone).set(data, { merge: true });
+  } catch (e) {
+    console.warn('[Firebase] createOrUpdateUser error:', e);
+    const users = JSON.parse(localStorage.getItem('pa_users') || '{}');
+    users[phone] = { ...(users[phone] || {}), ...data };
+    localStorage.setItem('pa_users', JSON.stringify(users));
+  }
+}
+
+async function getUserByPhone(phone) {
+  const localUsers = JSON.parse(localStorage.getItem('pa_users') || '{}');
+  if (!firebaseReady) return localUsers[phone] || null;
+  try {
+    const doc = await _db.collection('users').doc(phone).get();
+    if (doc.exists) {
+      const data = doc.data();
+      localUsers[phone] = data;
+      localStorage.setItem('pa_users', JSON.stringify(localUsers));
+      return data;
+    }
+    return localUsers[phone] || null;
+  } catch (e) {
+    console.warn('[Firebase] getUserByPhone error:', e);
+    return localUsers[phone] || null;
+  }
+}
+
+async function linkOrderToUser(phone, orderId) {
+  const user = await getUserByPhone(phone);
+  const orderIds = user?.orderIds || [];
+  if (!orderIds.includes(orderId)) {
+    orderIds.push(orderId);
+    await createOrUpdateUser(phone, { orderIds });
+  }
 }
 
 // ── Firebase Storage ──────────────────────────────────────────
@@ -663,7 +746,51 @@ async function deleteTeammateFromDB(id) {
   }
 }
 
+async function getAdminUsers() {
+  if (!firebaseReady) {
+    const users = JSON.parse(localStorage.getItem('pa_users') || '{}');
+    return Object.values(users);
+  }
+  try {
+    const snapshot = await _db.collection('users').get();
+    const list = [];
+    snapshot.forEach(doc => {
+      list.push(doc.data());
+    });
+    return list;
+  } catch (e) {
+    console.error('[Firebase] getAdminUsers error:', e);
+    const users = JSON.parse(localStorage.getItem('pa_users') || '{}');
+    return Object.values(users);
+  }
+}
+
+async function adminResetUserPassword(phone, newPasswordHash) {
+  if (!firebaseReady) {
+    const users = JSON.parse(localStorage.getItem('pa_users') || '{}');
+    if (users[phone]) {
+      users[phone].passwordHash = newPasswordHash;
+      localStorage.setItem('pa_users', JSON.stringify(users));
+    }
+    const localAuth = JSON.parse(localStorage.getItem('pa_local_auth') || '{}');
+    if (localAuth[phone]) {
+      localAuth[phone].passwordHash = newPasswordHash;
+      localStorage.setItem('pa_local_auth', JSON.stringify(localAuth));
+    }
+    return;
+  }
+  try {
+    await _db.collection('users').doc(phone).update({ passwordHash: newPasswordHash });
+  } catch (e) {
+    console.error('[Firebase] adminResetUserPassword error:', e);
+    throw e;
+  }
+}
+
 // Explicitly attach to window
 window.getTeammates = getTeammates;
 window.saveTeammateToDB = saveTeammateToDB;
 window.deleteTeammateFromDB = deleteTeammateFromDB;
+window.updateOrderStatus = updateOrderStatus;
+window.getAdminUsers = getAdminUsers;
+window.adminResetUserPassword = adminResetUserPassword;

@@ -168,8 +168,11 @@ const Store = (() => {
     // Already a data URI or Firebase Storage URL — use as-is
     if (url.startsWith('data:')) return url;
     if (url.includes('firebasestorage.googleapis.com')) return url;
-    // Already a working thumbnail URL — use as-is
-    if (url.includes('drive.google.com/thumbnail')) return url;
+    // Fix blurry thumbnail links stored in database by forcing sz=w1000
+    if (url.includes('drive.google.com/thumbnail')) {
+      return url.replace(/&sz=\w*\d+/, '') + '&sz=w1000';
+    }
+
     if (url.includes('drive.usercontent.google.com/download')) return url;
 
     // Extract Google Drive file ID from various link formats
@@ -183,9 +186,8 @@ const Store = (() => {
     for (let reg of driveRegex) {
       const match = url.match(reg);
       if (match && match[1]) {
-        // Use thumbnail API — more reliable than lh3.googleusercontent.com
-        // sz=800 gives good quality without CORS/hotlink blocks
-        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=800`;
+        // Use uc API for full resolution image display
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
       }
     }
 
@@ -230,8 +232,15 @@ const Store = (() => {
     const tax      = Math.round(subtotal * 0.18);
     const total    = subtotal + shipping + tax;
 
+    const session = PhoneAuth.getUser();
+    const uid = userId || session?.phone || 'guest';
+
     return {
-      userId: userId || 'guest',
+      userId: uid,
+      phone: session?.phone || address?.phone || '',
+      customerName:  address?.name  || session?.name  || '',
+      customerPhone: address?.phone || session?.phone || '',
+      customerEmail: address?.email || '',
       items,
       address,
       subtotal,
