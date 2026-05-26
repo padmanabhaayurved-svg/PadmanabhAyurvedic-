@@ -794,3 +794,7 @@ window.deleteTeammateFromDB = deleteTeammateFromDB;
 window.updateOrderStatus = updateOrderStatus;
 window.getAdminUsers = getAdminUsers;
 window.adminResetUserPassword = adminResetUserPassword;
+window.getUserByPhone = getUserByPhone;
+window.createOrUpdateUser = createOrUpdateUser;
+window.linkOrderToUser = linkOrderToUser;
+

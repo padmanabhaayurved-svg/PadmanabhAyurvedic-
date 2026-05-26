@@ -598,29 +598,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatBody = document.getElementById('chat-body');
 
   let chatState = 'INIT';
-  let chatData = { name: '', phone: '', product: '', address: '', payment: '' };
+  let chatData = { name: '', phone: '', userId: '', product: '', address: '', payment: '' };
 
   function toggleChat() {
     chatWindow.classList.toggle('open');
     if (chatWindow.classList.contains('open')) {
       chatInput.focus();
-      // On first open, try to get lead data
+      // On first open, try to get lead data or authenticated user session
       if (chatState === 'INIT') {
-        try {
-          const leads = JSON.parse(localStorage.getItem('pa_leads') || '[]');
-          if (leads.length > 0) {
-            const lead = leads[0];
-            chatData.name = lead.name;
-            chatData.phone = lead.phone;
-          }
-        } catch(e) {}
+        if (window.PhoneAuth && PhoneAuth.isLoggedIn()) {
+          const session = PhoneAuth.getUser();
+          chatData.name = session.name || session.phone;
+          chatData.phone = session.phone;
+          chatData.userId = session.uid;
+        } else {
+          try {
+            const leads = JSON.parse(localStorage.getItem('pa_leads') || '[]');
+            if (leads.length > 0) {
+              const lead = leads[0];
+              chatData.name = lead.name;
+              chatData.phone = lead.phone;
+            }
+          } catch(e) {}
+        }
         
         chatBody.innerHTML = '';
-        if (chatData.name) {
+        if (chatData.userId) {
           chatState = 'ASK_PRODUCT';
-          appendBotMessage(`Namaste ${chatData.name}! What product or service are you looking for today?`, [
+          appendBotMessage(`Namaste ${chatData.name}! Welcome back. What product or service are you looking for today?`, [
             'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder', 'Consultation'
           ]);
+        } else if (chatData.name) {
+          chatState = 'ASK_PHONE';
+          appendBotMessage(`Namaste ${chatData.name}! May I know your 10-digit WhatsApp number to verify your account?`);
         } else {
           chatState = 'ASK_NAME';
           appendBotMessage(`Namaste! Welcome to Padmanabh Ayurvedics. May I know your name?`);
@@ -673,20 +683,114 @@ document.addEventListener('DOMContentLoaded', () => {
         case 'ASK_NAME':
           chatData.name = text;
           chatState = 'ASK_PHONE';
-          appendBotMessage(`Thank you, ${chatData.name}. Could you please share your WhatsApp number?`);
+          appendBotMessage(`Thank you, ${chatData.name}. Could you please share your 10-digit WhatsApp number?`);
           break;
-        case 'ASK_PHONE':
-          chatData.phone = text;
-          chatState = 'ASK_PRODUCT';
-          appendBotMessage(`Got it! What product or service are you looking for today?`, [
-            'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
-            'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
-            'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
-          ]);
+        case 'ASK_PHONE': {
+          const cleanPhone = text.replace(/\D/g, '');
+          if (cleanPhone.length !== 10) {
+            appendBotMessage(`⚠️ Please enter a valid 10-digit mobile number.`);
+            return;
+          }
+          chatData.phone = cleanPhone;
+
+          appendBotMessage(`🔍 Checking your details...`);
+          try {
+            const existingUser = window.getUserByPhone ? await window.getUserByPhone(cleanPhone) : null;
+            
+            // Clean loader
+            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
+            for (let l of loaders) {
+              if (l.textContent.includes('Checking your details')) {
+                l.remove();
+              }
+            }
+
+            if (existingUser) {
+              chatState = 'ASK_LOGIN_PASSWORD';
+              appendBotMessage(`🌿 Welcome back, ${existingUser.name || 'Member'}! You already have an account with us. Please enter your password to login and secure your order:`);
+            } else {
+              chatState = 'ASK_CREATE_PASSWORD';
+              appendBotMessage(`✨ Welcome to Padmanabh Ayurvedics! Since this is your first time, let's secure your account. Please set a password (min 6 characters) so you can track order history:`);
+            }
+          } catch(e) {
+            console.warn('Error checking user by phone:', e);
+            chatState = 'ASK_PRODUCT';
+            appendBotMessage(`Got it! What product or service are you looking for today?`, [
+              'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
+              'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
+              'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
+            ]);
+          }
           break;
+        }
+        case 'ASK_LOGIN_PASSWORD': {
+          appendBotMessage(`🔐 Logging in...`);
+          try {
+            const session = await PhoneAuth.login(chatData.phone, text);
+            
+            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
+            for (let l of loaders) {
+              if (l.textContent.includes('Logging in')) {
+                l.remove();
+              }
+            }
+
+            chatData.userId = session.uid;
+            chatData.name = session.name || chatData.name;
+            chatState = 'ASK_PRODUCT';
+            appendBotMessage(`✅ Logged in successfully! Welcome, ${chatData.name}. What product or service are you looking for today?`, [
+              'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
+              'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
+              'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
+            ]);
+          } catch(e) {
+            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
+            for (let l of loaders) {
+              if (l.textContent.includes('Logging in')) {
+                l.remove();
+              }
+            }
+            appendBotMessage(`❌ Incorrect password. Please try again:`);
+          }
+          break;
+        }
+        case 'ASK_CREATE_PASSWORD': {
+          if (text.length < 6) {
+            appendBotMessage(`⚠️ Password must be at least 6 characters. Please try again:`);
+            return;
+          }
+          appendBotMessage(`🌿 Creating your account...`);
+          try {
+            const session = await PhoneAuth.register(chatData.phone, chatData.name, text);
+
+            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
+            for (let l of loaders) {
+              if (l.textContent.includes('Creating your account')) {
+                l.remove();
+              }
+            }
+
+            chatData.userId = session.uid;
+            chatState = 'ASK_PRODUCT';
+            appendBotMessage(`🎉 Account created successfully! What product or service are you looking for today?`, [
+              'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
+              'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
+              'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
+            ]);
+          } catch(e) {
+            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
+            for (let l of loaders) {
+              if (l.textContent.includes('Creating your account')) {
+                l.remove();
+              }
+            }
+            appendBotMessage(`❌ Account creation failed: ${e.message}. Please try again:`);
+          }
+          break;
+        }
         case 'ASK_PRODUCT':
           chatData.product = text;
-          if (text === 'Consultation') {
+          if (text === 'Consultation' || text === 'Consultation / Ayurvedic Therapy') {
             chatState = 'CLOSE_DEAL';
             appendBotMessage(`We'll schedule your consultation shortly. Our expert will contact you on ${chatData.phone}. Is there anything else?`, ['No, thanks', 'Shop Products']);
           } else {
@@ -728,7 +832,7 @@ document.addEventListener('DOMContentLoaded', () => {
               subtotal: cartTotal,
               shipping,
               total: cartTotal + shipping,
-              userId: chatData.phone // Using phone as temporary ID if not logged in
+              userId: chatData.userId || PhoneAuth.getUser()?.uid || chatData.phone
             };
 
             console.log('[Chatbot] Creating order in Firebase:', orderData);
@@ -737,6 +841,40 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.createOrder) {
               orderId = await createOrder(orderData);
             }
+
+            // Link order to user in database
+            if (window.linkOrderToUser) {
+              await linkOrderToUser(chatData.phone, orderId);
+            }
+
+            // Save order locally to maintain local history in User Drawer
+            const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+            const localOrder = {
+              id: orderId,
+              userId: orderData.userId,
+              customerName: chatData.name,
+              customerPhone: chatData.phone,
+              email: chatData.phone + '@padmanabh.site',
+              address: orderData.address,
+              items: orderData.items,
+              subtotal: orderData.subtotal,
+              shipping: orderData.shipping,
+              tax: 0,
+              total: orderData.total,
+              payment: orderData.paymentMethod.includes('COD') ? 'COD' : 'Online',
+              paymentId: orderData.paymentMethod.includes('COD') ? 'COD_' + Date.now() : 'Razorpay_' + Date.now(),
+              status: 'pending',
+              courierCompany: 'Standard Shipping',
+              courierCharge: orderData.shipping,
+              createdAt: new Date().toISOString(),
+              srStatus: null,
+              trackingId: null,
+              awb: null,
+              srOrderId: null,
+              shipmentId: null
+            };
+            localOrders.push(localOrder);
+            localStorage.setItem('pa_orders', JSON.stringify(localOrders));
 
             appendBotMessage(`✅ Order #${orderId.slice(-6).toUpperCase()} confirmed! Payment: ${text}. Delivering to: ${chatData.address}. We'll send updates to ${chatData.phone}. Thank you for choosing Padmanabh Ayurvedics! 🌿`);
           } catch(e) {
