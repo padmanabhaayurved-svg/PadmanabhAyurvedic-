@@ -191,30 +191,70 @@ async function loadAdminData() {
   loadHeroConfig();
   loadContentConfig();
   loadLeads();
-  loadAdminOrders();
-  loadAdminUsers();
+  // ── Real-time Firestore order listener & sound alert ─────────
+  let isFirstLoad = true;
+  if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+    const db = firebase.firestore();
+    db.collection('orders')
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .onSnapshot(snapshot => {
+        const firestoreOrders = snapshot.docs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || new Date().toISOString(),
+            updatedAt: data.updatedAt?.toDate?.()?.toISOString?.() || data.updatedAt || null
+          };
+        });
 
-  // ── Real-time cross-tab order sync ──────────────────────────
-  // The browser fires 'storage' events in OTHER tabs when localStorage changes.
-  // This ensures the admin auto-updates immediately when a customer places an order.
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'pa_orders') {
-      console.log('[Admin] New order detected in another tab — refreshing...');
-      loadAdminOrders();
-      loadAdminUsers();
-      renderOrderAnalytics(30);
-      loadShipmentTracker();
-      // Flash the Orders tab badge to alert admin
-      const ordersTab = document.querySelector('.sidebar-item[data-target="tab-orders"]');
-      if (ordersTab) {
-        ordersTab.style.boxShadow = '0 0 0 3px var(--gold)';
-        ordersTab.title = '🔔 New order received!';
-        setTimeout(() => {
-          ordersTab.style.boxShadow = '';
-        }, 4000);
-      }
-    }
-  });
+        // Save to local storage so other functions pull it
+        try { localStorage.setItem('pa_orders', JSON.stringify(firestoreOrders)); } catch(e) {}
+
+        // Reload views
+        loadAdminOrders();
+        loadAdminUsers();
+        renderOrderAnalytics(30);
+        loadShipmentTracker();
+
+        if (isFirstLoad) {
+          isFirstLoad = false;
+        } else {
+          // Play sound on subsequent document additions
+          let hasNewOrder = false;
+          snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+              hasNewOrder = true;
+            }
+          });
+
+          if (hasNewOrder) {
+            console.log('[Admin] New order received! Playing notification sound...');
+            const audio = new Audio('/assets/notification.mp3');
+            audio.play().catch(e => {
+              console.warn('[Admin] Audio playback blocked by browser interaction policy. Click anywhere on the dashboard to enable audio.', e);
+            });
+            
+            // Flash the orders tab
+            const ordersTab = document.querySelector('.sidebar-item[data-target="tab-orders"]');
+            if (ordersTab) {
+              ordersTab.style.boxShadow = '0 0 0 3px var(--gold)';
+              ordersTab.title = '🔔 New order received!';
+              setTimeout(() => {
+                ordersTab.style.boxShadow = '';
+              }, 4000);
+            }
+          }
+        }
+      }, err => {
+        console.warn('[Admin] Live orders snapshot failed:', err);
+      });
+  } else {
+    // Local Fallback if offline
+    loadAdminOrders();
+    loadAdminUsers();
+  }
 }
 
 // ── Order Analytics ────────────────────────────────────────────
