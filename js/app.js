@@ -1382,3 +1382,92 @@ window.handlePaRegister = async function() {
 }
 
 document.addEventListener('DOMContentLoaded', runInitializationSequence);
+
+// ── Background Devotional Violin BGM ─────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const bgm = new Audio('assets/bgm.mp3');
+  bgm.loop = true;
+  bgm.volume = 0.5; // Premium balanced volume
+
+  const musicBtn = document.getElementById('music-btn');
+  const musicIcon = document.getElementById('music-icon');
+  
+  if (!musicBtn) return;
+
+  const soundOnPath = musicIcon.querySelector('.sound-on');
+  const soundOffPath = musicIcon.querySelector('.sound-off');
+
+  let isMuted = localStorage.getItem('pa_bgm_muted') === 'true';
+
+  function updateMusicUI() {
+    if (isMuted) {
+      musicBtn.classList.remove('playing');
+      musicBtn.classList.add('muted');
+      if (soundOnPath) soundOnPath.style.display = 'none';
+      if (soundOffPath) soundOffPath.style.display = 'block';
+    } else {
+      musicBtn.classList.add('playing');
+      musicBtn.classList.remove('muted');
+      if (soundOnPath) soundOnPath.style.display = 'block';
+      if (soundOffPath) soundOffPath.style.display = 'none';
+    }
+  }
+
+  // Handle Autoplay & Interaction
+  async function attemptPlay() {
+    if (isMuted) return;
+    try {
+      await bgm.play();
+      console.log('[BGM] Autoplay successful');
+      updateMusicUI();
+    } catch(err) {
+      console.log('[BGM] Autoplay blocked, waiting for interaction');
+      // Wait for first user interaction
+      const startBGMOnInteraction = async () => {
+        try {
+          if (!isMuted && bgm.paused) {
+            await bgm.play();
+            updateMusicUI();
+            console.log('[BGM] Started on user interaction');
+          }
+        } catch(e) {
+          console.warn('[BGM] Failed to start on interaction', e);
+        }
+        // Remove listeners after first trigger
+        ['click', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+          document.removeEventListener(evt, startBGMOnInteraction);
+        });
+      };
+      
+      ['click', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+        document.addEventListener(evt, startBGMOnInteraction, { passive: true });
+      });
+    }
+  }
+
+  // Toggle state
+  musicBtn.addEventListener('click', async () => {
+    if (bgm.paused) {
+      isMuted = false;
+      localStorage.setItem('pa_bgm_muted', 'false');
+      try {
+        await bgm.play();
+        showToast('Devotional BGM playing 🎵', 'info');
+      } catch(e) {
+        console.error(e);
+      }
+    } else {
+      isMuted = true;
+      localStorage.setItem('pa_bgm_muted', 'true');
+      bgm.pause();
+      showToast('BGM muted 🔇', 'info');
+    }
+    updateMusicUI();
+  });
+
+  // Initial UI state
+  updateMusicUI();
+
+  // Run autoplay try
+  setTimeout(attemptPlay, 1000);
+});

@@ -1141,3 +1141,34 @@ img { transition: opacity 0.3s ease-in-out; }
     bottom: 96px;
   }
 }
+
+/* Floating Music Button Styles */
+.fab.music-fab {
+  background: var(--bg-surface);
+  color: var(--gold);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 4px 16px rgba(245,165,0,0.15);
+}
+
+.fab.music-fab:hover {
+  box-shadow: 0 6px 24px rgba(245,165,0,0.3);
+}
+
+.fab.music-fab.playing {
+  animation: fab-pulse 2.5s infinite;
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.fab.music-fab.muted {
+  color: var(--text-muted);
+  border-color: var(--border);
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.fab.music-fab.muted:hover {
+  opacity: 1;
+  border-color: var(--border-gold);
+  color: var(--gold);
+}
