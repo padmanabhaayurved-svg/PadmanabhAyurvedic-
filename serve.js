@@ -38,14 +38,16 @@ http.createServer(async (req, res) => {
 
   // Mock API routing for local testing
   if (cleanUrl.startsWith('/api/')) {
-    if (cleanUrl === '/api/razorpay') {
+    if (cleanUrl === '/api/razorpay' || cleanUrl === '/api/razorpay-webhook') {
       try {
-        const handler = require('./api/razorpay.js');
+        const handlerName = cleanUrl === '/api/razorpay' ? './api/razorpay.js' : './api/razorpay-webhook.js';
+        const handler = require(handlerName);
         // Parse JSON body manually (since we don't have express.json())
         if (req.method === 'POST') {
           let body = '';
           req.on('data', chunk => body += chunk.toString());
           req.on('end', async () => {
+            req.rawBody = body; // Crucial for webhook signature verification
             req.body = body ? JSON.parse(body) : {};
             await handler(req, enhanceResponse(res));
           });

@@ -19,6 +19,14 @@
     ],
     "rewrites": [
       {
+        "source": "/api/razorpay-webhook",
+        "function": "razorpayWebhook"
+      },
+      {
+        "source": "/api/razorpay",
+        "function": "createRazorpayOrder"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

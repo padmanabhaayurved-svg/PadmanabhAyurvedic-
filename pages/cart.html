@@ -351,6 +351,7 @@ function renderCartPage() {
           try {
             orderPayload.payment = 'Razorpay';
             orderPayload.paymentId = res.paymentId;
+            orderPayload.razorpayOrderId = res.orderId;
             const orderId = await createOrder(orderPayload);
             await processOrderAfterCreation(orderId, address, orderPayload, res);
           } catch (err) {

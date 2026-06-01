@@ -20,6 +20,7 @@
   "homepage": "https://github.com/padmanabhaayurved-svg/PadmanabhAyurvedic-#readme",
   "dependencies": {
     "dotenv": "^17.4.2",
+    "firebase-admin": "^13.10.0",
     "razorpay": "^2.9.6"
   }
 }
