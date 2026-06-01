@@ -1,10 +1,7 @@
 /* ============================================================
    PADMANABH AYURVEDICS — RAZORPAY INTEGRATION
    Standard Checkout · UPI, Cards, Net Banking, Wallets
-   TODO: Replace key_id with your real Razorpay key.
    ============================================================ */
-
-const Razorpay_KEY_ID = 'rzp_test_PLACEHOLDER_YOUR_KEY'; // TODO: replace
 
 const RazorpayHelper = (() => {
 
@@ -36,14 +33,27 @@ const RazorpayHelper = (() => {
     try {
       await loadScript();
 
+      // 1. Fetch Razorpay order ID securely from the backend
+      const res = await fetch('/api/razorpay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: orderData.amount })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to generate order ID');
+      }
+
+      // 2. Open Razorpay Checkout using the returned order ID
       const options = {
-        key:         Razorpay_KEY_ID,
-        amount:      orderData.amount * 100, // in paise
-        currency:    'INR',
+        key:         data.keyId,
+        amount:      data.amount,
+        currency:    data.currency,
         name:        'Padmanabh Ayurvedics',
         description: 'Ayurvedic Wellness Order',
         image:       '', // TODO: add logo URL
-        order_id:    orderData.razorpayOrderId || '', // from your backend if needed
+        order_id:    data.orderId,
         prefill: {
           name:    orderData.customerName || '',
           email:   orderData.email || '',
@@ -55,7 +65,7 @@ const RazorpayHelper = (() => {
         },
         modal: {
           ondismiss: () => {
-            showToast('Payment cancelled.', 'warning');
+            if (window.showToast) window.showToast('Payment cancelled.', 'warning');
           }
         },
         handler: function(response) {
@@ -71,14 +81,14 @@ const RazorpayHelper = (() => {
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function(response) {
         console.error('[Razorpay] Payment failed:', response.error);
-        showToast('Payment failed: ' + response.error.description, 'error');
+        if (window.showToast) window.showToast('Payment failed: ' + response.error.description, 'error');
         if (onFailure) onFailure(response.error);
       });
 
       rzp.open();
     } catch (e) {
       console.error('[Razorpay] Error:', e);
-      showToast('Payment service unavailable. Try again.', 'error');
+      if (window.showToast) window.showToast('Payment service unavailable. Try again.', 'error');
       if (onFailure) onFailure(e);
     }
   }

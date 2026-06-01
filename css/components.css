@@ -905,6 +905,69 @@
   border: 2px solid var(--bg-body);
 }
 
+/* ── Chatbot Rich Cards ─────────────────────────────────────── */
+.chat-product-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 8px 0;
+  display: flex;
+  gap: 12px;
+  align-items: start;
+}
+.chat-product-card img {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.chat-product-card .info { flex: 1; min-width: 0; }
+.chat-product-card .pname { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; }
+.chat-product-card .pprice { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.chat-product-card .pprice .current { color: var(--gold); font-weight: 700; }
+.chat-product-card .pprice .old { color: var(--text-muted); font-size: 0.8rem; text-decoration: line-through; }
+.chat-product-card .pprice .badge { background: rgba(34,197,94,0.15); color: #22c34e; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+.chat-product-card .pdesc { font-size: 0.8rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0 0 8px; }
+.chat-product-card .pactions { display: flex; gap: 6px; margin-top: 8px; }
+
+.chat-order-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 8px 0;
+}
+.chat-order-card .orow { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.chat-order-card .oid { font-weight: 600; }
+.chat-order-card .ometa { font-size: 0.85rem; color: var(--text-muted); }
+.chat-order-card .oawb { font-size: 0.8rem; margin-top: 6px; font-family: monospace; }
+
+.chat-detail-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px 0;
+}
+.chat-detail-card .dtitle { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+.chat-detail-card .dcat { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
+.chat-detail-card .drow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.chat-detail-card .dlabel { color: var(--text-muted); }
+.chat-detail-card .dvalue { font-weight: 500; text-align: right; }
+
+.chat-tracking-timeline { position: relative; padding-left: 24px; margin: 12px 0; }
+.chat-tracking-timeline .titem { border-left: 2px solid var(--border); padding: 0 0 16px 16px; position: relative; }
+.chat-tracking-timeline .titem:last-child { border-left-color: var(--gold); }
+.chat-tracking-timeline .titem::before { content: ''; width: 10px; height: 10px; background: var(--gold); border-radius: 50%; position: absolute; left: -6px; top: 4px; }
+.chat-tracking-timeline .tdate { font-size: 0.7rem; color: var(--text-muted); }
+.chat-tracking-timeline .tact { font-size: 0.85rem; font-weight: 500; margin: 2px 0; }
+.chat-tracking-timeline .tloc { font-size: 0.75rem; color: var(--text-secondary); }
+
+.chat-loading-dots::after { content: '...'; animation: chat-dots 1.5s steps(4, end) infinite; }
+@keyframes chat-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
 /* Pulse animation for chatbot */
 @keyframes fab-pulse {
   0% { box-shadow: 0 0 0 0 rgba(100,164,53, 0.4); }

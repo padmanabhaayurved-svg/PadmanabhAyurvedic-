@@ -277,6 +277,9 @@ const Store = (() => {
   };
 })();
 
+window.Store = Store;
+
+
 window.renderProductCard = function(p) {
   const savings = Store.getSavings(p.price, p.mrp);
   const lang = localStorage.getItem('pa_lang') || 'en';

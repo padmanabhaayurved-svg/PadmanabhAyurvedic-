@@ -30,6 +30,7 @@ function initFirebase() {
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
     _db      = firebase.firestore();
+    window.pa_db = _db; // Expose globally for app.js, admin.js, about.html, home.html
     _auth    = firebase.auth();
     _storage = firebase.storage();
     firebaseReady = true;
@@ -37,6 +38,20 @@ function initFirebase() {
   } catch (e) {
     console.warn('[Firebase] Init failed — running in offline mode:', e.message);
     firebaseReady = false;
+  }
+
+  // Defensive Mock Fallback to prevent crash when Firebase is offline
+  if (!window.pa_db) {
+    window.pa_db = {
+      collection: () => ({
+        add: async () => ({ id: 'mock-id-' + Date.now() }),
+        doc: () => ({
+          get: async () => ({ exists: false, data: () => ({}) }),
+          set: async () => {},
+          update: async () => {}
+        })
+      })
+    };
   }
 }
 
@@ -50,6 +65,10 @@ async function getProducts() {
       .where('deleted', '==', false)
       .get();
     const products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (products.length === 0) {
+      console.log('[Firebase] products collection is empty — falling back to sample products.');
+      return getSampleProducts();
+    }
     return products.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   } catch (e) {
     console.warn('[Firebase] getProducts error:', e);
@@ -787,6 +806,18 @@ async function adminResetUserPassword(phone, newPasswordHash) {
   }
 }
 
+async function getContentConfig() {
+  const defaults = { about: {}, faq: [], reviews: [] };
+  if (!firebaseReady) return defaults;
+  try {
+    const doc = await _db.collection('config').doc('content').get();
+    return doc.exists ? doc.data() : defaults;
+  } catch (e) {
+    console.warn('[Firebase] getContentConfig error:', e);
+    return defaults;
+  }
+}
+
 // Explicitly attach to window
 window.getTeammates = getTeammates;
 window.saveTeammateToDB = saveTeammateToDB;
@@ -797,4 +828,5 @@ window.adminResetUserPassword = adminResetUserPassword;
 window.getUserByPhone = getUserByPhone;
 window.createOrUpdateUser = createOrUpdateUser;
 window.linkOrderToUser = linkOrderToUser;
+window.getContentConfig = getContentConfig;
 

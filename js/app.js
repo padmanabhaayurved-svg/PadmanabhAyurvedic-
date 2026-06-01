@@ -237,6 +237,11 @@ async function startApp() {
 
 // ── Router ────────────────────────────────────────────────────
 let _currentRoute = null;
+Object.defineProperty(window, '_currentRoute', {
+  get: () => _currentRoute,
+  set: (v) => { _currentRoute = v; },
+  configurable: true
+});
 const _pageCache  = {};
 
 const ROUTES = {
@@ -589,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Chatbot logic
+  // ── CHATBOT INTELLIGENCE ENGINE ─────────────────────────────
   const chatBtn = document.getElementById('chatbot-btn');
   const chatWindow = document.getElementById('chatbot-window');
   const chatClose = document.getElementById('chatbot-close');
@@ -597,305 +602,805 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatInput = document.getElementById('chat-input');
   const chatBody = document.getElementById('chat-body');
 
-  let chatState = 'INIT';
-  let chatData = { name: '', phone: '', userId: '', product: '', address: '', payment: '' };
+  // Context & state
+  let chatCtx = {
+    flow: null,             // null | 'checkout' | 'consultation'
+    flowStep: null,         // substate within a flow
+    lastIntent: null,       // last detected intent
+    lastProduct: null,      // product ID for context-aware follow-ups
+    lastProductName: null,  // cached name
+    lastTopic: null,        // 'detail' | 'price' | 'ingredients' | 'usage' | 'recommendation'
+    user: { name: '', phone: '', uid: '', isLoggedIn: false },
+    consult: { symptoms: '', duration: '', priorTreatment: '', age: '', preferredTime: '' },
+    lang: 'en',
+    conversation: []        // [{ role, text }] last 10 for context
+  };
 
-  function toggleChat() {
-    chatWindow.classList.toggle('open');
-    if (chatWindow.classList.contains('open')) {
-      chatInput.focus();
-      // On first open, try to get lead data or authenticated user session
-      if (chatState === 'INIT') {
-        if (window.PhoneAuth && PhoneAuth.isLoggedIn()) {
-          const session = PhoneAuth.getUser();
-          chatData.name = session.name || session.phone;
-          chatData.phone = session.phone;
-          chatData.userId = session.uid;
-        } else {
-          try {
-            const leads = JSON.parse(localStorage.getItem('pa_leads') || '[]');
-            if (leads.length > 0) {
-              const lead = leads[0];
-              chatData.name = lead.name;
-              chatData.phone = lead.phone;
-            }
-          } catch(e) {}
-        }
-        
-        chatBody.innerHTML = '';
-        if (chatData.userId) {
-          chatState = 'ASK_PRODUCT';
-          appendBotMessage(`Namaste ${chatData.name}! Welcome back. What product or service are you looking for today?`, [
-            'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder', 'Consultation'
-          ]);
-        } else if (chatData.name) {
-          chatState = 'ASK_PHONE';
-          appendBotMessage(`Namaste ${chatData.name}! May I know your 10-digit WhatsApp number to verify your account?`);
-        } else {
-          chatState = 'ASK_NAME';
-          appendBotMessage(`Namaste! Welcome to Padmanabh Ayurvedics. May I know your name?`);
-        }
-      }
-    }
-  }
+  let faqCache = [];
+  let idleTimer = null;
 
-  if (chatBtn) chatBtn.addEventListener('click', toggleChat);
-  if (chatClose) chatClose.addEventListener('click', toggleChat);
+  // ── Symptom → Product Map (Feature 2) ──────────────────────
+  const SYMPTOM_MAP = {
+    knee:      ['pa-ortho-secure', 'pa-ortho-relief-oil', 'pa-pain-balm'],
+    joint:     ['pa-ortho-secure', 'pa-ortho-relief-oil'],
+    back:      ['pa-ortho-relief-oil', 'pa-pain-balm'],
+    muscle:    ['pa-ortho-relief-oil', 'pa-pain-balm'],
+    pain:      ['pa-ortho-secure', 'pa-ortho-relief-oil', 'pa-pain-balm'],
+    acidity:   ['pa-taka-tak-powder', 'pa-triphala-churna'],
+    gas:       ['pa-taka-tak-powder', 'pa-triphala-churna'],
+    bloating:  ['pa-taka-tak-powder', 'pa-triphala-churna'],
+    digestion: ['pa-arshas-cure', 'pa-taka-tak-powder', 'pa-triphala-churna'],
+    constipation: ['pa-triphala-churna', 'pa-taka-tak-powder'],
+    stress:    ['pa-ashwagandha-plus'],
+    immunity:  ['pa-giloy-immunity', 'pa-moringa-capsule'],
+    energy:    ['pa-ashwagandha-plus', 'pa-moringa-capsule'],
+    hair:      ['pa-moringa-capsule'],
+    skin:      ['pa-moringa-capsule'],
+    piles:     ['pa-arshas-cure'],
+    arshas:    ['pa-arshas-cure'],
+    fever:     ['pa-giloy-immunity'],
+    cough:     ['pa-giloy-immunity'],
+    cold:      ['pa-giloy-immunity'],
+    weight:    ['pa-triphala-churna'],
+    sleep:     ['pa-ashwagandha-plus'],
+    anaemia:   ['pa-moringa-capsule'],
+    thyroid:   ['pa-ashwagandha-plus'],
+    diabetes:  ['pa-triphala-churna', 'pa-giloy-immunity']
+  };
 
-  window.handleChatOption = function(option) {
-    if (chatInput) {
-      chatInput.value = option;
-      sendChatMessage();
+  const SYMPTOM_KEYWORDS = Object.keys(SYMPTOM_MAP);
+
+  // ── Language Detection (Feature 8) ──────────────────────────
+  const LANG_PATTERNS = {
+    hi: {
+      keywords: ['नमस्ते','नमस्कार','दर्द','जोड़ों','कीमत','ऑर्डर','दवा','पेट','कब्ज','बाल','त्वचा','बुखार','खांसी','एसिडिटी','गैस','तनाव','नींद','थायराइड','डायबिटीज','एनीमिया'],
+      greeting: 'नमस्ते! पद्मनाभ आयुर्वेदिक्स में आपका स्वागत है। मैं आपकी कैसे मदद कर सकता हूँ?',
+      greetingName: 'नमस्ते {{name}}! आपका स्वागत है। आज आप क्या खोज रहे हैं?',
+      checkout: 'कृपया अपना पूरा डिलीवरी पता दें:',
+      payment: 'धन्यवाद। आप कैसे भुगतान करना चाहेंगे?',
+      orderPlaced: '✅ ऑर्डर #{{id}} कन्फर्म! भुगतान: {{pay}}। पता: {{addr}}। अपडेट {{phone}} पर भेजेंगे। पद्मनाभ आयुर्वेदिक्स चुनने के लिए धन्यवाद! 🌿',
+      consultConfirm: 'धन्यवाद! हमारे वैद्य आपकी जानकारी की समीक्षा करेंगे और 24 घंटे में {{phone}} पर संपर्क करेंगे।'
+    },
+    mr: {
+      keywords: ['नमस्कार','दुख','दुखणे','किंमत','ऑर्डर','औषधी','पोट','बुखार','खोकला','सर्दी','केस','त्वचा','अॅसिडिटी','गॅस','तणाव','झोप'],
+      greeting: 'नमस्कार! पद्मनाभ आयुर्वेदिक्समध्ये आपले स्वागत आहे. मी तुमची कशी मदत करू शकतो?',
+      greetingName: 'नमस्कार {{name}}! तुमचे स्वागत आहे. आज तुम्ही काय शोधत आहात?',
     }
   };
 
+  function detectLang(text) {
+    for (const [lang, patterns] of Object.entries(LANG_PATTERNS)) {
+      if (patterns.keywords.some(kw => text.includes(kw))) return lang;
+    }
+    return 'en';
+  }
+
+  function langStr(key, vars = {}) {
+    const l = chatCtx.lang;
+    if (l !== 'en' && LANG_PATTERNS[l] && LANG_PATTERNS[l][key]) {
+      let s = LANG_PATTERNS[l][key];
+      for (const [k, v] of Object.entries(vars)) s = s.replace('{{' + k + '}}', v);
+      return s;
+    }
+    // English fallbacks
+    const EN = {
+      greeting: "Namaste! Welcome to Padmanabh Ayurvedics. I'm your wellness assistant. How can I help you today?",
+      greetingName: "Namaste {{name}}! Great to see you again. What are you looking for today?",
+      greetingLoggedIn: "Namaste {{name}}! Welcome back. You can browse products, track orders, or place a new order. What would you like?",
+      checkout: "Please provide your full delivery address:",
+      payment: "Thank you. How would you like to pay?",
+      orderPlaced: "✅ Order #{{id}} confirmed! Payment: {{pay}}. Delivering to: {{addr}}. We'll send updates to {{phone}}. Thank you! 🌿",
+      consultConfirm: "Thank you! Our Vaidya will review your details and contact you on {{phone}} within 24 hours.",
+      consultFee: "Consultation is ₹199 (includes first follow-up). We'll contact you to complete payment.",
+      orderFail: "Something went wrong with the order, but we've noted your interest. Our team will contact you.",
+      help: "Here's what I can help with:",
+    };
+    if (EN[key]) {
+      let s = EN[key];
+      for (const [k, v] of Object.entries(vars)) s = s.replace('{{' + k + '}}', v);
+      return s;
+    }
+    return key;
+  }
+
+  // ── Intent Classifier ──────────────────────────────────────
+  const INTENT_PATTERNS = {
+    greeting:     ['hi','hello','hey','namaste','नमस्ते','नमस्कार','good morning','good evening','hii','heyy'],
+    help:         ['help','what can you do','options','menu','commands','सहायता','क्या कर सकते हैं'],
+    symptom:      SYMPTOM_KEYWORDS,
+    product_detail: ['tell me about','what is','details of','about','बताएं','क्या है','जानकारी'],
+    price:        ['price','cost','how much','rate','कीमत','दाम','कितने का','कितने की','₹'],
+    ingredients:  ['ingredients','contains','made of','सामग्री','क्या है इसमें','particles'],
+    usage:        ['how to use','usage','how to take','उपयोग','कैसे लें','कैसे उपयोग'],
+    order_track:  ['track','where is my order','order status','delivery status','shipping','awb','ट्रैक','ऑर्डर स्टेटस'],
+    faq:          ['shipping time','return policy','refund','cod','delivery time','payment','रिटर्न','रिफंड','डिलीवरी'],
+    consultation: ['consultation','consult','appointment','vaidya','doctor','talk to expert','परामर्श','डॉक्टर','वैद्य'],
+    checkout:     ['checkout','place order','order now','complete order','buy now','ऑर्डर','खरीदें'],
+    cart:         ['cart','my cart','whats in my cart','कार्ट']
+  };
+
+  function classifyIntent(text) {
+    const lower = text.toLowerCase();
+    for (const [intent, patterns] of Object.entries(INTENT_PATTERNS)) {
+      for (const p of patterns) {
+        if (lower.includes(p)) return intent;
+      }
+    }
+    // Check if it looks like a product name match
+    if (Store && Store.getCachedProducts) {
+      const prods = Store.getCachedProducts();
+      for (const p of prods) {
+        if (lower.includes(p.name.toLowerCase()) ||
+            lower.includes((p.nameHi || '').toLowerCase()) ||
+            lower.includes((p.nameMr || '').toLowerCase())) {
+          return 'product_select';
+        }
+      }
+    }
+    return null;
+  }
+
+  // ── FAQ Loader (Feature 5) ─────────────────────────────────
+  async function loadFAQs() {
+    try {
+      if (window.getContentConfig) {
+        const content = await getContentConfig();
+        faqCache = content.faq || [];
+      }
+    } catch (e) { /* ignore */ }
+    if (faqCache.length === 0) {
+      faqCache = [
+        { q: 'What is your shipping policy?', a: 'Free shipping on orders above ₹499. Standard delivery takes 3-7 business days across India.' },
+        { q: 'Do you offer Cash on Delivery?', a: 'Yes, COD is available on all orders across India.' },
+        { q: 'What is your return policy?', a: 'Returns accepted within 7 days of delivery for unopened, unused products.' },
+        { q: 'How can I pay?', a: 'We accept UPI, Cards, Netbanking via Razorpay, and Cash on Delivery.' },
+        { q: 'Do you ship internationally?', a: 'Currently we ship only within India.' },
+        { q: 'How can I track my order?', a: 'Once shipped, you will receive an AWB number via SMS. You can also track it by asking me!' },
+      ];
+    }
+  }
+
+  function findFAQ(text) {
+    const words = text.toLowerCase().split(/\s+/);
+    let best = { faq: null, score: 0 };
+    faqCache.forEach(faq => {
+      const qWords = faq.q.toLowerCase().split(/\s+/);
+      const match = words.filter(w => qWords.includes(w)).length;
+      if (match > best.score) best = { faq, score: match };
+    });
+    return best.score >= 2 ? best.faq : null;
+  }
+
+  // ── Rich Card Builders (Feature 9) ─────────────────────────
+  function buildProductCard(p) {
+    if (!p) return '';
+    const savings = Store.getSavings(p.price, p.mrp);
+    const img = Store.convertDriveLink(p.images?.[0]);
+    return `<div class="chat-product-card">
+      <img src="${img}" alt="${p.name}" onerror="this.src='${FALLBACK_IMG}'">
+      <div class="info">
+        <div class="pname">${p.name}</div>
+        <div class="pprice">
+          <span class="current">₹${p.price}</span>
+          ${p.mrp ? `<span class="old">₹${p.mrp}</span>` : ''}
+          ${savings > 0 ? `<span class="badge">${savings}% OFF</span>` : ''}
+        </div>
+        <p class="pdesc">${p.description}</p>
+        <div class="pactions">
+          <button class="btn btn-primary btn-sm" onclick="chatAddToCart('${p.id}')" style="font-size:0.75rem;padding:4px 10px">Add to Cart</button>
+          <button class="btn btn-outline btn-sm" onclick="chatShowDetail('${p.id}')" style="font-size:0.75rem;padding:4px 10px">Details</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function buildOrderCard(o) {
+    const st = o.status || 'pending';
+    const sc = st === 'delivered' ? 'var(--success)' : st === 'shipped' ? 'var(--gold)' : st === 'processing' ? 'var(--warning)' : 'var(--text-muted)';
+    return `<div class="chat-order-card">
+      <div class="orow"><span class="oid">Order #${(o.id||'').slice(-6).toUpperCase()}</span><span style="color:${sc}">${st.toUpperCase()}</span></div>
+      <div class="ometa">${o.items?.length||0} items · ₹${o.total} · ${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : ''}</div>
+      ${o.awb ? `<div class="oawb">AWB: ${o.awb}</div>` : ''}
+    </div>`;
+  }
+
+  function buildDetailCard(p) {
+    if (!p) return '';
+    return `<div class="chat-detail-card">
+      <div class="dtitle">${p.name}</div>
+      <div class="dcat">${p.category}</div>
+      <div class="drow"><span class="dlabel">Price</span><span class="dvalue">₹${p.price} ${p.mrp ? `<span style="text-decoration:line-through;color:var(--text-muted);font-weight:400">₹${p.mrp}</span>` : ''}</span></div>
+      <div class="drow"><span class="dlabel">Description</span><span class="dvalue" style="font-weight:400">${p.description}</span></div>
+      <div class="drow"><span class="dlabel">Ingredients</span><span class="dvalue" style="font-weight:400;font-size:0.8rem">${p.ingredients}</span></div>
+      <div class="drow"><span class="dlabel">How to Use</span><span class="dvalue" style="font-weight:400;font-size:0.8rem">${p.usage}</span></div>
+      <div style="margin-top:12px;display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="chatAddToCart('${p.id}')" style="font-size:0.75rem">Add to Cart</button>
+        <button class="btn btn-outline btn-sm" onclick="chatAddToCart('${p.id}')" style="font-size:0.75rem">Back</button>
+      </div>
+    </div>`;
+  }
+
+  // ── Global Chat Helpers ────────────────────────────────────
+  window.chatAddToCart = function(productId) {
+    const p = Store.getCachedProducts().find(x => x.id === productId);
+    if (p) { Store.addToCart(p); showToast(`${p.name} added to cart`, 'success'); }
+  };
+  window.chatShowDetail = function(productId) {
+    const p = Store.getCachedProducts().find(x => x.id === productId);
+    if (p) {
+      chatCtx.lastProduct = productId;
+      chatCtx.lastProductName = p.name;
+      chatCtx.lastTopic = 'detail';
+      const card = buildDetailCard(p);
+      const msg = document.createElement('div');
+      msg.className = 'chat-msg bot';
+      msg.innerHTML = card;
+      chatBody.appendChild(msg);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+  };
+  window.handleChatOption = function(option) {
+    if (chatInput) { chatInput.value = option; sendChatMessage(); }
+  };
+
+  // ── Append Helpers ─────────────────────────────────────────
   function appendBotMessage(text, options = []) {
-    const botMsg = document.createElement('div');
-    botMsg.className = 'chat-msg bot';
-    let html = text;
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg bot';
+    let html = typeof text === 'string' ? text : '';
     if (options.length > 0) {
-      html += `<div class="chat-options" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">`;
-      options.forEach(opt => {
-        html += `<button class="btn btn-outline btn-sm" onclick="handleChatOption('${opt}')" style="text-align:left; font-size:0.8rem; padding:6px 10px;">${opt}</button>`;
+      html += `<div class="chat-options" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">`;
+      options.forEach(o => {
+        const safe = o.replace(/'/g, "\\'");
+        html += `<button class="btn btn-outline btn-sm" onclick="handleChatOption('${safe}')" style="text-align:left;font-size:0.8rem;padding:6px 10px">${o}</button>`;
       });
       html += `</div>`;
     }
-    botMsg.innerHTML = html;
-    chatBody.appendChild(botMsg);
+    msg.innerHTML = html;
+    chatBody.appendChild(msg);
     chatBody.scrollTop = chatBody.scrollHeight;
   }
 
+  function appendLoader(text) {
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg bot';
+    msg.textContent = text;
+    chatBody.appendChild(msg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return msg;
+  }
+
+  function removeLoaders() {
+    chatBody.querySelectorAll('.chat-msg.bot').forEach(m => {
+      if (m.textContent.includes('...') || m.textContent.includes('🔍') || m.textContent.includes('🔐') || m.textContent.includes('🌿')) m.remove();
+    });
+  }
+
+  function getDynamicButtons(max = 6) {
+    return Store.getCachedProducts().slice(0, max).map(p => p.name);
+  }
+
+  // ── Proactive Idle Timer (Feature 7) ───────────────────────
+  function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (chatWindow.classList.contains('open') && chatCtx.flow !== 'checkout') {
+        appendBotMessage("Still thinking? 😊 Feel free to ask me anything — product recommendations, order tracking, or place an order!", [
+          'Show Products', 'Track My Order', 'Consultation'
+        ]);
+      }
+    }, 30000);
+  }
+
+  // ── Intent Handlers ────────────────────────────────────────
+
+  // Handle symptom → product recommendations (Feature 2)
+  function handleSymptom(text, symptomKeyword) {
+    const ids = SYMPTOM_MAP[symptomKeyword];
+    if (!ids) return false;
+    
+    // Find products using direct ID or fuzzy name matching to bridge sample vs real DB IDs
+    const prods = ids.map(id => {
+      const cached = Store.getCachedProducts();
+      let found = cached.find(p => p.id === id);
+      if (found) return found;
+
+      const cleanId = id.replace(/^pa-/, '');
+      const idWords = cleanId.split('-').filter(w => !['capsule', 'capsules', 'powder', 'oil', 'balm', 'cure', 'plus', 'relief'].includes(w));
+      
+      return cached.find(p => {
+        const nameLower = p.name.toLowerCase();
+        const idLower = p.id.toLowerCase();
+        if (idLower.includes(cleanId) || cleanId.includes(idLower)) return true;
+        return idWords.some(word => nameLower.includes(word));
+      });
+    }).filter(Boolean);
+
+    if (prods.length === 0) return false;
+
+    chatCtx.lastIntent = 'symptom';
+    chatCtx.lastTopic = 'recommendation';
+
+    let msg = `Based on what you described, here are some products that may help:`;
+    appendBotMessage(msg);
+    prods.forEach(p => {
+      const card = buildProductCard(p);
+      const el = document.createElement('div');
+      el.className = 'chat-msg bot';
+      el.innerHTML = card;
+      chatBody.appendChild(el);
+    });
+    appendBotMessage("Would you like more details on any of these, or shall I add them to your cart?", [
+      'Tell me more', 'Add all to cart', 'Browse other products'
+    ]);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return true;
+  }
+
+  // Handle order tracking (Feature 4)
+  async function handleOrderTrack() {
+    const session = PhoneAuth.getUser();
+    if (!session) {
+      appendBotMessage("Please login first so I can look up your orders. You can login via the checkout page.");
+      return;
+    }
+    appendLoader("Looking up your orders...");
+    let orders = [];
+    try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+    orders = orders.filter(o => o.customerPhone === session.phone)
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    removeLoaders();
+    if (orders.length === 0) {
+      appendBotMessage("No orders found for your account. Would you like to browse our products?", ['Browse Products']);
+      return;
+    }
+    appendBotMessage(`Found ${orders.length} order(s). Here are your latest:`);
+    orders.slice(0, 3).forEach(o => {
+      const card = buildOrderCard(o);
+      const el = document.createElement('div');
+      el.className = 'chat-msg bot';
+      el.innerHTML = card;
+      chatBody.appendChild(el);
+    });
+    if (orders[0].awb) {
+      appendBotMessage(`Your latest order AWB: ${orders[0].awb}. Track it now?`, ['Track Now', 'Back']);
+    } else {
+      appendBotMessage("Your order is being processed. You'll receive tracking details soon.", ['Back']);
+    }
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  async function handleTrackAWB(awb) {
+    appendLoader("Fetching tracking...");
+    try {
+      if (window.ShiprocketHelper) {
+        const res = await ShiprocketHelper.trackShipment(awb);
+        const data = res.tracking_data || {};
+        const activities = data?.shipment_track_activities || [];
+        removeLoaders();
+        if (activities.length > 0) {
+          let html = '<div class="chat-tracking-timeline">';
+          activities.forEach(a => {
+            html += `<div class="titem"><div class="tdate">${a.date || ''}</div><div class="tact">${a.activity || ''}</div><div class="tloc">${a.location || ''}</div></div>`;
+          });
+          html += '</div>';
+          const el = document.createElement('div');
+          el.className = 'chat-msg bot';
+          el.innerHTML = html;
+          chatBody.appendChild(el);
+        } else {
+          appendBotMessage("No tracking updates available yet.");
+        }
+      } else {
+        removeLoaders();
+        appendBotMessage("Tracking service not available right now.");
+      }
+    } catch (e) {
+      removeLoaders();
+      appendBotMessage("Could not fetch tracking details. Please try again later.");
+    }
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  // Handle FAQ (Feature 5)
+  function handleFAQ(text) {
+    const faq = findFAQ(text);
+    if (!faq) return false;
+    appendBotMessage(faq.a, ['Got it, thanks', 'Ask another question']);
+    return true;
+  }
+
+  // Handle product detail/price/ingredients context-aware (Feature 3)
+  function handleProductContext(intent, text) {
+    if (!chatCtx.lastProduct) {
+      // No context — show product list
+      appendBotMessage("Which product would you like to know about?", getDynamicButtons(6));
+      return true;
+    }
+    const p = Store.getCachedProducts().find(x => x.id === chatCtx.lastProduct);
+    if (!p) return false;
+
+    if (intent === 'price') {
+      const savings = Store.getSavings(p.price, p.mrp);
+      appendBotMessage(`${p.name} is ₹${p.price}${p.mrp ? `, MRP ₹${p.mrp}` : ''}${savings > 0 ? ` — you save ${savings}%!` : ''}. Want to add it to your cart?`, ['Add to Cart', 'Show Details']);
+    } else if (intent === 'ingredients') {
+      appendBotMessage(`**${p.name} — Ingredients:**\n${p.ingredients}`, ['Add to Cart', 'How to use']);
+    } else if (intent === 'usage') {
+      appendBotMessage(`**${p.name} — How to Use:**\n${p.usage}`, ['Add to Cart', 'Show Ingredients']);
+    } else if (intent === 'product_detail') {
+      chatCtx.lastTopic = 'detail';
+      const card = buildDetailCard(p);
+      const el = document.createElement('div');
+      el.className = 'chat-msg bot';
+      el.innerHTML = card;
+      chatBody.appendChild(el);
+    }
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return true;
+  }
+
+  // Handle product selection (when user types a product name)
+  function handleProductSelect(text) {
+    const prods = Store.getCachedProducts();
+    const p = prods.find(x =>
+      text.toLowerCase().includes(x.name.toLowerCase()) ||
+      (x.nameHi && text.includes(x.nameHi)) ||
+      (x.nameMr && text.includes(x.nameMr))
+    );
+    if (!p) return false;
+    chatCtx.lastProduct = p.id;
+    chatCtx.lastProductName = p.name;
+    chatCtx.lastTopic = 'detail';
+    const savings = Store.getSavings(p.price, p.mrp);
+    appendBotMessage(`${p.name} — ₹${p.price}${p.mrp ? ` (MRP ₹${p.mrp})` : ''}${savings > 0 ? ` — ${savings}% OFF!` : ''}\n${p.description}`, [
+      'Add to Cart', 'Tell me more', 'Ingredients', 'How to use'
+    ]);
+    return true;
+  }
+
+  // Handle consultation with qualification (Feature 10)
+  function handleConsultation() {
+    if (!chatCtx.user.isLoggedIn) {
+      appendBotMessage("I'd love to connect you with our Ayurvedic expert! First, I'll need your details.", ['Start Registration']);
+      return;
+    }
+    chatCtx.flow = 'consultation';
+    chatCtx.consult = { symptoms: '', duration: '', priorTreatment: '', age: '', preferredTime: '' };
+    chatCtx.flowStep = 0;
+    appendBotMessage("I'll connect you with our Ayurvedic expert. A few quick details to help them prepare:");
+    askConsultQuestion();
+  }
+
+  const CONSULT_QUESTIONS = [
+    { key: 'symptoms', q: '1/5 — What symptoms or health concerns are you facing?' },
+    { key: 'duration', q: '2/5 — How long have you been experiencing this?' },
+    { key: 'priorTreatment', q: '3/5 — Have you tried any treatments before?' },
+    { key: 'age', q: '4/5 — What is your age?' },
+    { key: 'preferredTime', q: '5/5 — When would you prefer the consultation?' }
+  ];
+
+  function askConsultQuestion() {
+    if (chatCtx.flowStep < CONSULT_QUESTIONS.length) {
+      appendBotMessage(CONSULT_QUESTIONS[chatCtx.flowStep].q);
+    } else {
+      finishConsultation();
+    }
+  }
+
+  async function finishConsultation() {
+    appendLoader("Submitting your consultation request...");
+    const data = {
+      name: chatCtx.user.name,
+      phone: chatCtx.user.phone,
+      service: 'Consultation',
+      ...chatCtx.consult,
+      timestamp: new Date().toISOString()
+    };
+    try {
+      if (window.saveLead) await saveLead(data);
+      else {
+        const leads = JSON.parse(localStorage.getItem('pa_leads') || '[]');
+        leads.unshift(data);
+        localStorage.setItem('pa_leads', JSON.stringify(leads));
+      }
+    } catch (e) { /* silent */ }
+    removeLoaders();
+    chatCtx.flow = null;
+    appendBotMessage(langStr('consultConfirm', { phone: chatCtx.user.phone }) + ' ' + langStr('consultFee'), ['Got it, thanks', 'Browse Products']);
+  }
+
+  // ── Greeting with dynamic buttons (Feature 6) ──────────────
+  function handleGreeting() {
+    const session = PhoneAuth.getUser();
+    const prods = getDynamicButtons(4);
+    const btns = [...prods, 'Track My Order', 'Consultation'];
+    if (session && session.phone) {
+      chatCtx.user = { name: session.name || session.phone, phone: session.phone, uid: session.uid, isLoggedIn: true };
+      appendBotMessage(langStr('greetingLoggedIn', { name: session.name || session.phone }), btns);
+    } else {
+      appendBotMessage(langStr('greeting'), btns);
+    }
+    // Check for cart abandonment (Feature 7)
+    if (Store.getCartCount() > 0) {
+      setTimeout(() => {
+        appendBotMessage(`I see you have ${Store.getCartCount()} item(s) in your cart (₹${Store.getCartTotal()}). Would you like to complete your order?`, ['Complete Order', 'Continue Shopping']);
+      }, 1500);
+    }
+  }
+
+  // ── Help menu ──────────────────────────────────────────────
+  function handleHelp() {
+    appendBotMessage(langStr('help') + `
+🌿 Ask about health concerns (joint pain, digestion, etc.)
+📦 Track your orders
+💬 Learn about products, prices, ingredients
+❓ FAQ about shipping, returns, payment
+🛒 Place an order
+👨‍⚕️ Book a consultation with our Vaidya`, [
+      'I have a health concern', 'Track My Order', 'Show Products', 'Consultation'
+    ]);
+  }
+
+  // ── Main Message Handler ───────────────────────────────────
   function sendChatMessage() {
     const text = chatInput.value.trim();
     if (!text) return;
-
-    // Add user message
     const userMsg = document.createElement('div');
     userMsg.className = 'chat-msg user';
     userMsg.textContent = text;
     chatBody.appendChild(userMsg);
     chatInput.value = '';
     chatBody.scrollTop = chatBody.scrollHeight;
+    resetIdleTimer();
 
-    // Process State
+    // Store context
+    chatCtx.conversation.push({ role: 'user', text });
+    if (chatCtx.conversation.length > 10) chatCtx.conversation.shift();
+
+    // Detect language
+    chatCtx.lang = detectLang(text);
+
     setTimeout(async () => {
-      switch(chatState) {
-        case 'ASK_NAME':
-          chatData.name = text;
-          chatState = 'ASK_PHONE';
-          appendBotMessage(`Thank you, ${chatData.name}. Could you please share your 10-digit WhatsApp number?`);
-          break;
-        case 'ASK_PHONE': {
-          const cleanPhone = text.replace(/\D/g, '');
-          if (cleanPhone.length !== 10) {
-            appendBotMessage(`⚠️ Please enter a valid 10-digit mobile number.`);
-            return;
-          }
-          chatData.phone = cleanPhone;
-
-          appendBotMessage(`🔍 Checking your details...`);
-          try {
-            const existingUser = window.getUserByPhone ? await window.getUserByPhone(cleanPhone) : null;
-            
-            // Clean loader
-            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
-            for (let l of loaders) {
-              if (l.textContent.includes('Checking your details')) {
-                l.remove();
-              }
-            }
-
-            if (existingUser) {
-              chatState = 'ASK_LOGIN_PASSWORD';
-              appendBotMessage(`🌿 Welcome back, ${existingUser.name || 'Member'}! You already have an account with us. Please enter your password to login and secure your order:`);
-            } else {
-              chatState = 'ASK_CREATE_PASSWORD';
-              appendBotMessage(`✨ Welcome to Padmanabh Ayurvedics! Since this is your first time, let's secure your account. Please set a password (min 6 characters) so you can track order history:`);
-            }
-          } catch(e) {
-            console.warn('Error checking user by phone:', e);
-            chatState = 'ASK_PRODUCT';
-            appendBotMessage(`Got it! What product or service are you looking for today?`, [
-              'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
-              'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
-              'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
-            ]);
-          }
-          break;
+      // ── Flow-based handlers first ──
+      if (chatCtx.flow === 'consultation') {
+        const step = chatCtx.flowStep;
+        if (step < CONSULT_QUESTIONS.length) {
+          chatCtx.consult[CONSULT_QUESTIONS[step].key] = text;
+          chatCtx.flowStep++;
+          askConsultQuestion();
+        } else {
+          finishConsultation();
         }
-        case 'ASK_LOGIN_PASSWORD': {
-          appendBotMessage(`🔐 Logging in...`);
-          try {
-            const session = await PhoneAuth.login(chatData.phone, text);
-            
-            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
-            for (let l of loaders) {
-              if (l.textContent.includes('Logging in')) {
-                l.remove();
-              }
-            }
-
-            chatData.userId = session.uid;
-            chatData.name = session.name || chatData.name;
-            chatState = 'ASK_PRODUCT';
-            appendBotMessage(`✅ Logged in successfully! Welcome, ${chatData.name}. What product or service are you looking for today?`, [
-              'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
-              'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
-              'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
-            ]);
-          } catch(e) {
-            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
-            for (let l of loaders) {
-              if (l.textContent.includes('Logging in')) {
-                l.remove();
-              }
-            }
-            appendBotMessage(`❌ Incorrect password. Please try again:`);
-          }
-          break;
-        }
-        case 'ASK_CREATE_PASSWORD': {
-          if (text.length < 6) {
-            appendBotMessage(`⚠️ Password must be at least 6 characters. Please try again:`);
-            return;
-          }
-          appendBotMessage(`🌿 Creating your account...`);
-          try {
-            const session = await PhoneAuth.register(chatData.phone, chatData.name, text);
-
-            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
-            for (let l of loaders) {
-              if (l.textContent.includes('Creating your account')) {
-                l.remove();
-              }
-            }
-
-            chatData.userId = session.uid;
-            chatState = 'ASK_PRODUCT';
-            appendBotMessage(`🎉 Account created successfully! What product or service are you looking for today?`, [
-              'Ortho Secure Capsule', 'Arshas Cure Capsule', 'Taka Tak Powder',
-              'Ortho Relief Oil', 'Ashwagandha Vitality Capsules',
-              'Joint Care Combo Pack', 'Consultation / Ayurvedic Therapy'
-            ]);
-          } catch(e) {
-            const loaders = chatBody.querySelectorAll('.chat-msg.bot');
-            for (let l of loaders) {
-              if (l.textContent.includes('Creating your account')) {
-                l.remove();
-              }
-            }
-            appendBotMessage(`❌ Account creation failed: ${e.message}. Please try again:`);
-          }
-          break;
-        }
-        case 'ASK_PRODUCT':
-          chatData.product = text;
-          if (text === 'Consultation' || text === 'Consultation / Ayurvedic Therapy') {
-            chatState = 'CLOSE_DEAL';
-            appendBotMessage(`We'll schedule your consultation shortly. Our expert will contact you on ${chatData.phone}. Is there anything else?`, ['No, thanks', 'Shop Products']);
-          } else {
-            chatState = 'ASK_ADDRESS';
-            // Try adding to cart
-            if (window.Store && Store.getCachedProducts) {
-              const prods = Store.getCachedProducts();
-              const p = prods.find(x => x.name.toLowerCase().includes(text.toLowerCase()) || text.toLowerCase().includes(x.name.toLowerCase()));
-              if (p) {
-                Store.addToCart(p);
-                appendBotMessage(`I've noted your interest in ${text} and added it to your cart! Could you please provide your full delivery address?`);
-              } else {
-                appendBotMessage(`I've noted your interest in ${text}. Could you please provide your full delivery address?`);
-              }
-            } else {
-              appendBotMessage(`I've noted your interest in ${text}. Could you please provide your full delivery address?`);
-            }
-          }
-          break;
-        case 'ASK_ADDRESS':
-          chatData.address = text;
-          chatState = 'ASK_PAYMENT';
-          appendBotMessage(`Thank you. How would you like to pay?`, ['Cash on Delivery (COD)', 'Online Payment (Razorpay)']);
-          break;
-        case 'ASK_PAYMENT':
-          chatData.payment = text;
-          chatState = 'CLOSE_DEAL';
-          try {
-            const cartItems = Store.getCart();
-            const cartTotal = Store.getCartTotal();
-            const shipping = cartTotal >= 499 ? 0 : 60;
-            
-            const orderData = {
-              customerName: chatData.name,
-              customerPhone: chatData.phone,
-              address: { address: chatData.address, city: '', pincode: '', state: '', name: chatData.name, phone: chatData.phone },
-              paymentMethod: text,
-              items: cartItems.length > 0 ? cartItems : [{ name: chatData.product, qty: 1, price: 0, productId: 'CHAT' }],
-              subtotal: cartTotal,
-              shipping,
-              total: cartTotal + shipping,
-              userId: chatData.userId || PhoneAuth.getUser()?.uid || chatData.phone
-            };
-
-            console.log('[Chatbot] Creating order in Firebase:', orderData);
-            
-            let orderId = 'ORD' + Date.now().toString().slice(-6);
-            if (window.createOrder) {
-              orderId = await createOrder(orderData);
-            }
-
-            // Link order to user in database
-            if (window.linkOrderToUser) {
-              await linkOrderToUser(chatData.phone, orderId);
-            }
-
-            // Save order locally to maintain local history in User Drawer
-            const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
-            const localOrder = {
-              id: orderId,
-              userId: orderData.userId,
-              customerName: chatData.name,
-              customerPhone: chatData.phone,
-              email: chatData.phone + '@padmanabh.site',
-              address: orderData.address,
-              items: orderData.items,
-              subtotal: orderData.subtotal,
-              shipping: orderData.shipping,
-              tax: 0,
-              total: orderData.total,
-              payment: orderData.paymentMethod.includes('COD') ? 'COD' : 'Online',
-              paymentId: orderData.paymentMethod.includes('COD') ? 'COD_' + Date.now() : 'Razorpay_' + Date.now(),
-              status: 'pending',
-              courierCompany: 'Standard Shipping',
-              courierCharge: orderData.shipping,
-              createdAt: new Date().toISOString(),
-              srStatus: null,
-              trackingId: null,
-              awb: null,
-              srOrderId: null,
-              shipmentId: null
-            };
-            localOrders.push(localOrder);
-            localStorage.setItem('pa_orders', JSON.stringify(localOrders));
-
-            appendBotMessage(`✅ Order #${orderId.slice(-6).toUpperCase()} confirmed! Payment: ${text}. Delivering to: ${chatData.address}. We'll send updates to ${chatData.phone}. Thank you for choosing Padmanabh Ayurvedics! 🌿`);
-          } catch(e) {
-            console.error('[Chatbot] Order failed:', e);
-            appendBotMessage(`Something went wrong with the order, but we've noted your interest in ${chatData.product}. Our team will contact you on ${chatData.phone}.`);
-          }
-          break;
-        case 'CLOSE_DEAL':
-          if (text === 'Shop Products') {
-             chatState = 'ASK_PRODUCT';
-             if (window.navigate) navigate('catalog');
-             toggleChat();
-          } else {
-             appendBotMessage(`Thank you! Have a great day ahead.`);
-          }
-          break;
-        default:
-          appendBotMessage(`I am here to help you with your Ayurvedic journey.`);
+        chatBody.scrollTop = chatBody.scrollHeight;
+        return;
       }
-    }, 800);
+
+      if (chatCtx.flow === 'checkout') {
+        // Existing checkout flow states
+        if (chatCtx.flowStep === 'ASK_ADDRESS') {
+          chatCtx.checkoutAddress = text;
+          chatCtx.flowStep = 'ASK_PAYMENT';
+          appendBotMessage(langStr('payment'), ['Cash on Delivery (COD)', 'Online Payment (Razorpay)']);
+        } else if (chatCtx.flowStep === 'ASK_PAYMENT') {
+          await placeChatbotOrder(text);
+        }
+        chatBody.scrollTop = chatBody.scrollHeight;
+        return;
+      }
+
+      // ── Check if it's a known flow option ──
+      if (text === 'Consultation' || text === 'Consultation / Ayurvedic Therapy') {
+        handleConsultation(); return;
+      }
+      if (text === 'Show Products' || text === 'Browse Products' || text === 'Browse other products') {
+        appendBotMessage("Here are our products:", getDynamicButtons(8)); return;
+      }
+      if (text === 'Tell me more' && chatCtx.lastProduct) {
+        const p = Store.getCachedProducts().find(x => x.id === chatCtx.lastProduct);
+        if (p) { chatCtx.lastTopic = 'detail'; const card = buildDetailCard(p); const el = document.createElement('div'); el.className = 'chat-msg bot'; el.innerHTML = card; chatBody.appendChild(el); chatBody.scrollTop = chatBody.scrollHeight; }
+        return;
+      }
+      if (text === 'Ingredients' && chatCtx.lastProduct) {
+        handleProductContext('ingredients', text); return;
+      }
+      if (text === 'How to use' && chatCtx.lastProduct) {
+        handleProductContext('usage', text); return;
+      }
+      if (text === 'Add to Cart' && chatCtx.lastProduct) {
+        const p = Store.getCachedProducts().find(x => x.id === chatCtx.lastProduct);
+        if (p) { Store.addToCart(p); appendBotMessage(`${p.name} added to cart!`, ['Checkout', 'Keep Shopping']); }
+        return;
+      }
+      if (text === 'Add all to cart') {
+        // Find all recommended products
+        let count = 0;
+        chatBody.querySelectorAll('.chat-product-card').forEach(card => {
+          const btn = card.querySelector('[onclick^="chatAddToCart"]');
+          if (btn) {
+            const match = btn.getAttribute('onclick').match(/'([^']+)'/);
+            if (match) { const p = Store.getCachedProducts().find(x => x.id === match[1]); if (p) { Store.addToCart(p); count++; } }
+          }
+        });
+        appendBotMessage(`${count} product(s) added to cart!`, ['Checkout', 'Keep Shopping']);
+        return;
+      }
+      if (text === 'Checkout' || text === 'Complete Order' || text === 'place order') {
+        startCheckoutFlow(); return;
+      }
+      if (text === 'Track Now' || text === 'Track My Order') {
+        handleOrderTrack(); return;
+      }
+      if (text === 'Back') {
+        appendBotMessage("What would you like to do?", ['Show Products', 'Track My Order', 'Consultation', 'Help']); return;
+      }
+      if (text === 'Got it, thanks' || text === 'No, thanks' || text === 'Keep Shopping') {
+        appendBotMessage("Glad I could help! 😊 Anything else?", ['Show Products', 'Track My Order', 'Help']); return;
+      }
+      if (text === 'Add all to cart') {
+        let count = 0;
+        Store.getCachedProducts().forEach(p => { Store.addToCart(p); count++; });
+        appendBotMessage(`${count} products added to cart!`, ['Checkout']); return;
+      }
+      if (text === 'Start Registration') {
+        startCheckoutFlow(); return;
+      }
+      if (text === 'Help') { handleHelp(); return; }
+
+      // ── Intent classification ──
+      const intent = classifyIntent(text);
+
+      if (intent === 'greeting') { handleGreeting(); return; }
+      if (intent === 'help') { handleHelp(); return; }
+      if (intent === 'symptom') {
+        for (const kw of SYMPTOM_KEYWORDS) {
+          if (text.toLowerCase().includes(kw)) {
+            if (handleSymptom(text, kw)) return;
+          }
+        }
+      }
+      if (intent === 'order_track') { handleOrderTrack(); return; }
+      if (intent === 'faq') { if (handleFAQ(text)) return; }
+      if (intent === 'consultation') { handleConsultation(); return; }
+      if (intent === 'checkout') { startCheckoutFlow(); return; }
+      if (intent === 'cart') {
+        const cart = Store.getCart();
+        if (cart.length === 0) { appendBotMessage("Your cart is empty.", ['Browse Products']); return; }
+        let html = `You have ${cart.length} item(s) in your cart (₹${Store.getCartTotal()}):<br>`;
+        cart.forEach(i => { html += `• ${i.name} x${i.qty} — ₹${i.price * i.qty}<br>`; });
+        appendBotMessage(html, ['Checkout', 'Continue Shopping']);
+        return;
+      }
+      if (intent === 'product_select') { if (handleProductSelect(text)) return; }
+      if (intent === 'product_detail' || intent === 'price' || intent === 'ingredients' || intent === 'usage') {
+        if (handleProductContext(intent, text)) return;
+      }
+
+      // ── Check if it looks like an AWB number ──
+      if (/^[A-Z0-9]{5,20}$/i.test(text.trim())) {
+        await handleTrackAWB(text.trim());
+        return;
+      }
+
+      // ── Fallback: show quick replies ──
+      const btns = getDynamicButtons(4);
+      appendBotMessage("I'm not sure I understand. Try one of these:", [...btns, 'Help']);
+
+    }, 600);
   }
+
+  // ── Checkout Flow ──────────────────────────────────────────
+  function startCheckoutFlow() {
+    const cart = Store.getCart();
+    if (cart.length === 0) {
+      appendBotMessage("Your cart is empty. Let's add some products first!", ['Browse Products']);
+      return;
+    }
+    const session = PhoneAuth.getUser();
+    if (!session || !session.phone) {
+      appendBotMessage("Please login or create an account to place an order.");
+      return;
+    }
+    chatCtx.user = { name: session.name || session.phone, phone: session.phone, uid: session.uid, isLoggedIn: true };
+    chatCtx.user.name = session.name || session.phone;
+    chatCtx.user.phone = session.phone;
+    chatCtx.user.uid = session.uid;
+
+    chatCtx.flow = 'checkout';
+    chatCtx.flowStep = 'ASK_ADDRESS';
+    chatCtx.checkoutAddress = '';
+    let items = cart.map(i => `${i.name} x${i.qty} — ₹${i.price * i.qty}`).join('\n');
+    appendBotMessage(`Your order:\n${items}\nTotal: ₹${Store.getCartTotal()}\n\n` + langStr('checkout'));
+  }
+
+  async function placeChatbotOrder(paymentText) {
+    appendLoader("Placing your order...");
+    const cart = Store.getCart();
+    const cartTotal = Store.getCartTotal();
+    const shipping = cartTotal >= 499 ? 0 : 60;
+    const total = cartTotal + shipping;
+    const isCOD = paymentText.toLowerCase().includes('cod');
+
+    const orderData = {
+      customerName: chatCtx.user.name,
+      customerPhone: chatCtx.user.phone,
+      address: { address: chatCtx.checkoutAddress, city: '', pincode: '', state: '', name: chatCtx.user.name, phone: chatCtx.user.phone },
+      paymentMethod: isCOD ? 'COD' : 'Online',
+      items: cart.length > 0 ? cart : [{ name: 'Chatbot Order', qty: 1, price: total, productId: 'CHAT' }],
+      subtotal: cartTotal,
+      shipping,
+      total,
+      userId: chatCtx.user.uid || chatCtx.user.phone
+    };
+
+    try {
+      let orderId = 'ORD' + Date.now().toString().slice(-6);
+      if (window.createOrder) orderId = await createOrder(orderData);
+      if (window.linkOrderToUser) await linkOrderToUser(chatCtx.user.phone, orderId);
+
+      const localOrder = { id: orderId, userId: orderData.userId, customerName: chatCtx.user.name, customerPhone: chatCtx.user.phone, email: chatCtx.user.phone + '@padmanabh.site', address: orderData.address, items: orderData.items, subtotal: orderData.subtotal, shipping, tax: 0, total, payment: isCOD ? 'COD' : 'Online', paymentId: isCOD ? 'COD_' + Date.now() : 'Razorpay_' + Date.now(), status: 'pending', courierCompany: 'Standard Shipping', courierCharge: shipping, createdAt: new Date().toISOString(), srStatus: null, trackingId: null, awb: null, srOrderId: null, shipmentId: null };
+      const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+      localOrders.push(localOrder);
+      localStorage.setItem('pa_orders', JSON.stringify(localOrders));
+      Store.clearCart();
+
+      removeLoaders();
+      chatCtx.flow = null;
+      appendBotMessage(langStr('orderPlaced', { id: orderId.slice(-6).toUpperCase(), pay: isCOD ? 'COD' : 'Online', addr: chatCtx.checkoutAddress, phone: chatCtx.user.phone }), ['Track My Order', 'Shop More']);
+    } catch (e) {
+      removeLoaders();
+      appendBotMessage(langStr('orderFail'));
+    }
+  }
+
+  // ── Chat Toggle ────────────────────────────────────────────
+  function toggleChat() {
+    chatWindow.classList.toggle('open');
+    if (chatWindow.classList.contains('open')) {
+      chatInput.focus();
+      if (!chatCtx._initialized) {
+        chatCtx._initialized = true;
+        chatBody.innerHTML = '';
+        loadFAQs();
+        const session = PhoneAuth.getUser();
+        if (session && session.phone) {
+          chatCtx.user = { name: session.name || session.phone, phone: session.phone, uid: session.uid, isLoggedIn: true };
+        } else {
+          try {
+            const leads = JSON.parse(localStorage.getItem('pa_leads') || '[]');
+            if (leads.length > 0) { chatCtx.user.name = leads[0].name; chatCtx.user.phone = leads[0].phone; }
+          } catch(e) {}
+        }
+        handleGreeting();
+        // Check product page context (Feature 7)
+        if (window._lastProductPage) {
+          const p = Store.getCachedProducts().find(x => x.id === window._lastProductPage);
+          if (p) {
+            chatCtx.lastProduct = p.id;
+            setTimeout(() => {
+              appendBotMessage(`I see you're looking at ${p.name} (₹${p.price}). Would you like to know more?`, ['Show Details', 'Add to Cart']);
+            }, 2000);
+          }
+        }
+      }
+    }
+  }
+
+  // ── Event Listeners ────────────────────────────────────────
+  if (chatBtn) chatBtn.addEventListener('click', toggleChat);
+  if (chatClose) chatClose.addEventListener('click', toggleChat);
+  if (chatSend) chatSend.addEventListener('click', sendChatMessage);
+  if (chatInput) {
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { sendChatMessage(); resetIdleTimer(); } });
+  }
+
+  // ── Track product page for proactive context (Feature 7) ───
+  const origInitProduct = window.initProduct || function(){};
+  const origNav = window.navigate;
+  window._lastProductPage = null;
+  document.addEventListener('page:product', (e) => {
+    window._lastProductPage = e.detail?.id || null;
+  });
 
 // Update Navbar UI based on Auth state
 window.updateAuthUI = async function() {
