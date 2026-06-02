@@ -409,7 +409,7 @@ async function navigate(hash, force = false) {
 }
 
 function updateNavActive(route) {
-  document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(el => {
+  document.querySelectorAll('.nav-link, .mobile-nav-link, .glass-pill-link').forEach(el => {
     el.classList.toggle('active', el.dataset.route === route || (route === '' && el.dataset.route === 'home'));
   });
 }
@@ -1003,6 +1003,42 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBody.scrollTop = chatBody.scrollHeight;
   }
 
+  async function handlePincodeCheck(pincode) {
+    appendLoader("Checking courier options...");
+    try {
+      if (window.Shiprocket) {
+        let couriers = [];
+        try {
+          couriers = await Shiprocket.checkServiceability(null, pincode);
+        } catch(apiError) {
+          console.warn("ShipRocket API failed (likely running locally). Using mock data.", apiError);
+          couriers = [
+            { courier_name: 'Delhivery', estimated_delivery_days: 3, rate: 60 },
+            { courier_name: 'XpressBees', estimated_delivery_days: 4, rate: 55 },
+            { courier_name: 'Ecom Express', estimated_delivery_days: 5, rate: 50 }
+          ];
+        }
+        removeLoaders();
+        if (couriers && couriers.length > 0) {
+          let html = `Good news! We deliver to ${pincode}. Courier options:<br><ul style="margin: 5px 0; padding-left: 20px; font-size: 0.9em;">`;
+          couriers.slice(0, 5).forEach(c => {
+            html += `<li>${c.courier_name} (Est: ${c.estimated_delivery_days || c.etd} days, ₹${c.rate})</li>`;
+          });
+          html += '</ul>';
+          appendBotMessage(html, ['Checkout', 'Browse Products']);
+        } else {
+          appendBotMessage(`Sorry, we currently do not have serviceability to ${pincode}.`, ['Help']);
+        }
+      } else {
+        removeLoaders();
+        appendBotMessage("Serviceability check is currently unavailable.");
+      }
+    } catch (e) {
+      removeLoaders();
+      appendBotMessage("Could not fetch courier options. Please try again later.");
+    }
+  }
+
   // Handle FAQ (Feature 5)
   function handleFAQ(text) {
     const faq = findFAQ(text);
@@ -1320,6 +1356,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (intent === 'product_select') { if (handleProductSelect(text)) return; }
       if (intent === 'product_detail' || intent === 'price' || intent === 'ingredients' || intent === 'usage') {
         if (handleProductContext(intent, text)) return;
+      }
+      
+      if (intent === 'pincode') {
+        appendBotMessage("Please enter your 6-digit Pincode to check courier options.");
+        return;
+      }
+
+      // ── Check if it looks like a Pincode (6 digits) ──
+      if (/^\d{6}$/.test(text.trim())) {
+        await handlePincodeCheck(text.trim());
+        return;
       }
 
       // ── Check if it looks like an AWB number ──

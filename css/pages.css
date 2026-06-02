@@ -183,67 +183,111 @@
 /* ── FEATURED COLLECTIONS ──────────────────────────────────── */
 .collections-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 32px;
 }
 
 .collection-card {
   position: relative;
   aspect-ratio: 3/4;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+  transform: translateY(0);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.5s ease;
+}
+
+.collection-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(12, 12, 12, 0.9) 0%, rgba(12, 12, 12, 0.2) 50%, transparent 100%);
+  z-index: 1;
+  opacity: 0.7;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.collection-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 24px rgba(100, 164, 53, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.collection-card:hover::before {
+  opacity: 1;
 }
 
 .collection-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.7s ease;
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
 }
 
 .collection-card:hover img {
-  transform: scale(1.08);
+  transform: scale(1.1) rotate(1deg);
 }
 
 .collection-card-overlay {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%);
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  z-index: 2;
+  background: rgba(20, 20, 20, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 24px;
-  transition: var(--transition);
+  align-items: center;
+  text-align: center;
+  transform: translateY(16px);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.5s ease, border-color 0.5s ease;
 }
 
 .collection-card:hover .collection-card-overlay {
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%);
+  transform: translateY(0);
+  background: rgba(35, 35, 35, 0.65);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .collection-card-title {
   font-family: var(--font-serif);
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  color: white;
-  margin-bottom: 4px;
+  color: #fff;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: color 0.4s ease;
+}
+
+.collection-card:hover .collection-card-title {
+  color: var(--gold);
 }
 
 .collection-card-label {
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 500;
-  transform: translateY(8px);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
   opacity: 0;
-  transition: var(--transition);
+  transform: translateY(10px);
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s;
 }
 
 .collection-card:hover .collection-card-label {
-  transform: translateY(0);
   opacity: 1;
+  transform: translateY(0);
+  color: #fff;
 }
 
 /* ── TRUST SECTION ─────────────────────────────────────────── */
@@ -256,15 +300,21 @@
 .trust-item {
   text-align: center;
   padding: 32px 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  transition: var(--transition);
-  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-xl);
+  background: rgba(25, 25, 25, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transform: translateY(0);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease, background 0.4s ease;
 }
 
 .trust-item:hover {
-  border-color: var(--border-gold);
-  background: var(--bg-elevated);
+  transform: translateY(-6px);
+  background: rgba(35, 35, 35, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 16px 32px -8px rgba(0,0,0,0.6), 0 0 16px rgba(100, 164, 53, 0.1);
 }
 
 .trust-icon {
@@ -274,6 +324,11 @@
   align-items: center;
   justify-content: center;
   min-height: 40px;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.trust-item:hover .trust-icon {
+  transform: translateY(-5px) scale(1.15);
 }
 
 .trust-title {
@@ -296,17 +351,29 @@
 }
 
 .testimonial-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
+  background: rgba(25, 25, 25, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transform: translateY(0);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px -8px rgba(0,0,0,0.6), 0 0 16px rgba(100, 164, 53, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .testimonial-stars {
   color: var(--gold);
-  font-size: 0.9rem;
-  letter-spacing: 2px;
-  margin-bottom: 16px;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(100, 164, 53, 0.4);
 }
 
 .testimonial-text {
@@ -745,7 +812,7 @@
 @media (max-width: 768px) {
   .product-info-actions {
     position: fixed;
-    bottom: 0;
+    bottom: 90px;
     left: 0;
     right: 0;
     background: var(--bg-surface);
@@ -1377,26 +1444,52 @@
   .catalog-filters { flex-direction: column; align-items: flex-start; }
   .gallery-thumbnails { gap: 6px; }
   .cart-item { grid-template-columns: 64px 1fr; gap: 12px; }
-  .cart-item-right { flex-direction: row; align-items: center; justify-content: space-between; }
+  .cart-item-right { 
+    grid-column: 1 / -1;
+    flex-direction: row; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    margin-top: 4px;
+  }
 }
 
 /* ── TEAM CARDS ─────────────────────────────────────────────── */
 .team-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  position: relative;
+  background: linear-gradient(145deg, rgba(30, 30, 30, 0.7), rgba(15, 15, 15, 0.8));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
-  padding: 32px 24px;
+  padding: 40px 24px;
   text-align: center;
-  transition: var(--transition);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  transform: translateY(0);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease;
+  overflow: hidden;
+}
+.team-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 .team-card:hover {
-  border-color: var(--border-gold);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-gold);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7), 0 0 25px rgba(100, 164, 53, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.team-card:hover::before {
+  opacity: 1;
 }
 .team-avatar {
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1404,8 +1497,13 @@
   font-size: 2rem;
   font-weight: 700;
   color: #fff;
-  margin: 0 auto 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(100,164,53,0.15);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+.team-card:hover .team-avatar {
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.5), 0 0 0 4px rgba(100,164,53,0.3);
 }
 .team-avatar img {
   width: 100%;

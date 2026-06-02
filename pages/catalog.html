@@ -51,10 +51,10 @@
 </div>
 
 <script>
-let _allProducts = [];
-let _activeCategory = 'all';
-let _searchQuery = '';
-let _sortOrder = 'newest';
+var _allProducts = [];
+var _activeCategory = 'all';
+var _searchQuery = '';
+var _sortOrder = 'newest';
 
 document.addEventListener('page:catalog', async () => {
   _allProducts = await Store.loadProducts().catch(() => []);

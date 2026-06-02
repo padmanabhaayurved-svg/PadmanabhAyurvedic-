@@ -33,9 +33,9 @@
 </section>
 
 <script>
-let _currentProduct = null;
-let _selectedImageIdx = 0;
-let _qty = 1;
+var _currentProduct = null;
+var _selectedImageIdx = 0;
+var _qty = 1;
 
 document.addEventListener('page:product', async (e) => {
   const id = e.detail?.id;
