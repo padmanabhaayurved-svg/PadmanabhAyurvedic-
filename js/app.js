@@ -1176,6 +1176,52 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (chatCtx.flow === 'lead_capture') {
+        const step = chatCtx.flowStep;
+        if (step === 0) {
+          chatCtx.user.name = text;
+          chatCtx.flowStep = 1;
+          askLeadQuestion();
+        } else if (step === 1) {
+          chatCtx.user.phone = text;
+          appendLoader("Verifying...");
+          try {
+            const existingUser = window.getUserByPhone ? await window.getUserByPhone(text) : null;
+            removeLoaders();
+            if (!existingUser) {
+              chatCtx.flowStep = 2;
+              chatCtx.isNewUser = true;
+              appendBotMessage("It looks like you're new here! Please set a password to create your account.");
+            } else {
+              chatCtx.flowStep = 2;
+              chatCtx.isNewUser = false;
+              appendBotMessage("Welcome back! Please enter your password to login.");
+            }
+          } catch(e) {
+             removeLoaders();
+             finishLeadCapture();
+          }
+        } else if (step === 2) {
+          const password = text;
+          appendLoader(chatCtx.isNewUser ? "Creating account..." : "Logging in...");
+          try {
+             if (chatCtx.isNewUser) {
+               await PhoneAuth.register(chatCtx.user.phone, chatCtx.user.name, password);
+             } else {
+               await PhoneAuth.login(chatCtx.user.phone, password);
+             }
+             removeLoaders();
+             appendBotMessage(chatCtx.isNewUser ? "Account created successfully! 🎉" : "Logged in successfully! 🔓");
+             finishLeadCapture();
+          } catch (err) {
+             removeLoaders();
+             appendBotMessage(err.message || "Invalid password. Try again.");
+          }
+        }
+        chatBody.scrollTop = chatBody.scrollHeight;
+        return;
+      }
+
       if (chatCtx.flow === 'checkout') {
         // Existing checkout flow states
         if (chatCtx.flowStep === 'ASK_ADDRESS') {
@@ -1353,6 +1399,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ── Lead Capture Questionnaire (Chatbot) ───────────────────
+  const LEAD_QUESTIONS = [
+    { key: 'name', q: 'Hello! 👋 Before we start, may I know your name?' },
+    { key: 'phone', q: 'Thanks! What is your phone number so our experts can reach you if we get disconnected?' }
+  ];
+
+  function startLeadCaptureFlow() {
+    chatCtx.flow = 'lead_capture';
+    chatCtx.flowStep = 0;
+    askLeadQuestion();
+  }
+
+  function askLeadQuestion() {
+    if (chatCtx.flowStep < LEAD_QUESTIONS.length) {
+      appendBotMessage(LEAD_QUESTIONS[chatCtx.flowStep].q);
+    } else {
+      finishLeadCapture();
+    }
+  }
+
+  async function finishLeadCapture() {
+    try {
+      const data = {
+        name: chatCtx.user.name,
+        phone: chatCtx.user.phone,
+        service: 'Chatbot Lead',
+        timestamp: new Date().toISOString()
+      };
+      if (window.saveLead) {
+        await saveLead(data);
+      } else {
+        let leads = [];
+        try { leads = JSON.parse(localStorage.getItem('pa_leads') || '[]'); } catch(e){}
+        leads.unshift(data);
+        localStorage.setItem('pa_leads', JSON.stringify(leads));
+      }
+    } catch (e) {
+      console.error('Lead capture error', e);
+    }
+    chatCtx.flow = null;
+    handleGreeting();
+    if (window._lastProductPage) {
+      const p = Store.getCachedProducts().find(x => x.id === window._lastProductPage);
+      if (p) {
+        chatCtx.lastProduct = p.id;
+        setTimeout(() => {
+          appendBotMessage(`I see you're looking at ${p.name} (₹${p.price}). Would you like to know more?`, ['Show Details', 'Add to Cart']);
+        }, 2000);
+      }
+    }
+  }
+
   // ── Chat Toggle ────────────────────────────────────────────
   function toggleChat() {
     chatWindow.classList.toggle('open');
@@ -1371,15 +1469,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (leads.length > 0) { chatCtx.user.name = leads[0].name; chatCtx.user.phone = leads[0].phone; }
           } catch(e) {}
         }
-        handleGreeting();
-        // Check product page context (Feature 7)
-        if (window._lastProductPage) {
-          const p = Store.getCachedProducts().find(x => x.id === window._lastProductPage);
-          if (p) {
-            chatCtx.lastProduct = p.id;
-            setTimeout(() => {
-              appendBotMessage(`I see you're looking at ${p.name} (₹${p.price}). Would you like to know more?`, ['Show Details', 'Add to Cart']);
-            }, 2000);
+        
+        if (!chatCtx.user.phone) {
+          startLeadCaptureFlow();
+        } else {
+          handleGreeting();
+          // Check product page context (Feature 7)
+          if (window._lastProductPage) {
+            const p = Store.getCachedProducts().find(x => x.id === window._lastProductPage);
+            if (p) {
+              chatCtx.lastProduct = p.id;
+              setTimeout(() => {
+                appendBotMessage(`I see you're looking at ${p.name} (₹${p.price}). Would you like to know more?`, ['Show Details', 'Add to Cart']);
+              }, 2000);
+            }
           }
         }
       }
