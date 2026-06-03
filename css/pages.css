@@ -238,9 +238,7 @@
   left: 24px;
   right: 24px;
   z-index: 2;
-  background: rgba(20, 20, 20, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(20, 20, 20, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
   padding: 20px;
@@ -302,9 +300,7 @@
   padding: 32px 20px;
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-xl);
-  background: rgba(25, 25, 25, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(25, 25, 25, 0.85);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease, background 0.4s ease;
@@ -351,9 +347,7 @@
 }
 
 .testimonial-card {
-  background: rgba(25, 25, 25, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(25, 25, 25, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-xl);
   padding: 32px;
@@ -1226,9 +1220,7 @@
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.95);
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -1458,9 +1450,7 @@
 /* ── TEAM CARDS ─────────────────────────────────────────────── */
 .team-card {
   position: relative;
-  background: linear-gradient(145deg, rgba(30, 30, 30, 0.7), rgba(15, 15, 15, 0.8));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: linear-gradient(145deg, rgba(30, 30, 30, 0.95), rgba(15, 15, 15, 0.98));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
   padding: 40px 24px;
