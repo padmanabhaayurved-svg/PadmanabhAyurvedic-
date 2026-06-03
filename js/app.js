@@ -326,17 +326,20 @@ async function navigate(hash, force = false) {
     const mobileNav = document.getElementById('mobile-nav');
     const siteFooter = document.getElementById('site-footer');
     const fabContainer = document.querySelector('.fab-container');
+    const floatingMobileNav = document.getElementById('floating-mobile-nav');
 
     if (route === 'admin') {
       if (navbar) navbar.style.display = 'none';
       if (mobileNav) mobileNav.style.display = 'none';
       if (siteFooter) siteFooter.style.display = 'none';
       if (fabContainer) fabContainer.style.display = 'none';
+      if (floatingMobileNav) floatingMobileNav.style.display = 'none';
     } else {
       if (navbar) navbar.style.display = '';
       if (mobileNav) mobileNav.style.display = '';
       if (siteFooter) siteFooter.style.display = '';
       if (fabContainer) fabContainer.style.display = '';
+      if (floatingMobileNav) floatingMobileNav.style.display = '';
 
       // Special case for cart FAB
       const floatCart = document.getElementById('floating-cart-btn');
