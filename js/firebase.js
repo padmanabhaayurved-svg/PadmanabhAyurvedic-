@@ -377,7 +377,7 @@ async function getAnalyticsSummary(days = 30) {
       viewsToday:    todaySnap.size,
       lifetimeViews: allSnap.size,
       cartAdds:      carts.length,
-      activeSessions: Math.floor(Math.random() * 8) + 1,
+      activeSessions: 0,
       dailyViews:    dailyMap,
       mobile,
       desktop
@@ -685,25 +685,23 @@ let _mockAnalyticsCache = null;
 function getMockAnalytics(days) {
   if (!_mockAnalyticsCache) {
     const dailyViews = {};
-    // Pre-generate 30 days of data once
     for (let i = 30; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
-      dailyViews[key] = Math.floor(Math.random() * 120) + 20;
+      dailyViews[key] = 0;
     }
     _mockAnalyticsCache = {
-      viewsToday:     Math.floor(Math.random() * 80) + 10,
-      lifetimeViews:  Math.floor(Math.random() * 5000) + 1000,
-      cartAdds:       Math.floor(Math.random() * 300) + 50,
-      activeSessions: Math.floor(Math.random() * 8) + 1,
+      viewsToday: 0,
+      lifetimeViews: 0,
+      cartAdds: 0,
+      activeSessions: 0,
       dailyViews,
-      mobile:         Math.floor(Math.random() * 300) + 100,
-      desktop:        Math.floor(Math.random() * 200) + 50
+      mobile: 0,
+      desktop: 0
     };
   }
 
-  // Filter dailyViews based on requested days
   const keys = Object.keys(_mockAnalyticsCache.dailyViews).sort();
   const slicedKeys = keys.slice(-days);
   const slicedViews = {};
