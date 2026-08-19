@@ -1664,39 +1664,6 @@ async function refreshAllTracking() {
 }
 window.refreshAllTracking = refreshAllTracking;
 
-// Dummy Order Generator
-window.addDummyOrder = function() {
-  const dummy = {
-    id: 'ORD-' + Math.floor(Math.random() * 1000000),
-    customerName: 'Aarav Sharma',
-    customerPhone: '+91 98765 43210',
-    address: '12/A, Lotus Apartments, MG Road, Bangalore, 560001',
-    payment: 'Prepaid (Razorpay)',
-    status: 'processing',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    trackingId: '',
-    items: [
-      { name: 'Ashwagandha Elixir', qty: 2, price: 899, image: 'assets/products/ashwa.webp' },
-      { name: 'Kumkumadi Tailam', qty: 1, price: 1299, image: 'assets/products/kumkumadi.webp' }
-    ],
-    subtotal: 3097,
-    shipping: 0,
-    total: 3097
-  };
-  let orders = [];
-  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
-  orders.unshift(dummy);
-  localStorage.setItem('pa_orders', JSON.stringify(orders));
-  
-  // Refresh views
-  if (typeof loadAdminOrders === 'function') loadAdminOrders();
-  if (typeof renderOrderAnalytics === 'function') renderOrderAnalytics(30);
-  if (typeof loadShipmentTracker === 'function') loadShipmentTracker();
-  
-  showToast('Dummy order added successfully!', 'success');
-};
-
 // Helper toast (reuse existing or create simple one)
 function showToast(msg) {
   let t = document.getElementById('admin-toast');
