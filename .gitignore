@@ -26,3 +26,13 @@ __pycache__/
 # Node (if ever used)
 node_modules/
 dist/
+.env
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+coverage/
+

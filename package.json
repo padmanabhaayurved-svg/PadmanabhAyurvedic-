@@ -4,7 +4,7 @@
   "description": "",
   "main": "check_img.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -19,8 +19,16 @@
   },
   "homepage": "https://github.com/padmanabhaayurved-svg/PadmanabhAyurvedic-#readme",
   "dependencies": {
+    "@libsql/client": "^0.17.4",
+    "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "firebase-admin": "^13.10.0",
-    "razorpay": "^2.9.6"
+    "formidable": "^3.5.4",
+    "razorpay": "^2.9.8"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
   }
 }

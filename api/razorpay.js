@@ -17,12 +17,13 @@ module.exports = async function handler(req, res) {
   try {
     const { amount, receipt } = req.body || {};
 
-    if (!amount) {
-      return res.status(400).json({ error: 'Amount is required' });
+    if (!amount || Math.round(amount * 100) < 100) {
+      return res.status(400).json({ error: 'Amount must be at least 1 INR (100 paise)' });
     }
 
-    const key_id = process.env.RAZORPAY_KEY_ID || "rzp_test_SpN4BRYijSM3U2";
-    const key_secret = process.env.RAZORPAY_KEY_SECRET || "YOUR_TEST_KEY_SECRET";
+    const key_id = process.env.RAZORPAY_KEY_ID;
+    const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
 
     const razorpay = new Razorpay({
       key_id: key_id,

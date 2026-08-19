@@ -68,13 +68,34 @@ const RazorpayHelper = (() => {
             if (window.showToast) window.showToast('Payment cancelled.', 'warning');
           }
         },
-        handler: function(response) {
+        handler: async function(response) {
           // response: { razorpay_payment_id, razorpay_order_id, razorpay_signature }
-          onSuccess({
-            paymentId:  response.razorpay_payment_id,
-            orderId:    response.razorpay_order_id,
-            signature:  response.razorpay_signature
-          });
+          try {
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            const verifyData = await verifyRes.json();
+            
+            if (verifyRes.ok && verifyData.success) {
+              onSuccess({
+                paymentId:  response.razorpay_payment_id,
+                orderId:    response.razorpay_order_id,
+                signature:  response.razorpay_signature
+              });
+            } else {
+              throw new Error(verifyData.error || 'Payment signature mismatch');
+            }
+          } catch (err) {
+            console.error('[Razorpay] Verification failed:', err);
+            if (window.showToast) window.showToast('Payment verification failed', 'error');
+            if (onFailure) onFailure(err);
+          }
         }
       };
 
