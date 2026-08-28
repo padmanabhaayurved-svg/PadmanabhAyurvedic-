@@ -1714,8 +1714,21 @@
 .invoice-total-row.grand { font-weight: 700; font-size: 1rem; color: #1a1a1a; border-top: 2px solid #e5e5e5; padding-top: 12px; margin-top: 8px; }
 .invoice-footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 0.8rem; color: #999; text-align: center; }
 @media print {
-  .no-print { display: none !important; }
-  .invoice-wrap { padding: 20px; }
-  body > *:not(.invoice-print-wrapper) { display: none; }
+  .no-print, 
+  #navbar, 
+  #floating-mobile-nav, 
+  .fab-container,
+  .modal-close,
+  .modal-footer { 
+    display: none !important; 
+  }
+  .invoice-wrap,
+  .invoice-print-wrapper { 
+    display: block !important;
+    visibility: visible !important;
+    padding: 20px !important; 
+    color: #000 !important;
+    background: #fff !important;
+  }
 }
 

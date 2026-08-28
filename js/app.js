@@ -1846,8 +1846,9 @@ window.trackOrder = async function(awb) {
 window.viewOrderDetails = function(orderId) {
   const o = window._currentUserOrders?.find(x => x.id === orderId);
   if (!o) return;
+  window._currentViewingOrder = o;
 
-  const d = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'Just now';
+  const d = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : 'Just now';
   const itemsHtml = (o.items || []).map(i => `
     <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;">
       <div>
@@ -1883,9 +1884,9 @@ window.viewOrderDetails = function(orderId) {
           <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Shipping Address</div>
           <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
             ${o.address ? `
-              <div style="font-weight:500">${o.address.name || o.customerName}</div>
-              <div>${o.address.phone || o.customerPhone}</div>
-              <div style="margin-top:4px; color:var(--text-secondary)">${o.address.address}, ${o.address.city}, ${o.address.state} - ${o.address.pincode}</div>
+              <div style="font-weight:500">${o.address.name || o.customerName || 'Customer'}</div>
+              <div>${o.address.phone || o.customerPhone || ''}</div>
+              <div style="margin-top:4px; color:var(--text-secondary)">${o.address.address || ''}, ${o.address.city || ''}, ${o.address.state || ''} - ${o.address.pincode || ''}</div>
             ` : 'No address provided'}
           </div>
         </div>
@@ -1930,21 +1931,182 @@ window.viewOrderDetails = function(orderId) {
         </div>
 
       </div>
-      <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
-        <button class="btn btn-outline" onclick="printInvoice()">Print Invoice</button>
+      <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Close</button>
+        <button class="btn btn-primary" onclick="printInvoice('${o.id}')">🖨️ Print Invoice</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 };
 
-window.printInvoice = function() {
-  const printContent = document.getElementById('print-area').innerHTML;
-  const originalContent = document.body.innerHTML;
-  document.body.innerHTML = '<div class="invoice-print-wrapper" style="padding:40px; color:black; background:white;">' + printContent.replace(/<button.*?>.*?<\/button>/g, '') + '</div>';
-  window.print();
-  document.body.innerHTML = originalContent;
-  window.location.reload();
+window.printInvoice = function(orderId) {
+  const o = (orderId ? window._currentUserOrders?.find(x => x.id === orderId) : null) || window._currentViewingOrder;
+  if (!o) {
+    window.print();
+    return;
+  }
+
+  const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'N/A';
+  const orderNumber = (o.id || 'ORDER').slice(-6).toUpperCase();
+  const items = o.items || [];
+  const subtotal = o.subtotal || (o.total - (o.shipping || 0));
+  const shipping = o.shipping || 0;
+  const total = o.total || subtotal;
+
+  const itemRowsHtml = items.map(item => `
+    <tr>
+      <td style="padding:10px 12px; border-bottom:1px solid #eee; text-align:left;">
+        <strong>${item.name || 'Ayurvedic Product'}</strong>
+      </td>
+      <td style="padding:10px 12px; border-bottom:1px solid #eee; text-align:center;">${item.qty || 1}</td>
+      <td style="padding:10px 12px; border-bottom:1px solid #eee; text-align:right;">₹${(item.price || 0).toLocaleString('en-IN')}</td>
+      <td style="padding:10px 12px; border-bottom:1px solid #eee; text-align:right;"><strong>₹${((item.price || 0) * (item.qty || 1)).toLocaleString('en-IN')}</strong></td>
+    </tr>
+  `).join('');
+
+  const customerName = o.address?.name || o.customerName || 'Valued Customer';
+  const customerPhone = o.address?.phone || o.customerPhone || 'N/A';
+  const addressText = o.address ? `${o.address.address || ''}, ${o.address.city || ''}, ${o.address.state || ''} - ${o.address.pincode || ''}` : 'Address not specified';
+
+  const invoiceHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Tax Invoice - #${orderNumber}</title>
+      <style>
+        @page { size: A4; margin: 15mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        body { background: #ffffff !important; color: #111111 !important; padding: 20px; font-size: 13px; line-height: 1.5; }
+        .invoice-card { max-width: 800px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 32px; }
+        .invoice-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #64a435; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand-title { font-size: 24px; font-weight: 700; color: #1a4d1a; letter-spacing: -0.5px; }
+        .brand-desc { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.4; }
+        .tax-invoice-label { text-align: right; }
+        .tax-invoice-label h2 { font-size: 20px; font-weight: 800; color: #111; text-transform: uppercase; }
+        .tax-invoice-label p { font-size: 12px; color: #666; margin-top: 4px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .box { background: #f9fbf9; border: 1px solid #e6eee6; border-radius: 6px; padding: 14px; }
+        .box-title { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64a435; letter-spacing: 0.8px; margin-bottom: 6px; }
+        .box-content { font-size: 12.5px; color: #333; line-height: 1.4; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #e6eee6; border-radius: 6px; overflow: hidden; }
+        th { background: #f0f5f0; color: #1a4d1a; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; border-bottom: 1px solid #e0e0e0; }
+        .totals-section { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+        .totals-box { width: 280px; }
+        .tot-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #444; border-bottom: 1px solid #f0f0f0; }
+        .tot-row.grand { border-top: 2px solid #64a435; border-bottom: none; margin-top: 8px; padding-top: 10px; font-size: 16px; font-weight: 700; color: #111; }
+        .footer { border-top: 1px solid #eee; padding-top: 16px; text-align: center; font-size: 11px; color: #777; line-height: 1.5; }
+      </style>
+    </head>
+    <body>
+      <div class="invoice-card">
+        <div class="invoice-head">
+          <div>
+            <div class="brand-title">Padmanabh Ayurvedics</div>
+            <div class="brand-desc">
+              Pure Ayurvedic Wellness<br>
+              Dr. A.P.J. Abdul Kalam Chauk, Nagardeole<br>
+              Ahilyanagar, Maharashtra 414003<br>
+              GSTIN: 27AAAAA0000A1Z5 · Support: +91 98765 43210
+            </div>
+          </div>
+          <div class="tax-invoice-label">
+            <h2>TAX INVOICE</h2>
+            <p>Invoice No: <strong>INV-${orderNumber}</strong></p>
+            <p>Order Date: <strong>${dateStr}</strong></p>
+            <p>Status: <strong style="color:#64a435;">${(o.status || 'Pending').toUpperCase()}</strong></p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="box">
+            <div class="box-title">Billed & Shipped To</div>
+            <div class="box-content">
+              <strong>${customerName}</strong><br>
+              Phone: ${customerPhone}<br>
+              ${addressText}
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Payment & Shipment</div>
+            <div class="box-content">
+              Payment Method: <strong>${o.paymentMethod || 'COD'}</strong><br>
+              Payment Status: <strong>${o.paymentMethod === 'Online' ? 'Paid' : 'Pending (Cash on Delivery)'}</strong><br>
+              ${o.paymentId ? `Transaction ID: <span style="font-family:monospace">${o.paymentId}</span><br>` : ''}
+              Courier / Tracking: <strong>${o.awb ? o.awb : (o.courierName || 'Shiprocket Standard')}</strong>
+            </div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Item Description</th>
+              <th style="text-align:center;">Qty</th>
+              <th style="text-align:right;">Unit Price</th>
+              <th style="text-align:right;">Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRowsHtml || '<tr><td colspan="4" style="text-align:center;padding:16px;">No items recorded</td></tr>'}
+          </tbody>
+        </table>
+
+        <div class="totals-section">
+          <div class="totals-box">
+            <div class="tot-row">
+              <span>Items Subtotal:</span>
+              <span>₹${subtotal.toLocaleString('en-IN')}</span>
+            </div>
+            <div class="tot-row">
+              <span>Shipping Charges:</span>
+              <span>${shipping === 0 ? 'FREE' : '₹' + shipping.toLocaleString('en-IN')}</span>
+            </div>
+            <div class="tot-row grand">
+              <span>Grand Total:</span>
+              <span style="color:#1a4d1a;">₹${total.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          Thank you for choosing Padmanabh Ayurvedics for your wellness journey!<br>
+          This is a computer-generated tax invoice and requires no physical signature.<br>
+          Website: <strong>padmanabhayurved.com</strong>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  let printFrame = document.getElementById('invoice-print-frame');
+  if (printFrame) printFrame.remove();
+
+  printFrame = document.createElement('iframe');
+  printFrame.id = 'invoice-print-frame';
+  printFrame.style.position = 'fixed';
+  printFrame.style.right = '0';
+  printFrame.style.bottom = '0';
+  printFrame.style.width = '0';
+  printFrame.style.height = '0';
+  printFrame.style.border = '0';
+  document.body.appendChild(printFrame);
+
+  const frameDoc = printFrame.contentWindow.document;
+  frameDoc.open();
+  frameDoc.write(invoiceHtml);
+  frameDoc.close();
+
+  setTimeout(() => {
+    try {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    } catch (err) {
+      console.error('Print iframe error:', err);
+      window.print();
+    }
+  }, 350);
 };
 
 // ── Universal Phone Auth Modal ───────────────────────────────

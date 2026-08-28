@@ -1038,23 +1038,57 @@
 
 /* ── Invoice / Print ─────────────────────────────────────────── */
 @media print {
-  body * { visibility: hidden; }
-  .order-detail-modal, .order-detail-modal * { visibility: visible; }
-  .order-detail-modal {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: white !important;
-    color: black !important;
+  .no-print, 
+  .no-print-overlay .modal-header, 
+  .no-print-overlay .modal-footer, 
+  #navbar, 
+  #floating-mobile-nav, 
+  .fab-container, 
+  #admin-sidebar, 
+  .admin-mobile-topbar, 
+  .admin-mobile-quick-nav,
+  .modal-close,
+  .modal-footer {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .order-detail-modal, 
+  .invoice-wrap,
+  .invoice-print-wrapper,
+  #print-area {
+    visibility: visible !important;
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
     box-shadow: none !important;
     border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  .no-print { display: none !important; }
-  .order-detail-modal table { border-collapse: collapse; width: 100%; }
-  .order-detail-modal th, .order-detail-modal td { border: 1px solid #ddd; padding: 8px; }
+
+  .order-detail-modal table,
+  .invoice-table { 
+    border-collapse: collapse !important; 
+    width: 100% !important; 
+  }
+
+  .order-detail-modal th, 
+  .order-detail-modal td,
+  .invoice-table th,
+  .invoice-table td { 
+    border: 1px solid #ddd !important; 
+    padding: 8px 12px !important; 
+    color: #000 !important;
+    background: #fff !important;
+  }
+
   .text-gold { color: #64a435 !important; }
 }
 
