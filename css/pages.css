@@ -673,13 +673,13 @@
 /* ── PRODUCT DETAIL ─────────────────────────────────────────── */
 .product-detail-hero {
   padding-top: var(--nav-h);
-  padding-bottom: 80px;
+  padding-bottom: 48px;
 }
 
 .product-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 64px;
+  gap: 48px;
   align-items: start;
 }
 
@@ -754,7 +754,7 @@
   display: flex;
   align-items: baseline;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .product-info-price {
@@ -781,7 +781,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .stock-dot {
@@ -796,7 +796,7 @@
 .product-info-actions {
   display: flex;
   gap: 12px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
@@ -820,7 +820,7 @@
 .product-divider {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 24px 0;
+  margin: 16px 0;
 }
 
 /* ── CART ───────────────────────────────────────────────────── */
