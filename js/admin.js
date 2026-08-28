@@ -44,41 +44,113 @@ async function initAdminHub() {
     loadAdminData();
   }
 
-  // Sidebar Tabs
+  // Mobile sidebar controls
+  function openAdminMobileSidebar() {
+    const sb = document.getElementById('admin-sidebar');
+    const backdrop = document.getElementById('admin-sidebar-backdrop');
+    if (sb) sb.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('active');
+  }
+
+  function closeAdminMobileSidebar() {
+    const sb = document.getElementById('admin-sidebar');
+    const backdrop = document.getElementById('admin-sidebar-backdrop');
+    if (sb) sb.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+  }
+
+  function toggleAdminMobileSidebar() {
+    const sb = document.getElementById('admin-sidebar');
+    if (sb && sb.classList.contains('mobile-open')) {
+      closeAdminMobileSidebar();
+    } else {
+      openAdminMobileSidebar();
+    }
+  }
+
+  // Centralized Tab Switcher (Works for Desktop Sidebar & Mobile Quick-Nav)
+  function switchAdminTab(targetId, tabLabel) {
+    const sidebarItems = document.querySelectorAll('.sidebar-item[data-target]');
+    sidebarItems.forEach(i => {
+      if (i.dataset.target === targetId) {
+        i.classList.add('active');
+      } else {
+        i.classList.remove('active');
+      }
+    });
+
+    const quickPills = document.querySelectorAll('.admin-quick-pill[data-target]');
+    quickPills.forEach(p => {
+      if (p.dataset.target === targetId) {
+        p.classList.add('active');
+        try { p.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch(e){}
+      } else {
+        p.classList.remove('active');
+      }
+    });
+
+    document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
+    const target = document.getElementById(targetId);
+    if (target) target.classList.add('active');
+
+    // Update Mobile Topbar Tab Label
+    const tabNameEl = document.getElementById('admin-mobile-tab-name');
+    if (tabNameEl) {
+      if (tabLabel) {
+        tabNameEl.textContent = tabLabel;
+      } else {
+        const activeSidebarItem = document.querySelector(`.sidebar-item[data-target="${targetId}"]`);
+        if (activeSidebarItem) {
+          const icon = activeSidebarItem.querySelector('.sidebar-icon')?.textContent || '';
+          const label = activeSidebarItem.querySelector('.sidebar-label')?.textContent || '';
+          tabNameEl.textContent = `${icon} ${label}`.trim();
+        }
+      }
+    }
+
+    // Refresh data on tab switch
+    if (targetId === 'tab-history') loadHistory();
+    if (targetId === 'tab-finance') initFinanceAndLedger();
+    if (targetId === 'tab-retarget') initRetargetTab();
+    if (targetId === 'tab-users') loadAdminUsers();
+    if (targetId === 'tab-orders') loadAdminOrders();
+    if (targetId === 'tab-teammates') loadTeammates();
+    if (targetId === 'tab-analytics') { renderAnalytics(30); renderOrderAnalytics(30); }
+
+    closeAdminMobileSidebar();
+  }
+  window.switchAdminTab = switchAdminTab;
+
+  // Sidebar Tabs Event Listeners
   const sidebarItems = document.querySelectorAll('.sidebar-item[data-target]');
   sidebarItems.forEach(item => {
     item.addEventListener('click', () => {
-      sidebarItems.forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-
-      document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
-      const target = document.getElementById(item.dataset.target);
-      if (target) target.classList.add('active');
-
-      // Refresh data on tab switch
-      if (item.dataset.target === 'tab-history') loadHistory();
-      if (item.dataset.target === 'tab-finance') initFinanceAndLedger();
-      if (item.dataset.target === 'tab-retarget') initRetargetTab();
-      if (item.dataset.target === 'tab-users') loadAdminUsers();
-      if (item.dataset.target === 'tab-orders') loadAdminOrders();
-      if (item.dataset.target === 'tab-teammates') loadTeammates();
-      if (item.dataset.target === 'tab-analytics') { renderAnalytics(30); renderOrderAnalytics(30); }
-      
-      if (window.innerWidth < 768) {
-        document.getElementById('admin-sidebar').classList.remove('mobile-open');
-      }
+      switchAdminTab(item.dataset.target);
     });
   });
 
-  // Sidebar toggle
+  // Mobile Quick Navigation Pills Event Listeners
+  const quickPills = document.querySelectorAll('.admin-quick-pill[data-target]');
+  quickPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      switchAdminTab(pill.dataset.target, pill.textContent);
+    });
+  });
+
+  // Mobile Menu & Backdrop Event Listeners
+  document.getElementById('admin-mobile-menu-btn')?.addEventListener('click', toggleAdminMobileSidebar);
+  document.getElementById('admin-sidebar-close')?.addEventListener('click', closeAdminMobileSidebar);
+  document.getElementById('admin-sidebar-backdrop')?.addEventListener('click', closeAdminMobileSidebar);
+
+  // Desktop/Mobile Sidebar toggle button
   const toggleBtn = document.getElementById('sidebar-toggle');
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
       const sb = document.getElementById('admin-sidebar');
       if (window.innerWidth < 768) {
-        sb.classList.toggle('mobile-open');
+        toggleAdminMobileSidebar();
       } else {
-        sb.classList.toggle('collapsed');
+        sb?.classList.toggle('collapsed');
       }
     });
   }

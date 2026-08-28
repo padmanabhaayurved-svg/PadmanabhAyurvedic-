@@ -28,6 +28,9 @@
 <!-- Admin Dashboard Shell -->
 <div id="admin-shell" class="admin-shell" style="display:none">
 
+  <!-- Mobile Backdrop Overlay -->
+  <div id="admin-sidebar-backdrop" class="admin-sidebar-backdrop" aria-hidden="true"></div>
+
   <!-- Sidebar -->
   <aside id="admin-sidebar">
     <div class="sidebar-header">
@@ -35,7 +38,10 @@
         <span class="sidebar-brand-name">Neural Hub</span>
         <span class="sidebar-brand-sub">Padmanabh Admin</span>
       </div>
-      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Sidebar">≡</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="sidebar-toggle desktop-only-btn" id="sidebar-toggle" aria-label="Toggle Sidebar">≡</button>
+        <button class="sidebar-close-btn mobile-only-btn" id="admin-sidebar-close" aria-label="Close Sidebar">✕</button>
+      </div>
     </div>
     <nav class="sidebar-nav">
       <button class="sidebar-item active" data-target="tab-analytics">
@@ -95,7 +101,7 @@
         <span class="sidebar-icon">⚙️</span>
         <span class="sidebar-label">System</span>
       </button>
-          <button class="sidebar-item" data-target="tab-teammates">
+      <button class="sidebar-item" data-target="tab-teammates">
         <span class="sidebar-icon">🤝</span>
         <span class="sidebar-label">Teammates</span>
       </button>
@@ -114,6 +120,40 @@
 
   <!-- Main Content -->
   <main id="admin-main">
+
+    <!-- Mobile Topbar -->
+    <header class="admin-mobile-topbar" id="admin-mobile-topbar">
+      <button class="admin-mobile-menu-btn" id="admin-mobile-menu-btn" aria-label="Open Admin Menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="admin-mobile-tab-name" id="admin-mobile-tab-name">📊 Analytics</div>
+      <div class="admin-mobile-topbar-actions">
+        <button class="admin-mobile-icon-btn" onclick="navigate('home')" title="View Store">🌐</button>
+        <button class="admin-mobile-icon-btn" onclick="adminLogout()" title="Log Out">🚪</button>
+      </div>
+    </header>
+
+    <!-- Mobile Quick Tab Navigation (Pill Strip) -->
+    <div class="admin-mobile-quick-nav" id="admin-mobile-quick-nav">
+      <button class="admin-quick-pill active" data-target="tab-analytics">📊 Analytics</button>
+      <button class="admin-quick-pill" data-target="tab-products">📦 Products</button>
+      <button class="admin-quick-pill" data-target="tab-orders">📋 Orders</button>
+      <button class="admin-quick-pill" data-target="tab-leads">👥 Leads</button>
+      <button class="admin-quick-pill" data-target="tab-users">👤 Users</button>
+      <button class="admin-quick-pill" data-target="tab-finance">💹 Finance</button>
+      <button class="admin-quick-pill" data-target="tab-shiprocket">🚚 Shiprocket</button>
+      <button class="admin-quick-pill" data-target="tab-razorpay">💳 Razorpay</button>
+      <button class="admin-quick-pill" data-target="tab-printer">🖨️ Printer</button>
+      <button class="admin-quick-pill" data-target="tab-hero">🖼️ Hero</button>
+      <button class="admin-quick-pill" data-target="tab-content">📝 Content</button>
+      <button class="admin-quick-pill" data-target="tab-teammates">🤝 Team</button>
+      <button class="admin-quick-pill" data-target="tab-system">⚙️ System</button>
+      <button class="admin-quick-pill" data-target="tab-history">🗑️ Archive</button>
+    </div>
 
     <!-- 1. ANALYTICS TAB -->
     <div id="tab-analytics" class="admin-tab active">
@@ -1226,7 +1266,7 @@
     <div class="modal-body">
       <form id="product-form" class="form-group" style="gap:20px">
         <input type="hidden" id="pm-id"/>
-        <div class="form-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px;">
+        <div class="form-grid-3">
           <div class="form-group">
             <label class="form-label">Name (EN) *</label>
             <input type="text" class="form-input" id="pm-name" required/>
@@ -1283,7 +1323,7 @@
           <input type="hidden" id="pm-img-urls"/>
         </div>
 
-        <div class="form-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px; margin-top:16px;">
+        <div class="form-grid-3 mt-16">
           <div class="form-group">
             <label class="form-label">Description (EN)</label>
             <textarea class="form-textarea" id="pm-desc"></textarea>
