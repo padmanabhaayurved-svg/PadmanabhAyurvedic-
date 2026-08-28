@@ -590,7 +590,7 @@
   .co-wrap {
     grid-template-columns: 1fr;
     gap: 20px;
-    padding: 0 16px 100px;
+    padding: 0 16px 40px;
   }
   /* On mobile: summary goes above form */
   .co-right { order: -1; }
@@ -609,6 +609,18 @@
   .co-address-grid { grid-template-columns: 1fr; }
   .co-item { padding: 12px 14px; gap: 10px; }
   .co-item-img { width: 52px; height: 52px; }
+}
+
+/* Hide global floating elements and upper navigator on mobile checkout for a distraction-free and clean UI */
+@media (max-width: 768px) {
+  body[data-route="cart"] #floating-mobile-nav,
+  body[data-route="cart"] .fab-container,
+  .co-top-nav {
+    display: none !important;
+  }
+  body[data-route="cart"] #app {
+    padding-bottom: 0 !important;
+  }
 }
 </style>
 
@@ -632,7 +644,7 @@ function renderCartPage() {
 
   if (cart.length === 0) {
     container.innerHTML = `
-      <div class="co-empty" style="padding-top:calc(var(--nav-h) + 40px)">
+      <div class="co-empty">
         <div class="co-empty-art">🛒</div>
         <h2 style="font-family:var(--font-serif)">Your cart is empty</h2>
         <p style="color:var(--text-muted);max-width:320px;line-height:1.6">Discover our premium Ayurvedic products and add something wonderful.</p>
@@ -649,11 +661,9 @@ function renderCartPage() {
   const subtotal = Store.getCartTotal();
   const total    = subtotal + SHIPPING_CHARGE;
 
-  container.style.paddingTop = 'calc(var(--nav-h) + 24px)';
-
   container.innerHTML = `
     <!-- Back + Progress -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div class="co-top-nav" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
       <button class="co-back-btn" onclick="navigate('catalog')" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.85rem;padding:0;transition:color 0.2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-muted)'">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
         Continue Shopping

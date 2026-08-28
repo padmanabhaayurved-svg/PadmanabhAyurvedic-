@@ -237,9 +237,13 @@ async function getUserOrders(uid) {
   try {
     const snap = await _db.collection('orders')
       .where('userId', '==', uid)
-      .orderBy('createdAt', 'desc')
       .get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return orders.sort((a, b) => {
+      const tA = a.createdAt?.toMillis?.() || 0;
+      const tB = b.createdAt?.toMillis?.() || 0;
+      return tB - tA;
+    });
   } catch (e) {
     console.warn('[Firebase] getUserOrders error:', e);
     return [];
@@ -356,13 +360,15 @@ async function getAnalyticsSummary(days = 30) {
 
     // Today's views
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const todayTs = firebase.firestore.Timestamp.fromDate(todayStart);
-    const todaySnap = await _db.collection('analytics')
-      .where('type', '==', 'pageView')
-      .where('timestamp', '>=', todayTs).get();
+    const viewsToday = views.filter(v => v.timestamp?.toDate() >= todayStart).length;
 
     // Build daily traffic
     const dailyMap = {};
+    for (let i = days; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dailyMap[d.toISOString().slice(0, 10)] = 0;
+    }
     views.forEach(v => {
       const d = v.timestamp?.toDate();
       if (!d) return;
@@ -374,7 +380,7 @@ async function getAnalyticsSummary(days = 30) {
     const desktop = views.length - mobile;
 
     return {
-      viewsToday:    todaySnap.size,
+      viewsToday:    viewsToday,
       lifetimeViews: allSnap.size,
       cartAdds:      carts.length,
       activeSessions: 0,

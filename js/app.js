@@ -296,6 +296,7 @@ async function navigate(hash, force = false) {
     app.innerHTML = html;
     app.classList.remove('transitioning');
     _currentRoute = route;
+    document.body.setAttribute('data-route', route);
 
     // Update URL hash without triggering another navigation
     if (window.location.hash !== '#' + hash) {
@@ -314,6 +315,7 @@ async function navigate(hash, force = false) {
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     _currentRoute = route;
+    document.body.setAttribute('data-route', route);
 
     // Track page view
     trackPageView('#' + hash).catch(() => {});

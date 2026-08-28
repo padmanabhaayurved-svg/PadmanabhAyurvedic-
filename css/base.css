@@ -55,6 +55,12 @@
   --max-w-narrow:   860px;
 }
 
+@media (max-width: 768px) {
+  :root {
+    --nav-h: 0px;
+  }
+}
+
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;

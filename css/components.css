@@ -996,6 +996,9 @@
   .fab-container {
     bottom: 90px;
   }
+  .cart-fab {
+    display: none !important;
+  }
 }
 
 .glass-btn {
