@@ -1135,7 +1135,7 @@
   width: 420px;
 }
 @media (max-width: 480px) {
-  #cart-drawer { width: 100vw; }
+  #cart-drawer { width: 100%; }
 }
 .side-cart-item {
   display: flex;
