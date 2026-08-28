@@ -780,20 +780,25 @@ document.addEventListener('DOMContentLoaded', () => {
   function buildProductCard(p) {
     if (!p) return '';
     const savings = Store.getSavings(p.price, p.mrp);
-    const img = Store.convertDriveLink(p.images?.[0]);
+    const rawImg = p.images?.[0];
+    const img = (rawImg && typeof Store.convertDriveLink === 'function') 
+      ? Store.convertDriveLink(rawImg) 
+      : (rawImg || 'assets/logo.png');
     return `<div class="chat-product-card">
-      <img src="${img}" alt="${p.name}" onerror="this.src='${FALLBACK_IMG}'">
+      <div class="chat-pimg-wrap">
+        <img src="${img}" alt="${p.name}" onerror="this.src='assets/logo.png'">
+      </div>
       <div class="info">
         <div class="pname">${p.name}</div>
         <div class="pprice">
           <span class="current">₹${p.price}</span>
-          ${p.mrp ? `<span class="old">₹${p.mrp}</span>` : ''}
+          ${p.mrp && p.mrp > p.price ? `<span class="old">₹${p.mrp}</span>` : ''}
           ${savings > 0 ? `<span class="badge">${savings}% OFF</span>` : ''}
         </div>
-        <p class="pdesc">${p.description}</p>
+        <p class="pdesc">${p.description ? (p.description.length > 75 ? p.description.slice(0, 75) + '...' : p.description) : 'Pure Ayurvedic formulation.'}</p>
         <div class="pactions">
-          <button class="btn btn-primary btn-sm" onclick="chatAddToCart('${p.id}')" style="font-size:0.75rem;padding:4px 10px">Add to Cart</button>
-          <button class="btn btn-outline btn-sm" onclick="chatShowDetail('${p.id}')" style="font-size:0.75rem;padding:4px 10px">Details</button>
+          <button class="chat-card-btn-add" onclick="chatAddToCart('${p.id}')">🛒 Add (₹${p.price})</button>
+          <button class="chat-card-btn-det" onclick="chatShowDetail('${p.id}')">ℹ️ Details</button>
         </div>
       </div>
     </div>`;
@@ -811,16 +816,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function buildDetailCard(p) {
     if (!p) return '';
+    const rawImg = p.images?.[0];
+    const img = (rawImg && typeof Store.convertDriveLink === 'function') 
+      ? Store.convertDriveLink(rawImg) 
+      : (rawImg || 'assets/logo.png');
+    const savings = Store.getSavings(p.price, p.mrp);
     return `<div class="chat-detail-card">
-      <div class="dtitle">${p.name}</div>
-      <div class="dcat">${p.category}</div>
-      <div class="drow"><span class="dlabel">Price</span><span class="dvalue">₹${p.price} ${p.mrp ? `<span style="text-decoration:line-through;color:var(--text-muted);font-weight:400">₹${p.mrp}</span>` : ''}</span></div>
-      <div class="drow"><span class="dlabel">Description</span><span class="dvalue" style="font-weight:400">${p.description}</span></div>
-      <div class="drow"><span class="dlabel">Ingredients</span><span class="dvalue" style="font-weight:400;font-size:0.8rem">${p.ingredients}</span></div>
-      <div class="drow"><span class="dlabel">How to Use</span><span class="dvalue" style="font-weight:400;font-size:0.8rem">${p.usage}</span></div>
-      <div style="margin-top:12px;display:flex;gap:6px">
-        <button class="btn btn-primary btn-sm" onclick="chatAddToCart('${p.id}')" style="font-size:0.75rem">Add to Cart</button>
-        <button class="btn btn-outline btn-sm" onclick="chatAddToCart('${p.id}')" style="font-size:0.75rem">Back</button>
+      <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
+        <div class="chat-pimg-wrap" style="width:68px;height:68px;">
+          <img src="${img}" alt="${p.name}" onerror="this.src='assets/logo.png'">
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="dtitle">${p.name}</div>
+          <div class="dcat">${(p.category || 'Ayurveda').toUpperCase()}</div>
+          <div class="pprice" style="margin-top:2px">
+            <span class="current" style="font-size:1.1rem;font-weight:700;color:var(--gold)">₹${p.price}</span>
+            ${p.mrp && p.mrp > p.price ? `<span class="old" style="text-decoration:line-through;color:var(--text-muted);font-size:0.8rem;margin-left:6px">₹${p.mrp}</span>` : ''}
+            ${savings > 0 ? `<span class="badge" style="margin-left:6px">${savings}% OFF</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="drow"><span class="dlabel">Benefits</span><span class="dvalue" style="font-weight:400">${p.description || 'N/A'}</span></div>
+      ${p.ingredients ? `<div class="drow"><span class="dlabel">Ingredients</span><span class="dvalue" style="font-weight:400;font-size:0.8rem">${p.ingredients}</span></div>` : ''}
+      ${p.usage ? `<div class="drow"><span class="dlabel">How to Use</span><span class="dvalue" style="font-weight:400;font-size:0.8rem">${p.usage}</span></div>` : ''}
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="chat-card-btn-add" onclick="chatAddToCart('${p.id}')" style="flex:1">🛒 Add to Cart (₹${p.price})</button>
+        <button class="chat-card-btn-det" onclick="showProductsInChat(4)" style="flex:1">← More Products</button>
       </div>
     </div>`;
   }
@@ -828,8 +849,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Global Chat Helpers ────────────────────────────────────
   window.chatAddToCart = function(productId) {
     const p = Store.getCachedProducts().find(x => x.id === productId);
-    if (p) { Store.addToCart(p); showToast(`${p.name} added to cart`, 'success'); }
+    if (p) {
+      Store.addToCart(p);
+      showToast(`${p.name} added to cart!`, 'success');
+      appendBotMessage(`✅ **${p.name}** added to your cart! Total Cart: ₹${Store.getCartTotal()}`, [
+        '🛒 View Cart / Checkout', '🌿 Browse More Products', '💊 Health Remedies'
+      ]);
+    }
   };
+
   window.chatShowDetail = function(productId) {
     const p = Store.getCachedProducts().find(x => x.id === productId);
     if (p) {
@@ -844,6 +872,44 @@ document.addEventListener('DOMContentLoaded', () => {
       chatBody.scrollTop = chatBody.scrollHeight;
     }
   };
+
+  function showProductsInChat(limit = 4, category = null) {
+    let prods = Store.getCachedProducts();
+    if (category) {
+      prods = prods.filter(p => (p.category || '').toLowerCase() === category.toLowerCase());
+    }
+    if (!prods || prods.length === 0) {
+      appendBotMessage("No products found in this category right now.", ['🌿 Browse All Products']);
+      return;
+    }
+    appendBotMessage(`🌿 **${category ? category.toUpperCase() + ' REMEDIES' : 'Recommended Ayurvedic Formulations'}:**`);
+    prods.slice(0, limit).forEach(p => {
+      const card = buildProductCard(p);
+      const el = document.createElement('div');
+      el.className = 'chat-msg bot';
+      el.innerHTML = card;
+      chatBody.appendChild(el);
+    });
+    appendBotMessage("Tap **Add** on any item or select an option below:", [
+      '🛒 View Cart / Checkout', '💊 Health Remedies', '👨‍⚕️ Doctor Consultation'
+    ]);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+  window.showProductsInChat = showProductsInChat;
+
+  function showHealthCategories() {
+    appendBotMessage("🌿 What health concern would you like Ayurvedic remedies for?", [
+      'Joint & Knee Pain',
+      'Digestion, Gas & Acidity',
+      'Diabetes & Sugar Control',
+      'Piles & Fissure (Arshas)',
+      'Immunity, Fever & Cough',
+      'Hair Care & Skin Glow',
+      'Stress, Energy & Sleep'
+    ]);
+  }
+  window.showHealthCategories = showHealthCategories;
+
   window.handleChatOption = function(option) {
     if (chatInput) { chatInput.value = option; sendChatMessage(); }
   };
@@ -1083,47 +1149,58 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   }
 
-  // Handle product selection (when user types a product name)
+  // Handle product selection (when user types or clicks a product name)
   function handleProductSelect(text) {
     const prods = Store.getCachedProducts();
+    const query = text.toLowerCase().trim();
     const p = prods.find(x =>
-      text.toLowerCase().includes(x.name.toLowerCase()) ||
-      (x.nameHi && text.includes(x.nameHi)) ||
-      (x.nameMr && text.includes(x.nameMr))
+      x.name.toLowerCase().includes(query) ||
+      query.includes(x.name.toLowerCase()) ||
+      (x.nameHi && (text.includes(x.nameHi) || x.nameHi.includes(text))) ||
+      (x.nameMr && (text.includes(x.nameMr) || x.nameMr.includes(text))) ||
+      (x.id && query.includes(x.id.toLowerCase()))
     );
     if (!p) return false;
     chatCtx.lastProduct = p.id;
     chatCtx.lastProductName = p.name;
     chatCtx.lastTopic = 'detail';
-    const savings = Store.getSavings(p.price, p.mrp);
-    appendBotMessage(`${p.name} — ₹${p.price}${p.mrp ? ` (MRP ₹${p.mrp})` : ''}${savings > 0 ? ` — ${savings}% OFF!` : ''}\n${p.description}`, [
-      'Add to Cart', 'Tell me more', 'Ingredients', 'How to use'
-    ]);
+    
+    appendBotMessage(`🌿 Found **${p.name}**:`);
+    const card = buildProductCard(p);
+    const el = document.createElement('div');
+    el.className = 'chat-msg bot';
+    el.innerHTML = card;
+    chatBody.appendChild(el);
+    chatBody.scrollTop = chatBody.scrollHeight;
     return true;
   }
 
-  // Handle consultation with qualification (Feature 10)
+  // Handle consultation with friendly questionnaire
   function handleConsultation() {
-    if (!chatCtx.user.isLoggedIn) {
-      appendBotMessage("I'd love to connect you with our Ayurvedic expert! First, I'll need your details.", ['Start Registration']);
-      return;
-    }
     chatCtx.flow = 'consultation';
-    chatCtx.consult = { symptoms: '', duration: '', priorTreatment: '', age: '', preferredTime: '' };
+    chatCtx.consult = { name: chatCtx.user.name || '', phone: chatCtx.user.phone || '', symptoms: '', preferredTime: '' };
     chatCtx.flowStep = 0;
-    appendBotMessage("I'll connect you with our Ayurvedic expert. A few quick details to help them prepare:");
+    appendBotMessage("👨‍⚕️ **Free Ayurvedic Doctor Consultation**\nI'll connect you directly with our senior Vaidya. Let's get a few quick details:");
     askConsultQuestion();
   }
 
   const CONSULT_QUESTIONS = [
-    { key: 'symptoms', q: '1/5 — What symptoms or health concerns are you facing?' },
-    { key: 'duration', q: '2/5 — How long have you been experiencing this?' },
-    { key: 'priorTreatment', q: '3/5 — Have you tried any treatments before?' },
-    { key: 'age', q: '4/5 — What is your age?' },
-    { key: 'preferredTime', q: '5/5 — When would you prefer the consultation?' }
+    { key: 'name', q: '1/3 — What is your full name?' },
+    { key: 'phone', q: '2/3 — What is your WhatsApp/Mobile number for the doctor call?' },
+    { key: 'symptoms', q: '3/3 — Briefly describe your health concern or symptoms:' }
   ];
 
   function askConsultQuestion() {
+    // If name or phone already known from session, skip ahead
+    if (chatCtx.flowStep === 0 && chatCtx.user.name) {
+      chatCtx.consult.name = chatCtx.user.name;
+      chatCtx.flowStep = 1;
+    }
+    if (chatCtx.flowStep === 1 && chatCtx.user.phone) {
+      chatCtx.consult.phone = chatCtx.user.phone;
+      chatCtx.flowStep = 2;
+    }
+
     if (chatCtx.flowStep < CONSULT_QUESTIONS.length) {
       appendBotMessage(CONSULT_QUESTIONS[chatCtx.flowStep].q);
     } else {
@@ -1132,12 +1209,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function finishConsultation() {
-    appendLoader("Submitting your consultation request...");
+    appendLoader("Booking your consultation...");
     const data = {
-      name: chatCtx.user.name,
-      phone: chatCtx.user.phone,
-      service: 'Consultation',
-      ...chatCtx.consult,
+      name: chatCtx.consult.name || chatCtx.user.name || 'Anonymous',
+      phone: chatCtx.consult.phone || chatCtx.user.phone || '',
+      service: 'Ayurvedic Consultation',
+      symptoms: chatCtx.consult.symptoms || '',
       timestamp: new Date().toISOString()
     };
     try {
@@ -1150,38 +1227,41 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { /* silent */ }
     removeLoaders();
     chatCtx.flow = null;
-    appendBotMessage(langStr('consultConfirm', { phone: chatCtx.user.phone }) + ' ' + langStr('consultFee'), ['Got it, thanks', 'Browse Products']);
+    appendBotMessage(`🎉 Thank you **${data.name}**! Your free Ayurvedic consultation request is confirmed.\nOur Vaidya will contact you at **${data.phone}** shortly.`, [
+      '🌿 Browse Products', '💊 Health Remedies'
+    ]);
   }
 
-  // ── Greeting with dynamic buttons (Feature 6) ──────────────
+  // ── Greeting with interactive buttons ──────────────────────
   function handleGreeting() {
     const session = PhoneAuth.getUser();
-    const prods = getDynamicButtons(4);
-    const btns = [...prods, 'Track My Order', 'Consultation'];
-    if (session && session.phone) {
-      chatCtx.user = { name: session.name || session.phone, phone: session.phone, uid: session.uid, isLoggedIn: true };
-      appendBotMessage(langStr('greetingLoggedIn', { name: session.name || session.phone }), btns);
-    } else {
-      appendBotMessage(langStr('greeting'), btns);
-    }
-    // Check for cart abandonment (Feature 7)
+    const name = session?.name ? session.name.split(' ')[0] : '';
+    const welcomeText = name
+      ? `Namaste **${name}**! 🙏 Welcome back to **Padmanabh Ayurvedics**.\nI am your AI Ayurvedic Vaidya. How may I support your wellness today?`
+      : `Namaste! 🙏 Welcome to **Padmanabh Ayurvedics**.\nI am your AI Ayurvedic Vaidya. How may I support your wellness today?`;
+
+    appendBotMessage(welcomeText, [
+      '🌿 Browse Products',
+      '💊 Health Remedies',
+      '📦 Track My Order',
+      '👨‍⚕️ Doctor Consultation',
+      '🛒 View Cart'
+    ]);
+
+    // Check for cart items
     if (Store.getCartCount() > 0) {
       setTimeout(() => {
-        appendBotMessage(`I see you have ${Store.getCartCount()} item(s) in your cart (₹${Store.getCartTotal()}). Would you like to complete your order?`, ['Complete Order', 'Continue Shopping']);
-      }, 1500);
+        appendBotMessage(`💡 You have **${Store.getCartCount()} item(s)** in your cart (₹${Store.getCartTotal()}). Would you like to complete your order?`, [
+          '🛒 View Cart / Checkout', '🌿 Browse Products'
+        ]);
+      }, 1200);
     }
   }
 
   // ── Help menu ──────────────────────────────────────────────
   function handleHelp() {
-    appendBotMessage(langStr('help') + `
-🌿 Ask about health concerns (joint pain, digestion, etc.)
-📦 Track your orders
-💬 Learn about products, prices, ingredients
-❓ FAQ about shipping, returns, payment
-🛒 Place an order
-👨‍⚕️ Book a consultation with our Vaidya`, [
-      'I have a health concern', 'Track My Order', 'Show Products', 'Consultation'
+    appendBotMessage(`🌿 **How can I help you today?**\n• 💊 Get herbal remedies for joint pain, acidity, diabetes, etc.\n• 🛍️ Browse all Ayurvedic products with images & discounts\n• 📦 Track your current shipment\n• 👨‍⚕️ Book a 100% Free Vaidya Consultation`, [
+      '🌿 Browse Products', '💊 Health Remedies', '📦 Track My Order', '👨‍⚕️ Doctor Consultation'
     ]);
   }
 
@@ -1209,7 +1289,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (chatCtx.flow === 'consultation') {
         const step = chatCtx.flowStep;
         if (step < CONSULT_QUESTIONS.length) {
-          chatCtx.consult[CONSULT_QUESTIONS[step].key] = text;
+          const key = CONSULT_QUESTIONS[step].key;
+          chatCtx.consult[key] = text;
+          if (key === 'phone') { chatCtx.user.phone = text; }
+          if (key === 'name') { chatCtx.user.name = text; }
           chatCtx.flowStep++;
           askConsultQuestion();
         } else {
@@ -1219,54 +1302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (chatCtx.flow === 'lead_capture') {
-        const step = chatCtx.flowStep;
-        if (step === 0) {
-          chatCtx.user.name = text;
-          chatCtx.flowStep = 1;
-          askLeadQuestion();
-        } else if (step === 1) {
-          chatCtx.user.phone = text;
-          appendLoader("Verifying...");
-          try {
-            const existingUser = window.getUserByPhone ? await window.getUserByPhone(text) : null;
-            removeLoaders();
-            if (!existingUser) {
-              chatCtx.flowStep = 2;
-              chatCtx.isNewUser = true;
-              appendBotMessage("It looks like you're new here! Please set a password to create your account.");
-            } else {
-              chatCtx.flowStep = 2;
-              chatCtx.isNewUser = false;
-              appendBotMessage("Welcome back! Please enter your password to login.");
-            }
-          } catch(e) {
-             removeLoaders();
-             finishLeadCapture();
-          }
-        } else if (step === 2) {
-          const password = text;
-          appendLoader(chatCtx.isNewUser ? "Creating account..." : "Logging in...");
-          try {
-             if (chatCtx.isNewUser) {
-               await PhoneAuth.register(chatCtx.user.phone, chatCtx.user.name, password);
-             } else {
-               await PhoneAuth.login(chatCtx.user.phone, password);
-             }
-             removeLoaders();
-             appendBotMessage(chatCtx.isNewUser ? "Account created successfully! 🎉" : "Logged in successfully! 🔓");
-             finishLeadCapture();
-          } catch (err) {
-             removeLoaders();
-             appendBotMessage(err.message || "Invalid password. Try again.");
-          }
-        }
-        chatBody.scrollTop = chatBody.scrollHeight;
-        return;
-      }
-
       if (chatCtx.flow === 'checkout') {
-        // Existing checkout flow states
         if (chatCtx.flowStep === 'ASK_ADDRESS') {
           chatCtx.checkoutAddress = text;
           chatCtx.flowStep = 'ASK_PAYMENT';
@@ -1278,40 +1314,92 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // ── Check if it's a known flow option ──
-      if (text === 'Consultation' || text === 'Consultation / Ayurvedic Therapy') {
-        handleConsultation(); return;
+      const lower = text.toLowerCase().trim();
+
+      // ── Interactive Navigation Options ──
+      if (lower.includes('browse product') || lower.includes('show product') || lower === 'products' || lower === 'shop' || lower.includes('all product')) {
+        showProductsInChat(6);
+        return;
       }
-      if (text === 'Show Products' || text === 'Browse Products' || text === 'Browse other products') {
-        appendBotMessage("Here are our products:", getDynamicButtons(8)); return;
+
+      if (lower.includes('health remed') || lower.includes('remedies') || lower.includes('health concern')) {
+        showHealthCategories();
+        return;
       }
+
+      // Symptom specific matches from chips
+      if (lower.includes('joint') || lower.includes('knee') || lower.includes('muscle') || lower.includes('pain') || lower.includes('back')) {
+        if (handleSymptom(text, 'knee') || handleSymptom(text, 'joint') || handleSymptom(text, 'pain')) return;
+      }
+      if (lower.includes('digestion') || lower.includes('acidity') || lower.includes('gas') || lower.includes('constipation') || lower.includes('bloat')) {
+        if (handleSymptom(text, 'digestion') || handleSymptom(text, 'acidity') || handleSymptom(text, 'gas')) return;
+      }
+      if (lower.includes('diabet') || lower.includes('sugar')) {
+        if (handleSymptom(text, 'diabetes')) return;
+      }
+      if (lower.includes('pile') || lower.includes('arsha') || lower.includes('fissure')) {
+        if (handleSymptom(text, 'piles') || handleSymptom(text, 'arshas')) return;
+      }
+      if (lower.includes('immunit') || lower.includes('fever') || lower.includes('cough') || lower.includes('cold')) {
+        if (handleSymptom(text, 'immunity') || handleSymptom(text, 'fever') || handleSymptom(text, 'cough')) return;
+      }
+      if (lower.includes('hair') || lower.includes('skin')) {
+        if (handleSymptom(text, 'hair') || handleSymptom(text, 'skin')) return;
+      }
+      if (lower.includes('stress') || lower.includes('sleep') || lower.includes('energy')) {
+        if (handleSymptom(text, 'stress') || handleSymptom(text, 'sleep') || handleSymptom(text, 'energy')) return;
+      }
+
+      if (lower.includes('consult') || lower.includes('doctor') || lower.includes('vaidya')) {
+        handleConsultation();
+        return;
+      }
+
+      if (lower.includes('cart') || lower.includes('basket')) {
+        const cart = Store.getCart();
+        if (cart.length === 0) {
+          appendBotMessage("🛒 Your cart is empty right now.", ['🌿 Browse Products', '💊 Health Remedies']);
+          return;
+        }
+        let html = `🛒 **Your Cart (${cart.length} items):**<br>`;
+        cart.forEach(i => { html += `• ${i.name} (${i.qty}x) — **₹${i.price * i.qty}**<br>`; });
+        html += `<br><strong>Cart Total: ₹${Store.getCartTotal()}</strong>`;
+        appendBotMessage(html, ['Proceed to Checkout', '🌿 Browse Products']);
+        return;
+      }
+
+      if (lower.includes('checkout') || lower.includes('proceed to checkout') || lower.includes('buy now') || lower.includes('place order')) {
+        if (typeof window.navigate === 'function') {
+          window.navigate('cart');
+          appendBotMessage("🚀 Taking you to your cart & checkout!");
+          setTimeout(() => { if (chatWindow) chatWindow.classList.remove('open'); }, 800);
+        } else {
+          startCheckoutFlow();
+        }
+        return;
+      }
+
+      if (lower.includes('track') || lower.includes('order status')) {
+        handleOrderTrack();
+        return;
+      }
+
       if (text === 'Tell me more' && chatCtx.lastProduct) {
         const p = Store.getCachedProducts().find(x => x.id === chatCtx.lastProduct);
-        if (p) { chatCtx.lastTopic = 'detail'; const card = buildDetailCard(p); const el = document.createElement('div'); el.className = 'chat-msg bot'; el.innerHTML = card; chatBody.appendChild(el); chatBody.scrollTop = chatBody.scrollHeight; }
+        if (p) {
+          chatCtx.lastTopic = 'detail';
+          const card = buildDetailCard(p);
+          const el = document.createElement('div');
+          el.className = 'chat-msg bot';
+          el.innerHTML = card;
+          chatBody.appendChild(el);
+          chatBody.scrollTop = chatBody.scrollHeight;
+        }
         return;
       }
-      if (text === 'Ingredients' && chatCtx.lastProduct) {
-        handleProductContext('ingredients', text); return;
-      }
-      if (text === 'How to use' && chatCtx.lastProduct) {
-        handleProductContext('usage', text); return;
-      }
+
       if (text === 'Add to Cart' && chatCtx.lastProduct) {
-        const p = Store.getCachedProducts().find(x => x.id === chatCtx.lastProduct);
-        if (p) { Store.addToCart(p); appendBotMessage(`${p.name} added to cart!`, ['Checkout', 'Keep Shopping']); }
-        return;
-      }
-      if (text === 'Add all to cart') {
-        // Find all recommended products
-        let count = 0;
-        chatBody.querySelectorAll('.chat-product-card').forEach(card => {
-          const btn = card.querySelector('[onclick^="chatAddToCart"]');
-          if (btn) {
-            const match = btn.getAttribute('onclick').match(/'([^']+)'/);
-            if (match) { const p = Store.getCachedProducts().find(x => x.id === match[1]); if (p) { Store.addToCart(p); count++; } }
-          }
-        });
-        appendBotMessage(`${count} product(s) added to cart!`, ['Checkout', 'Keep Shopping']);
+        window.chatAddToCart(chatCtx.lastProduct);
         return;
       }
       if (text === 'Checkout' || text === 'Complete Order' || text === 'place order') {
@@ -1321,18 +1409,11 @@ document.addEventListener('DOMContentLoaded', () => {
         handleOrderTrack(); return;
       }
       if (text === 'Back') {
-        appendBotMessage("What would you like to do?", ['Show Products', 'Track My Order', 'Consultation', 'Help']); return;
+        handleGreeting(); return;
       }
       if (text === 'Got it, thanks' || text === 'No, thanks' || text === 'Keep Shopping') {
-        appendBotMessage("Glad I could help! 😊 Anything else?", ['Show Products', 'Track My Order', 'Help']); return;
-      }
-      if (text === 'Add all to cart') {
-        let count = 0;
-        Store.getCachedProducts().forEach(p => { Store.addToCart(p); count++; });
-        appendBotMessage(`${count} products added to cart!`, ['Checkout']); return;
-      }
-      if (text === 'Start Registration') {
-        startCheckoutFlow(); return;
+        appendBotMessage("Glad I could help! 😊 Anything else?", ['🌿 Browse Products', '💊 Health Remedies', '📦 Track My Order']);
+        return;
       }
       if (text === 'Help') { handleHelp(); return; }
 
