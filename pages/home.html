@@ -273,7 +273,7 @@ var initHero = async () => {
           ? `<div class="testimonial-avatar" style="background-image:url('${r.dp}'); background-size:cover; background-position:center; color:transparent;"></div>`
           : `<div class="testimonial-avatar" style="background:linear-gradient(135deg,var(--gold),var(--gold-dark))">${r.name.charAt(0)}</div>`;
         return `
-          <div class="testimonial-card animate-in" style="min-width:300px; flex-shrink:0;">
+          <div class="testimonial-card animate-in">
             <div class="testimonial-stars">★★★★★</div>
             <p class="testimonial-text">"${r.text}"</p>
             <div class="testimonial-author">

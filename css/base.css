@@ -355,8 +355,8 @@ p { color: var(--text-secondary); line-height: 1.8; }
 
 /* ── Section Heading ───────────────────────────────────────── */
 .section-label {
-  font-size: 0.7rem;
-  letter-spacing: 0.3em;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--gold);
   font-weight: 600;

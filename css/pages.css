@@ -291,8 +291,8 @@
 /* ── TRUST SECTION ─────────────────────────────────────────── */
 .trust-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
 }
 
 .trust-item {
@@ -342,8 +342,9 @@
 /* ── TESTIMONIALS ───────────────────────────────────────────── */
 .testimonials-track {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
+  padding-right: 0;
 }
 
 .testimonial-card {
@@ -445,7 +446,7 @@
 .about-story-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 80px;
+  gap: 48px;
   align-items: center;
 }
 
@@ -657,7 +658,7 @@
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
   padding: 40px 0;
 }
@@ -1408,6 +1409,19 @@
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
+
+/* On screens ≤1280px, three-column grids can clip behind FABs. Switch to 2-col earlier */
+@media (max-width: 1280px) {
+  /* Give sections breathing room so FABs (right:24px ~64px wide) don't overlap */
+  .section .container,
+  .section-sm .container,
+  .section-lg .container {
+    padding-right: 24px;
+  }
+  .products-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .testimonials-track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (max-width: 1024px) {
   .collections-grid { grid-template-columns: repeat(2, 1fr); }
   .trust-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1428,6 +1442,12 @@
   .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .hero-title { font-size: 2.5rem; }
   .hero-actions { flex-direction: column; align-items: flex-start; }
+  /* Remove right padding on mobile since FABs are smaller */
+  .section .container,
+  .section-sm .container,
+  .section-lg .container {
+    padding-right: 16px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1436,11 +1456,11 @@
   .catalog-filters { flex-direction: column; align-items: flex-start; }
   .gallery-thumbnails { gap: 6px; }
   .cart-item { grid-template-columns: 64px 1fr; gap: 12px; }
-  .cart-item-right { 
+  .cart-item-right {
     grid-column: 1 / -1;
-    flex-direction: row; 
-    align-items: center; 
-    justify-content: space-between; 
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     padding-top: 12px;
     border-top: 1px dashed var(--border);
     margin-top: 4px;
