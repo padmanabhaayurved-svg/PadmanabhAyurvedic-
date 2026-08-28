@@ -1,8 +1,619 @@
-<!-- CART & CHECKOUT PAGE -->
-<div class="cart-page">
-  <div class="container" id="cart-container">
-    <!-- Rendered via JS -->
-  </div>
+<!-- CART & CHECKOUT PAGE — Premium Redesign -->
+<style>
+/* ── Checkout Premium Styles ─── */
+.cart-page { min-height: 100vh; background: var(--bg-primary); }
+
+/* Step Progress */
+.co-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 24px 0;
+  margin-bottom: 32px;
+}
+.co-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  flex: 1;
+  max-width: 120px;
+}
+.co-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 2px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+.co-step.active .co-step-circle {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #000;
+  box-shadow: 0 0 0 4px rgba(201,168,76,0.2);
+}
+.co-step.done .co-step-circle {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+}
+.co-step-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+.co-step.active .co-step-label { color: var(--gold); }
+.co-step.done .co-step-label { color: #22c55e; }
+.co-step-line {
+  height: 2px;
+  flex: 1;
+  background: var(--border);
+  margin-bottom: 20px;
+  max-width: 80px;
+  transition: background 0.3s;
+}
+.co-step-line.done { background: #22c55e; }
+
+/* Page Layout */
+.co-wrap {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+  align-items: start;
+}
+
+/* Left Panel */
+.co-left { display: flex; flex-direction: column; gap: 16px; }
+
+/* Section Cards */
+.co-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.co-card.active-card { border-color: rgba(201,168,76,0.4); }
+
+.co-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.co-card-header-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(201,168,76,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.co-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  flex: 1;
+}
+.co-card-badge {
+  background: var(--gold);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* Cart Items */
+.co-items-list { padding: 4px 0; }
+.co-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+.co-item:last-child { border-bottom: none; }
+.co-item:hover { background: rgba(255,255,255,0.02); }
+
+.co-item-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.co-item-img img { width:100%; height:100%; object-fit:cover; }
+.co-item-qty-pill {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--gold);
+  color: #000;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+}
+.co-item-info { flex: 1; min-width: 0; }
+.co-item-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.co-item-meta { font-size: 0.78rem; color: var(--text-muted); }
+
+.co-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.co-item-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 64px;
+  text-align: right;
+}
+.co-qty-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.co-qty-btn {
+  background: none;
+  border: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  transition: background 0.15s, color 0.15s;
+}
+.co-qty-btn:hover { background: rgba(201,168,76,0.15); color: var(--gold); }
+.co-qty-val {
+  min-width: 30px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+.co-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+}
+.co-remove-btn:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* Form Styles */
+.co-form-body { padding: 20px; }
+.co-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.co-form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.co-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.co-label span { color: var(--gold); margin-left: 2px; }
+.co-input {
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  font-family: inherit;
+}
+.co-input::placeholder { color: var(--text-muted); font-size: 0.88rem; }
+.co-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+  background: rgba(201,168,76,0.03);
+}
+.co-input.error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+.co-input.valid { border-color: #22c55e; }
+
+.co-address-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+/* COD Highlight */
+.co-cod-box {
+  margin: 4px 20px 20px;
+  background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, rgba(201,168,76,0.04) 100%);
+  border: 1.5px solid rgba(201,168,76,0.25);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.co-cod-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(201,168,76,0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.co-cod-title { font-weight: 700; color: var(--text-primary); margin-bottom: 2px; font-size: 0.95rem; }
+.co-cod-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+.co-cod-check {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+/* CTA Button */
+.co-place-btn {
+  width: calc(100% - 40px);
+  margin: 0 20px 20px;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #c9a84c 0%, #e8c96e 50%, #c9a84c 100%);
+  background-size: 200% 100%;
+  color: #000;
+  border: none;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 0.03em;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(201,168,76,0.4), 0 1px 0 rgba(255,255,255,0.2) inset;
+  position: relative;
+  overflow: hidden;
+}
+.co-place-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+.co-place-btn:hover::before { left: 160%; }
+.co-place-btn:hover {
+  box-shadow: 0 8px 32px rgba(201,168,76,0.55), 0 1px 0 rgba(255,255,255,0.2) inset;
+  transform: translateY(-1px);
+}
+.co-place-btn:active { transform: translateY(0); }
+.co-place-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+.co-secure-note {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Right — Summary Sticky Card */
+.co-summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  position: sticky;
+  top: calc(var(--nav-h) + 16px);
+}
+.co-summary-header {
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(201,168,76,0.1) 0%, rgba(201,168,76,0.03) 100%);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.co-summary-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.co-summary-count {
+  background: var(--gold);
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.co-summary-items { padding: 4px 0; }
+.co-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.co-summary-item-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+.co-summary-item-img img { width:100%;height:100%;object-fit:cover; }
+.co-summary-item-name {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.3;
+}
+.co-summary-item-qty { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.co-summary-item-price {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.co-summary-calc { padding: 16px 20px; border-top: 1px solid var(--border); }
+.co-calc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+}
+.co-calc-row:last-child { margin-bottom: 0; }
+.co-calc-label { color: var(--text-secondary); }
+.co-calc-val { font-weight: 500; color: var(--text-primary); }
+.co-calc-divider { height: 1px; background: var(--border); margin: 14px 0; }
+.co-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.co-total-label { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.co-total-val {
+  font-size: 1.3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #c9a84c, #e8c96e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Trust Mini Badges */
+.co-trust-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,0.01);
+}
+.co-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.co-trust-item-icon {
+  width: 22px;
+  height: 22px;
+  background: rgba(34,197,94,0.12);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22c55e;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+/* Order Success */
+.co-success {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+.co-success-ring {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 28px;
+  font-size: 2.4rem;
+  box-shadow: 0 0 0 12px rgba(34,197,94,0.12), 0 8px 32px rgba(34,197,94,0.3);
+  animation: successPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes successPop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.co-success-title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+.co-success-desc {
+  color: var(--text-secondary);
+  max-width: 400px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+.co-success-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 32px;
+  text-align: left;
+}
+.co-success-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.88rem;
+}
+.co-success-row:last-child { border-bottom: none; }
+.co-success-key { color: var(--text-muted); }
+.co-success-val { font-weight: 600; color: var(--text-primary); }
+.co-success-val.gold {
+  background: linear-gradient(135deg, #c9a84c, #e8c96e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 1.05rem;
+}
+
+/* Empty cart */
+.co-empty {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  padding: 40px 24px;
+}
+.co-empty-art {
+  width: 120px;
+  height: 120px;
+  background: var(--bg-elevated);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  border: 2px dashed var(--border);
+}
+
+/* Mobile-first Responsive */
+@media (max-width: 860px) {
+  .co-wrap {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 16px 100px;
+  }
+  /* On mobile: summary goes above form */
+  .co-right { order: -1; }
+  .co-summary-card { position: static; }
+}
+@media (max-width: 600px) {
+  .co-form-row { grid-template-columns: 1fr; }
+  .co-address-grid { grid-template-columns: 1fr 1fr; }
+  .co-address-grid .co-form-group:first-child { grid-column: 1 / -1; }
+  .co-item-controls { flex-direction: column; align-items: flex-end; gap: 6px; }
+  .co-item-price { font-size: 0.9rem; }
+  .co-place-btn { font-size: 0.95rem; padding: 16px 20px; }
+  .co-progress { padding: 16px 12px 0; }
+}
+@media (max-width: 400px) {
+  .co-address-grid { grid-template-columns: 1fr; }
+  .co-item { padding: 12px 14px; gap: 10px; }
+  .co-item-img { width: 52px; height: 52px; }
+}
+</style>
+
+<div class="cart-page" id="cart-root">
+  <div class="container" id="cart-container"></div>
 </div>
 
 <script>
@@ -18,281 +629,416 @@ function renderCartPage() {
   if (!container) return;
 
   const cart = Store.getCart();
+
   if (cart.length === 0) {
     container.innerHTML = `
-      <div class="text-center" style="padding:100px 20px">
-        <div style="font-size:4rem;margin-bottom:24px;opacity:0.5">🛒</div>
-        <h2 style="margin-bottom:16px" data-i18n="cart.empty">Your cart is empty.</h2>
-        <button class="btn btn-primary" onclick="navigate('catalog')" data-i18n="cart.empty.cta">Start Shopping</button>
-      </div>
-    `;
+      <div class="co-empty" style="padding-top:calc(var(--nav-h) + 40px)">
+        <div class="co-empty-art">🛒</div>
+        <h2 style="font-family:var(--font-serif)">Your cart is empty</h2>
+        <p style="color:var(--text-muted);max-width:320px;line-height:1.6">Discover our premium Ayurvedic products and add something wonderful.</p>
+        <button class="btn btn-primary btn-lg" onclick="navigate('catalog')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Browse Products
+        </button>
+      </div>`;
     applyStrings();
     return;
   }
 
+  const lang     = localStorage.getItem('pa_lang') || 'en';
   const subtotal = Store.getCartTotal();
   const total    = subtotal + SHIPPING_CHARGE;
-  const lang     = localStorage.getItem('pa_lang') || 'en';
+
+  container.style.paddingTop = 'calc(var(--nav-h) + 24px)';
 
   container.innerHTML = `
-    <div class="checkout-page-wrap">
-      <!-- Left: Form -->
-      <div class="checkout-form-col">
-        <div class="checkout-header">
-          <button class="checkout-back-btn" onclick="navigate('catalog')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            Continue Shopping
-          </button>
-          <h1 class="checkout-title">Checkout</h1>
+    <!-- Back + Progress -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <button class="co-back-btn" onclick="navigate('catalog')" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.85rem;padding:0;transition:color 0.2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-muted)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Continue Shopping
+      </button>
+      <div style="display:flex;align-items:center;gap:0">
+        <div class="co-step done">
+          <div class="co-step-circle">✓</div>
+          <div class="co-step-label">Cart</div>
         </div>
+        <div class="co-step-line done"></div>
+        <div class="co-step active">
+          <div class="co-step-circle">2</div>
+          <div class="co-step-label">Details</div>
+        </div>
+        <div class="co-step-line"></div>
+        <div class="co-step">
+          <div class="co-step-circle">3</div>
+          <div class="co-step-label">Confirm</div>
+        </div>
+      </div>
+    </div>
 
-        <!-- Cart Items Mini-Summary -->
-        <div class="checkout-items-preview">
-          <div class="checkout-section-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            Your Items (${cart.length})
+    <div class="co-wrap" style="padding:0;max-width:100%">
+      <!-- LEFT -->
+      <div class="co-left">
+        <!-- Items -->
+        <div class="co-card active-card">
+          <div class="co-card-header">
+            <div class="co-card-header-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            </div>
+            <span class="co-card-title">Your Items</span>
+            <span class="co-card-badge">${cart.length} item${cart.length > 1 ? 's' : ''}</span>
           </div>
-          <div class="checkout-items-list">
-            ${cart.map(item => {
-              const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
-              return `
-              <div class="checkout-item-row">
-                <div class="checkout-item-img">
-                  <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
-                  <span class="checkout-item-qty-badge">${item.qty}</span>
-                </div>
-                <div class="checkout-item-info">
-                  <div class="checkout-item-name">${name}</div>
-                  <div class="checkout-item-price">${Store.formatPrice(item.price)} × ${item.qty}</div>
-                </div>
-                <div class="checkout-item-total">${Store.formatPrice(item.price * item.qty)}</div>
-                <div style="display:flex;align-items:center;gap:8px;margin-left:8px">
-                  <div class="qty-control" style="transform:scale(0.85)">
-                    <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty - 1})">−</button>
-                    <span class="qty-value">${item.qty}</span>
-                    <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty + 1})">+</button>
-                  </div>
-                  <button onclick="Store.removeFromCart('${item.id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:4px" title="Remove">✕</button>
-                </div>
-              </div>`;
-            }).join('')}
+          <div class="co-items-list" id="co-items-list">
+            ${cart.map(item => buildItemRow(item, lang)).join('')}
           </div>
         </div>
 
         <!-- Delivery Form -->
-        <div class="checkout-form-section">
-          <div class="checkout-section-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            Delivery Details
+        <div class="co-card active-card">
+          <div class="co-card-header">
+            <div class="co-card-header-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <span class="co-card-title">Delivery Details</span>
           </div>
-          <form id="checkout-form">
-            <div class="co-form-grid">
-              <div class="form-group">
-                <label class="form-label">Full Name *</label>
-                <input type="text" class="form-input co-input" id="co-name" placeholder="Your full name" required/>
+          <form id="co-form" novalidate>
+            <div class="co-form-body">
+              <div class="co-form-row">
+                <div class="co-form-group">
+                  <label class="co-label">Full Name <span>*</span></label>
+                  <input type="text" class="co-input" id="co-name" placeholder="Raj Kumar" required autocomplete="name"/>
+                </div>
+                <div class="co-form-group">
+                  <label class="co-label">Phone <span>*</span></label>
+                  <input type="tel" class="co-input" id="co-phone" placeholder="98765 43210" required pattern="[0-9]{10}" maxlength="10" autocomplete="tel" inputmode="numeric"/>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Phone Number *</label>
-                <input type="tel" class="form-input co-input" id="co-phone" placeholder="10-digit mobile number" required pattern="[0-9]{10}"/>
+              <div class="co-form-group">
+                <label class="co-label">Email Address</label>
+                <input type="email" class="co-input" id="co-email" placeholder="your@email.com" autocomplete="email"/>
               </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email Address</label>
-              <input type="email" class="form-input co-input" id="co-email" placeholder="your@email.com"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Street Address *</label>
-              <input type="text" class="form-input co-input" id="co-address" placeholder="House no., Street, Colony" required/>
-            </div>
-            <div class="co-form-grid">
-              <div class="form-group">
-                <label class="form-label">City *</label>
-                <input type="text" class="form-input co-input" id="co-city" placeholder="City" required/>
+              <div class="co-form-group">
+                <label class="co-label">Street Address <span>*</span></label>
+                <input type="text" class="co-input" id="co-address" placeholder="House no., Street, Colony, Landmark" required autocomplete="street-address"/>
               </div>
-              <div class="form-group">
-                <label class="form-label">State *</label>
-                <input type="text" class="form-input co-input" id="co-state" placeholder="State" required/>
-              </div>
-            </div>
-            <div class="form-group" style="max-width:180px">
-              <label class="form-label">Pincode *</label>
-              <input type="text" class="form-input co-input" id="co-pin" placeholder="6-digit pincode" required pattern="[0-9]{6}" maxlength="6"/>
-            </div>
-
-            <!-- COD Notice -->
-            <div class="cod-notice">
-              <div class="cod-notice-icon">📦</div>
-              <div>
-                <div style="font-weight:600;color:var(--text-primary);margin-bottom:2px">Cash on Delivery</div>
-                <div style="font-size:0.82rem;color:var(--text-secondary)">Pay when your order arrives at your doorstep. Safe & trusted.</div>
+              <div class="co-address-grid">
+                <div class="co-form-group">
+                  <label class="co-label">City <span>*</span></label>
+                  <input type="text" class="co-input" id="co-city" placeholder="Mumbai" required autocomplete="address-level2"/>
+                </div>
+                <div class="co-form-group">
+                  <label class="co-label">State <span>*</span></label>
+                  <input type="text" class="co-input" id="co-state" placeholder="Maharashtra" required/>
+                </div>
+                <div class="co-form-group">
+                  <label class="co-label">Pincode <span>*</span></label>
+                  <input type="text" class="co-input" id="co-pin" placeholder="400001" required pattern="[0-9]{6}" maxlength="6" inputmode="numeric"/>
+                </div>
               </div>
             </div>
-
-            <!-- Place Order Button -->
-            <button type="submit" class="btn btn-primary btn-lg place-order-btn" id="place-order-btn">
-              <span id="place-order-btn-icon">📦</span>
-              <span id="place-order-btn-text">Place Order · ${Store.formatPrice(total)}</span>
-            </button>
-            <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:12px">
-              🔒 Your information is safe & secure
-            </p>
           </form>
+        </div>
+
+        <!-- COD Section -->
+        <div class="co-card active-card">
+          <div class="co-card-header">
+            <div class="co-card-header-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <span class="co-card-title">Payment Method</span>
+          </div>
+          <div class="co-cod-box" style="margin:16px 20px">
+            <div class="co-cod-icon">🪙</div>
+            <div>
+              <div class="co-cod-title">Cash on Delivery</div>
+              <div class="co-cod-desc">Pay ₹${total.toLocaleString('en-IN')} when your order arrives at your door. 100% safe.</div>
+            </div>
+            <div class="co-cod-check">✓</div>
+          </div>
+          <div style="padding: 0 20px 20px;">
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--text-muted)">
+                <span style="color:#22c55e">🔒</span> No advance payment
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--text-muted)">
+                <span style="color:var(--gold)">📦</span> Order confirmed on call
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--text-muted)">
+                <span style="color:#3b82f6">🔄</span> Easy 7-day returns
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Place Order CTA -->
+        <button type="button" class="co-place-btn" id="co-place-btn" onclick="submitCheckout()">
+          <span id="co-btn-icon">📦</span>
+          <span id="co-btn-text">Place Order · ₹${total.toLocaleString('en-IN')}</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="co-btn-arrow"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="co-secure-note">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Secure & Encrypted · Your data is safe with us
         </div>
       </div>
 
-      <!-- Right: Order Summary -->
-      <div class="checkout-summary-col">
-        <div class="order-summary-card sticky-summary">
-          <div class="order-summary-title">Order Summary</div>
-          <div class="summary-items-list">
+      <!-- RIGHT — Order Summary -->
+      <div class="co-right">
+        <div class="co-summary-card">
+          <div class="co-summary-header">
+            <span class="co-summary-title">Order Summary</span>
+            <span class="co-summary-count">${cart.length} item${cart.length > 1 ? 's' : ''}</span>
+          </div>
+          <div class="co-summary-items">
             ${cart.map(item => {
               const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
               return `
-              <div class="summary-item-row">
-                <div class="summary-item-img">
+              <div class="co-summary-item">
+                <div class="co-summary-item-img">
                   <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
                 </div>
                 <div style="flex:1;min-width:0">
-                  <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.3;margin-bottom:2px">${name}</div>
-                  <div style="font-size:0.75rem;color:var(--text-muted)">Qty: ${item.qty}</div>
+                  <div class="co-summary-item-name">${name}</div>
+                  <div class="co-summary-item-qty">Qty: ${item.qty}</div>
                 </div>
-                <div style="font-size:0.9rem;font-weight:600;color:var(--text-primary);white-space:nowrap">${Store.formatPrice(item.price * item.qty)}</div>
+                <div class="co-summary-item-price">${Store.formatPrice(item.price * item.qty)}</div>
               </div>`;
             }).join('')}
           </div>
-          <div class="summary-divider"></div>
-          <div class="order-summary-row">
-            <span>Subtotal</span>
-            <span>${Store.formatPrice(subtotal)}</span>
+          <div class="co-summary-calc">
+            <div class="co-calc-row">
+              <span class="co-calc-label">Subtotal</span>
+              <span class="co-calc-val">${Store.formatPrice(subtotal)}</span>
+            </div>
+            <div class="co-calc-row">
+              <span class="co-calc-label" style="display:flex;align-items:center;gap:6px">
+                Shipping
+                <span style="font-size:0.68rem;background:rgba(201,168,76,0.12);color:var(--gold);padding:2px 6px;border-radius:4px">Flat Rate</span>
+              </span>
+              <span class="co-calc-val">${Store.formatPrice(SHIPPING_CHARGE)}</span>
+            </div>
+            <div class="co-calc-divider"></div>
+            <div class="co-total-row">
+              <span class="co-total-label">Total Payable</span>
+              <span class="co-total-val">${Store.formatPrice(total)}</span>
+            </div>
           </div>
-          <div class="order-summary-row">
-            <span>Shipping</span>
-            <span>${Store.formatPrice(SHIPPING_CHARGE)}</span>
-          </div>
-          <div class="summary-divider"></div>
-          <div class="order-summary-row total">
-            <span>Total</span>
-            <span id="summary-total">${Store.formatPrice(total)}</span>
-          </div>
-          <div class="summary-trust-badges">
-            <div class="trust-badge-mini">✓ Authentic Products</div>
-            <div class="trust-badge-mini">✓ AYUSH Certified</div>
-            <div class="trust-badge-mini">✓ Easy Returns</div>
+          <div class="co-trust-bar">
+            <div class="co-trust-item">
+              <div class="co-trust-item-icon">✓</div>
+              <span>100% Authentic Ayurvedic Products</span>
+            </div>
+            <div class="co-trust-item">
+              <div class="co-trust-item-icon">✓</div>
+              <span>AYUSH Ministry Certified</span>
+            </div>
+            <div class="co-trust-item">
+              <div class="co-trust-item-icon">✓</div>
+              <span>Free Replacement within 7 Days</span>
+            </div>
+            <div class="co-trust-item">
+              <div class="co-trust-item-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6">🔒</div>
+              <span>Safe Cash on Delivery</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   `;
 
+  // Live input validation
+  setupInputValidation();
   applyStrings();
+}
 
-  // Handle Checkout
-  const form = document.getElementById('checkout-form');
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+function buildItemRow(item, lang) {
+  const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
+  return `
+  <div class="co-item" id="co-item-${item.id}">
+    <div class="co-item-img">
+      <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
+      <div class="co-item-qty-pill">${item.qty}</div>
+    </div>
+    <div class="co-item-info">
+      <div class="co-item-name">${name}</div>
+      <div class="co-item-meta">${Store.formatPrice(item.price)} per unit</div>
+    </div>
+    <div class="co-item-controls">
+      <div class="co-qty-ctrl">
+        <button class="co-qty-btn" onclick="coUpdateQty('${item.id}', ${item.qty - 1})">−</button>
+        <span class="co-qty-val">${item.qty}</span>
+        <button class="co-qty-btn" onclick="coUpdateQty('${item.id}', ${item.qty + 1})">+</button>
+      </div>
+      <div class="co-item-price">${Store.formatPrice(item.price * item.qty)}</div>
+      <button class="co-remove-btn" onclick="coRemoveItem('${item.id}')" title="Remove">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
 
-      const btn     = document.getElementById('place-order-btn');
-      const btnText = document.getElementById('place-order-btn-text');
-      const btnIcon = document.getElementById('place-order-btn-icon');
-
-      btn.disabled  = true;
-      btnIcon.textContent = '⏳';
-      btnText.textContent = 'Placing Your Order…';
-
-      const address = {
-        name:    document.getElementById('co-name').value.trim(),
-        phone:   document.getElementById('co-phone').value.trim(),
-        email:   document.getElementById('co-email').value.trim(),
-        address: document.getElementById('co-address').value.trim(),
-        city:    document.getElementById('co-city').value.trim(),
-        state:   document.getElementById('co-state').value.trim(),
-        pincode: document.getElementById('co-pin').value.trim()
-      };
-
-      const session = PhoneAuth.getUser();
-      const orderPayload = {
-        ...Store.buildOrderPayload({ address, userId: session?.uid }),
-        payment:    'COD',
-        paymentId:  'COD_' + Date.now(),
-        shipping:   SHIPPING_CHARGE,
-        total:      Store.getCartTotal() + SHIPPING_CHARGE
-      };
-
-      try {
-        const orderId = await createOrder(orderPayload);
-        await processOrderAfterCreation(orderId, address, orderPayload, { paymentId: orderPayload.paymentId });
-      } catch (err) {
-        console.error('Order Error:', err);
-        showToast('Order creation failed. Please try again.', 'error');
-        btn.disabled  = false;
-        btnIcon.textContent = '📦';
-        btnText.textContent = `Place Order · ${Store.formatPrice(Store.getCartTotal() + SHIPPING_CHARGE)}`;
-      }
-    });
+function coUpdateQty(id, newQty) {
+  Store.updateQty(id, newQty);
+  renderCartPage();
+}
+function coRemoveItem(id) {
+  const el = document.getElementById('co-item-' + id);
+  if (el) {
+    el.style.transition = 'all 0.25s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(20px)';
+    setTimeout(() => { Store.removeFromCart(id); renderCartPage(); }, 250);
+  } else {
+    Store.removeFromCart(id);
+    renderCartPage();
   }
 }
 
-// Process order after creation (kept for compatibility)
-async function processOrderAfterCreation(orderId, address, orderPayload, res) {
-  const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
-  const localOrder = {
-    id: orderId,
-    userId: orderPayload.userId,
-    customerName: address.name,
-    customerPhone: address.phone,
-    email: address.email,
-    address: address,
-    items: orderPayload.items,
-    subtotal: orderPayload.subtotal,
-    shipping: SHIPPING_CHARGE,
-    total: orderPayload.total,
-    payment: 'COD',
-    paymentId: res.paymentId,
-    status: 'processing',
-    createdAt: new Date().toISOString()
+function setupInputValidation() {
+  const fields = {
+    'co-name':    v => v.trim().length >= 2,
+    'co-phone':   v => /^[0-9]{10}$/.test(v.trim()),
+    'co-address': v => v.trim().length >= 5,
+    'co-city':    v => v.trim().length >= 2,
+    'co-state':   v => v.trim().length >= 2,
+    'co-pin':     v => /^[0-9]{6}$/.test(v.trim()),
   };
-  localOrders.push(localOrder);
-  localStorage.setItem('pa_orders', JSON.stringify(localOrders));
-
-  Store.clearCart();
-  showOrderSuccess(orderId);
+  Object.keys(fields).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('blur', () => {
+      const valid = fields[id](el.value);
+      el.classList.toggle('valid', valid);
+      el.classList.toggle('error', !valid && el.value.length > 0);
+    });
+    el.addEventListener('input', () => {
+      if (el.classList.contains('error') && fields[id](el.value)) {
+        el.classList.remove('error');
+        el.classList.add('valid');
+      }
+    });
+  });
 }
 
-function showOrderSuccess(orderId) {
+window.submitCheckout = async function() {
+  const btn  = document.getElementById('co-place-btn');
+  const icon = document.getElementById('co-btn-icon');
+  const text = document.getElementById('co-btn-text');
+
+  // Validate all required fields
+  const required = ['co-name', 'co-phone', 'co-address', 'co-city', 'co-state', 'co-pin'];
+  const validators = {
+    'co-name':    v => v.trim().length >= 2,
+    'co-phone':   v => /^[0-9]{10}$/.test(v.trim()),
+    'co-address': v => v.trim().length >= 5,
+    'co-city':    v => v.trim().length >= 2,
+    'co-state':   v => v.trim().length >= 2,
+    'co-pin':     v => /^[0-9]{6}$/.test(v.trim()),
+  };
+  let hasError = false;
+  required.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const valid = validators[id](el.value);
+    el.classList.toggle('valid', valid);
+    el.classList.toggle('error', !valid);
+    if (!valid && !hasError) { el.focus(); hasError = true; }
+  });
+  if (hasError) {
+    showToast('Please fill all required fields correctly', 'error');
+    return;
+  }
+
+  // Loading State
+  btn.disabled = true;
+  icon.textContent = '⏳';
+  text.textContent = 'Placing Your Order…';
+
+  const address = {
+    name:    document.getElementById('co-name').value.trim(),
+    phone:   document.getElementById('co-phone').value.trim(),
+    email:   document.getElementById('co-email').value.trim(),
+    address: document.getElementById('co-address').value.trim(),
+    city:    document.getElementById('co-city').value.trim(),
+    state:   document.getElementById('co-state').value.trim(),
+    pincode: document.getElementById('co-pin').value.trim()
+  };
+
+  const session  = PhoneAuth.getUser();
+  const subtotal = Store.getCartTotal();
+  const orderPayload = {
+    ...Store.buildOrderPayload({ address, userId: session?.uid }),
+    payment:   'COD',
+    paymentId: 'COD_' + Date.now(),
+    shipping:  SHIPPING_CHARGE,
+    total:     subtotal + SHIPPING_CHARGE
+  };
+
+  try {
+    const orderId = await createOrder(orderPayload);
+    // Save locally
+    const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+    localOrders.push({ id: orderId, ...orderPayload, address, status: 'processing', createdAt: new Date().toISOString() });
+    localStorage.setItem('pa_orders', JSON.stringify(localOrders));
+    Store.clearCart();
+    showOrderConfirmed(orderId, address, orderPayload.total);
+  } catch (err) {
+    console.error('Order error:', err);
+    showToast('Order failed. Please try again.', 'error');
+    btn.disabled = false;
+    icon.textContent = '📦';
+    const t = Store.getCartTotal() + SHIPPING_CHARGE;
+    text.textContent = 'Place Order · ₹' + t.toLocaleString('en-IN');
+  }
+};
+
+function showOrderConfirmed(orderId, address, total) {
   const container = document.getElementById('cart-container');
-  const orderNum  = orderId?.slice(-6)?.toUpperCase() || '—';
-  const now       = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  container.style.paddingTop = '0';
+  const orderNum = orderId?.slice(-8)?.toUpperCase() || '—';
+  const now = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
 
   container.innerHTML = `
-    <div class="order-success">
-      <div class="order-success-checkmark">✓</div>
-      <h1 class="mb-16">Order Placed!</h1>
-      <p style="color:var(--text-secondary);margin-bottom:32px;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.7">
-        Thank you for your order! We'll call or WhatsApp you to confirm. Your Ayurvedic products will be on their way soon.
-      </p>
-      <div class="order-success-card">
-        <div class="order-detail-row">
-          <span class="order-detail-label">Order #</span>
-          <span class="order-detail-value gold">${orderNum}</span>
+    <div class="co-success" style="padding-top:calc(var(--nav-h)+40px)">
+      <div class="co-success-ring">✓</div>
+      <div class="co-success-title">Order Confirmed! 🎉</div>
+      <div class="co-success-desc">
+        Thank you, <strong>${address.name}</strong>! Your order has been placed successfully.
+        We'll call you on <strong>${address.phone}</strong> to confirm delivery.
+      </div>
+      <div class="co-success-card">
+        <div class="co-success-row">
+          <span class="co-success-key">Order ID</span>
+          <span class="co-success-val gold">#${orderNum}</span>
         </div>
-        <div class="order-detail-row">
-          <span class="order-detail-label">Date</span>
-          <span class="order-detail-value">${now}</span>
+        <div class="co-success-row">
+          <span class="co-success-key">Date</span>
+          <span class="co-success-val">${now}</span>
         </div>
-        <div class="order-detail-row">
-          <span class="order-detail-label">Payment</span>
-          <span class="order-detail-value">Cash on Delivery (COD)</span>
+        <div class="co-success-row">
+          <span class="co-success-key">Delivery To</span>
+          <span class="co-success-val" style="text-align:right;max-width:200px">${address.city}, ${address.state} — ${address.pincode}</span>
         </div>
-        <div class="order-detail-row">
-          <span class="order-detail-label">Shipping</span>
-          <span class="order-detail-value">₹70 (collected on delivery)</span>
+        <div class="co-success-row">
+          <span class="co-success-key">Payment</span>
+          <span class="co-success-val">💵 Cash on Delivery</span>
+        </div>
+        <div class="co-success-row">
+          <span class="co-success-key">Amount Payable</span>
+          <span class="co-success-val gold">₹${total.toLocaleString('en-IN')}</span>
         </div>
       </div>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="navigate('home')">Continue Shopping</button>
-        <button class="btn btn-outline" onclick="openUserDrawer()">View My Orders</button>
+        <button class="btn btn-primary" onclick="navigate('home')">
+          Continue Shopping
+        </button>
+        <button class="btn btn-outline" onclick="openUserDrawer()">
+          Track Order
+        </button>
       </div>
+      <p style="color:var(--text-muted);font-size:0.78rem;margin-top:24px">
+        📱 Confirmation SMS will be sent to ${address.phone}
+      </p>
     </div>
   `;
   applyStrings();
