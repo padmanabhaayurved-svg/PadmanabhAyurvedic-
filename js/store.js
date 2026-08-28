@@ -38,6 +38,12 @@ const Store = (() => {
       floatingBadge.textContent = total;
       floatingBadge.style.display = total > 0 ? 'flex' : 'none';
     }
+
+    const fabBadge = document.getElementById('fab-cart-count');
+    if (fabBadge) {
+      fabBadge.textContent = total;
+      fabBadge.style.display = total > 0 ? 'flex' : 'none';
+    }
   }
 
   // ── Cart Public API ───────────────────────────────────────────
@@ -63,6 +69,10 @@ const Store = (() => {
     _saveCart();
     showToast(`"${product.name}" added to cart`, 'success');
     trackCartAdd(product.id).catch(() => {});
+    // Open side cart drawer
+    if (typeof openCartDrawer === 'function') {
+      setTimeout(openCartDrawer, 200);
+    }
   }
 
   function removeFromCart(productId) {

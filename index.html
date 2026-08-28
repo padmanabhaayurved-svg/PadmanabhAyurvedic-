@@ -71,7 +71,7 @@
   <ul class="nav-links" role="list">
     <li><button class="nav-link" data-route="home" data-nav="home" data-i18n="nav.home">Home</button></li>
     <li><button class="nav-link" data-route="catalog" data-nav="catalog" data-i18n="nav.catalog">Shop</button></li>
-    <li><button class="nav-link" data-route="earn" data-nav="earn" data-i18n="nav.earn">Earn</button></li>
+
     <li><button class="nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button></li>
     <li><button class="nav-link" onclick="openUserDrawer()" data-i18n="nav.dashboard">My Orders</button></li>
   </ul>
@@ -110,7 +110,7 @@
   </div>
   <button class="mobile-nav-link" data-route="home" data-nav="home" data-i18n="nav.home">Home</button>
   <button class="mobile-nav-link" data-route="catalog" data-nav="catalog" data-i18n="nav.catalog">Shop</button>
-  <button class="mobile-nav-link" data-route="earn" data-nav="earn" data-i18n="nav.earn">Earn</button>
+
   <button class="mobile-nav-link" data-route="about" data-nav="about" data-i18n="nav.about">About</button>
   <button class="mobile-nav-link" onclick="openUserDrawer()" data-i18n="nav.dashboard">My Orders</button>
 </div>
@@ -120,64 +120,118 @@
 
 <!-- ══ FOOTER ════════════════════════════════════════════════ -->
 <footer id="site-footer">
+  <!-- Trust Bar -->
+  <div class="footer-trust-bar">
+    <div class="container">
+      <div class="footer-trust-row">
+        <div class="footer-trust-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>100% Authentic</span>
+        </div>
+        <div class="footer-trust-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>AYUSH Certified</span>
+        </div>
+        <div class="footer-trust-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span>Fast Delivery</span>
+        </div>
+        <div class="footer-trust-item">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Made in India</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="container">
+    <!-- Main Grid -->
     <div class="footer-grid">
-      <div>
-        <div class="nav-brand">
+      <!-- Brand Column -->
+      <div class="footer-brand-col">
+        <div class="nav-brand" style="margin-bottom:16px">
           <span class="nav-brand-name" style="font-size:1.4rem">Padmanabh Ayurvedics</span>
           <span class="nav-brand-tagline">Pure Ayurvedic Wellness</span>
         </div>
-        <p class="footer-brand-desc" data-i18n="footer.tagline">Pure Ayurvedic Wellness since generations.</p>
-        <div class="social-links" style="margin-top:20px">
+        <p class="footer-brand-desc" data-i18n="footer.tagline">Rooted in ancient Ayurvedic wisdom, crafted for the modern soul. Every product is a promise of purity, potency, and care.</p>
+        <div class="social-links" style="margin-top:24px">
           <a class="social-link" href="#" aria-label="Instagram">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
           </a>
           <a class="social-link" href="#" aria-label="WhatsApp">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           </a>
-          <a class="social-link" href="#" aria-label="Facebook">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          <a class="social-link" href="#" aria-label="YouTube">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+          </a>
+        </div>
+        <!-- Contact Info -->
+        <div class="footer-contact-mini">
+          <a href="tel:+919876543210" class="footer-contact-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.6a16 16 0 0 0 5.49 5.49l.94-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 17h.92z"/></svg>
+            +91 98765 43210
+          </a>
+          <a href="mailto:hello@padmanabhayurvedics.com" class="footer-contact-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            hello@padmanabhayurvedics.com
           </a>
         </div>
       </div>
 
+      <!-- Quick Links -->
       <div>
         <p class="footer-heading" data-i18n="footer.links">Quick Links</p>
         <nav class="footer-links">
           <a data-nav="home" onclick="navigate('home')" data-i18n="nav.home">Home</a>
-          <a data-nav="about" onclick="navigate('about')" data-i18n="nav.about">About</a>
-          <a data-nav="catalog" onclick="navigate('catalog')" data-i18n="nav.catalog">Shop</a>
+          <a data-nav="about" onclick="navigate('about')" data-i18n="nav.about">About Us</a>
+          <a data-nav="catalog" onclick="navigate('catalog')" data-i18n="nav.catalog">Shop All</a>
           <a onclick="openUserDrawer()" data-i18n="nav.dashboard" style="cursor:pointer">My Orders</a>
         </nav>
       </div>
 
-      <div>
-        <p class="footer-heading" data-i18n="footer.contact">Contact Us</p>
-        <nav class="footer-links">
-          <a href="mailto:hello@padmanabhayurvedics.com">hello@padmanabhayurvedics.com</a>
-          <a href="tel:+919876543210">+91 98765 43210</a>
-          <span style="color:var(--text-muted);font-size:0.95rem;line-height:1.6">Maharashtra, India</span>
-        </nav>
-      </div>
-
+      <!-- Policies -->
       <div>
         <p class="footer-heading">Policies</p>
         <nav class="footer-links">
           <a href="#" data-i18n="footer.privacy">Privacy Policy</a>
           <a href="#" data-i18n="footer.terms">Terms of Service</a>
           <a href="#" data-i18n="footer.refund">Refund Policy</a>
+          <a href="#" data-i18n="footer.shipping">Shipping Policy</a>
         </nav>
+      </div>
+
+      <!-- Newsletter -->
+      <div>
+        <p class="footer-heading">Stay Connected</p>
+        <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:16px;line-height:1.6">Get Ayurvedic wellness tips and exclusive offers.</p>
+        <form class="footer-newsletter" onsubmit="event.preventDefault(); showToast('Thank you for subscribing!', 'success')">
+          <input type="email" class="footer-newsletter-input" placeholder="Your email address" required />
+          <button type="submit" class="footer-newsletter-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </form>
+        <p class="footer-heading" style="margin-top:24px;margin-bottom:12px">Our Location</p>
+        <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.7">
+          Maharashtra, India<br>
+          <span style="color:var(--text-muted);font-size:0.8rem">Pan India Delivery Available</span>
+        </p>
       </div>
     </div>
 
+    <!-- Bottom Bar -->
     <div class="footer-bottom">
       <p>© <span id="year"></span> Padmanabh Ayurvedics. <span data-i18n="footer.rights">All rights reserved.</span></p>
-      <div class="footer-bottom-links">
-        <button class="btn btn-ghost btn-sm" onclick="navigate('admin')" style="color:var(--text-muted); padding: 4px 8px; font-size:0.8rem;">Admin Portal</button>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-muted)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Secure & Trusted
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('admin')" style="color:var(--text-muted);padding:4px 8px;font-size:0.8rem">Admin</button>
       </div>
     </div>
   </div>
 </footer>
+
 
 <!-- ══ FLOATING MOBILE NAV (Glassmorphism) ══════════════════ -->
 <div id="floating-mobile-nav" class="mobile-only">
@@ -210,7 +264,10 @@
   <button class="fab chat-fab" id="chatbot-btn" aria-label="Open Chatbot">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
   </button>
-
+  <button class="fab cart-fab" id="cart-fab-btn" aria-label="Open Cart" onclick="openCartDrawer()">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+    <span class="cart-badge" id="fab-cart-count" style="display:none">0</span>
+  </button>
 </div>
 
 <!-- ══ CHATBOT WINDOW ════════════════════════════════════════ -->

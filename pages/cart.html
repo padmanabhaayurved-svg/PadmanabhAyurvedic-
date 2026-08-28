@@ -6,10 +6,7 @@
 </div>
 
 <script>
-var _courierOptions = [];
-var _selectedCourierIdx = 0;
-var _courierCharge = 60;
-var _serviceabilityLoading = false;
+const SHIPPING_CHARGE = 70;
 
 document.addEventListener('page:cart', renderCartPage);
 document.addEventListener('cart:updated', () => {
@@ -19,10 +16,6 @@ document.addEventListener('cart:updated', () => {
 function renderCartPage() {
   const container = document.getElementById('cart-container');
   if (!container) return;
-
-  _courierOptions = [];
-  _selectedCourierIdx = 0;
-  _courierCharge = 60;
 
   const cart = Store.getCart();
   if (cart.length === 0) {
@@ -38,244 +31,160 @@ function renderCartPage() {
   }
 
   const subtotal = Store.getCartTotal();
-  const tax      = Math.round(subtotal * 0.18);
-  const total    = subtotal + _courierCharge + tax;
+  const total    = subtotal + SHIPPING_CHARGE;
   const lang     = localStorage.getItem('pa_lang') || 'en';
 
   container.innerHTML = `
-    <h1 class="mb-32" data-i18n="cart.title">Your Cart</h1>
-    <div class="cart-layout">
-      <!-- Items -->
-      <div class="cart-items">
-        ${cart.map(item => {
-          const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
-          return `
-            <div class="cart-item">
-              <div class="cart-item-image">
-                <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
-              </div>
-              <div>
-                <div class="cart-item-name">${name}</div>
-                <div class="cart-item-meta">${Store.formatPrice(item.price)} each</div>
-              </div>
-              <div class="cart-item-right">
-                <div class="cart-item-price">${Store.formatPrice(item.price * item.qty)}</div>
-                <div style="display:flex;align-items:center;gap:16px">
-                  <div class="qty-control">
+    <div class="checkout-page-wrap">
+      <!-- Left: Form -->
+      <div class="checkout-form-col">
+        <div class="checkout-header">
+          <button class="checkout-back-btn" onclick="navigate('catalog')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Continue Shopping
+          </button>
+          <h1 class="checkout-title">Checkout</h1>
+        </div>
+
+        <!-- Cart Items Mini-Summary -->
+        <div class="checkout-items-preview">
+          <div class="checkout-section-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Your Items (${cart.length})
+          </div>
+          <div class="checkout-items-list">
+            ${cart.map(item => {
+              const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
+              return `
+              <div class="checkout-item-row">
+                <div class="checkout-item-img">
+                  <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
+                  <span class="checkout-item-qty-badge">${item.qty}</span>
+                </div>
+                <div class="checkout-item-info">
+                  <div class="checkout-item-name">${name}</div>
+                  <div class="checkout-item-price">${Store.formatPrice(item.price)} × ${item.qty}</div>
+                </div>
+                <div class="checkout-item-total">${Store.formatPrice(item.price * item.qty)}</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-left:8px">
+                  <div class="qty-control" style="transform:scale(0.85)">
                     <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty - 1})">−</button>
                     <span class="qty-value">${item.qty}</span>
                     <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty + 1})">+</button>
                   </div>
-                  <button class="cart-remove-btn" onclick="Store.removeFromCart('${item.id}')" data-i18n="cart.remove">Remove</button>
+                  <button onclick="Store.removeFromCart('${item.id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:4px" title="Remove">✕</button>
                 </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Delivery Form -->
+        <div class="checkout-form-section">
+          <div class="checkout-section-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Delivery Details
+          </div>
+          <form id="checkout-form">
+            <div class="co-form-grid">
+              <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <input type="text" class="form-input co-input" id="co-name" placeholder="Your full name" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone Number *</label>
+                <input type="tel" class="form-input co-input" id="co-phone" placeholder="10-digit mobile number" required pattern="[0-9]{10}"/>
               </div>
             </div>
-          `;
-        }).join('')}
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" class="form-input co-input" id="co-email" placeholder="your@email.com"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Street Address *</label>
+              <input type="text" class="form-input co-input" id="co-address" placeholder="House no., Street, Colony" required/>
+            </div>
+            <div class="co-form-grid">
+              <div class="form-group">
+                <label class="form-label">City *</label>
+                <input type="text" class="form-input co-input" id="co-city" placeholder="City" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">State *</label>
+                <input type="text" class="form-input co-input" id="co-state" placeholder="State" required/>
+              </div>
+            </div>
+            <div class="form-group" style="max-width:180px">
+              <label class="form-label">Pincode *</label>
+              <input type="text" class="form-input co-input" id="co-pin" placeholder="6-digit pincode" required pattern="[0-9]{6}" maxlength="6"/>
+            </div>
+
+            <!-- COD Notice -->
+            <div class="cod-notice">
+              <div class="cod-notice-icon">📦</div>
+              <div>
+                <div style="font-weight:600;color:var(--text-primary);margin-bottom:2px">Cash on Delivery</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary)">Pay when your order arrives at your doorstep. Safe & trusted.</div>
+              </div>
+            </div>
+
+            <!-- Place Order Button -->
+            <button type="submit" class="btn btn-primary btn-lg place-order-btn" id="place-order-btn">
+              <span id="place-order-btn-icon">📦</span>
+              <span id="place-order-btn-text">Place Order · ${Store.formatPrice(total)}</span>
+            </button>
+            <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:12px">
+              🔒 Your information is safe & secure
+            </p>
+          </form>
+        </div>
       </div>
 
-      <!-- Summary -->
-      <div>
-        <div class="order-summary-card">
+      <!-- Right: Order Summary -->
+      <div class="checkout-summary-col">
+        <div class="order-summary-card sticky-summary">
           <div class="order-summary-title">Order Summary</div>
+          <div class="summary-items-list">
+            ${cart.map(item => {
+              const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
+              return `
+              <div class="summary-item-row">
+                <div class="summary-item-img">
+                  <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.3;margin-bottom:2px">${name}</div>
+                  <div style="font-size:0.75rem;color:var(--text-muted)">Qty: ${item.qty}</div>
+                </div>
+                <div style="font-size:0.9rem;font-weight:600;color:var(--text-primary);white-space:nowrap">${Store.formatPrice(item.price * item.qty)}</div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="summary-divider"></div>
           <div class="order-summary-row">
-            <span data-i18n="cart.subtotal">Subtotal</span>
+            <span>Subtotal</span>
             <span>${Store.formatPrice(subtotal)}</span>
           </div>
           <div class="order-summary-row">
-            <span data-i18n="cart.shipping">Shipping</span>
-            <span id="summary-shipping">${_courierCharge === 0 ? '<span class="text-gold" data-i18n="cart.shipping.free">Free</span>' : Store.formatPrice(_courierCharge)}</span>
+            <span>Shipping</span>
+            <span>${Store.formatPrice(SHIPPING_CHARGE)}</span>
           </div>
-          <div class="order-summary-row">
-            <span data-i18n="cart.tax">GST (18%)</span>
-            <span>${Store.formatPrice(tax)}</span>
-          </div>
+          <div class="summary-divider"></div>
           <div class="order-summary-row total">
-            <span data-i18n="cart.total">Total</span>
+            <span>Total</span>
             <span id="summary-total">${Store.formatPrice(total)}</span>
           </div>
+          <div class="summary-trust-badges">
+            <div class="trust-badge-mini">✓ Authentic Products</div>
+            <div class="trust-badge-mini">✓ AYUSH Certified</div>
+            <div class="trust-badge-mini">✓ Easy Returns</div>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Checkout Form -->
-    <div class="checkout-section">
-
-      <!-- Step Indicator -->
-      <div class="checkout-steps">
-        <div class="checkout-step done" id="step-address">
-          <div class="step-number">✓</div>
-          <span class="step-label">Address</span>
-        </div>
-        <div class="checkout-step active" id="step-shipping">
-          <div class="step-number">2</div>
-          <span class="step-label">Shipping</span>
-        </div>
-        <div class="checkout-step" id="step-payment">
-          <div class="step-number">3</div>
-          <span class="step-label">Payment</span>
-        </div>
-      </div>
-
-      <div class="checkout-section-title" data-i18n="checkout.address.title">Delivery Address</div>
-      <form id="checkout-form" class="form-group" style="max-width:800px;gap:20px">
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label" data-i18n="checkout.name">Full Name</label>
-            <input type="text" class="form-input" id="co-name" required/>
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="checkout.phone">Phone Number</label>
-            <input type="tel" class="form-input" id="co-phone" required pattern="[0-9]{10}" placeholder="10-digit number"/>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" data-i18n="checkout.email">Email Address</label>
-          <input type="email" class="form-input" id="co-email" required/>
-        </div>
-        <div class="form-group">
-          <label class="form-label" data-i18n="checkout.address">Address Line</label>
-          <input type="text" class="form-input" id="co-address" required/>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label" data-i18n="checkout.city">City</label>
-            <input type="text" class="form-input" id="co-city" required/>
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="checkout.state">State</label>
-            <input type="text" class="form-input" id="co-state" required/>
-          </div>
-        </div>
-        <div class="form-group" style="max-width:200px">
-          <label class="form-label" data-i18n="checkout.pincode">Pincode</label>
-          <div style="display:flex;gap:8px">
-            <input type="text" class="form-input" id="co-pin" required pattern="[0-9]{6}" style="flex:1" onblur="checkCourierServiceability()"/>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-check-couriers" onclick="checkCourierServiceability()" style="white-space:nowrap">Check</button>
-          </div>
-        </div>
-
-        <!-- Courier Selection -->
-        <div id="courier-section" style="display:none">
-          <div class="checkout-section-title" style="margin-bottom:16px">
-            🚚 Select Delivery Partner
-            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;margin-left:8px">Shipping charge will be added to your total</span>
-          </div>
-          <div id="courier-options" style="display:flex;flex-direction:column;gap:10px;max-width:600px">
-            <!-- Rendered by JS -->
-          </div>
-          <div id="courier-loading" style="display:none;padding:24px;text-align:center;color:var(--text-muted)">
-            <div class="processing-spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;margin-right:8px;vertical-align:middle"></div>
-            Checking available couriers...
-          </div>
-          <div id="courier-error" style="display:none;padding:12px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:var(--error);font-size:0.85rem;max-width:600px">
-          </div>
-        </div>
-
-        <!-- Payment Method -->
-        <div class="checkout-section-title" style="margin-top:32px; margin-bottom:16px">
-          💳 Payment Method
-        </div>
-        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px;" id="payment-methods-container">
-          <label class="payment-method-card selected" id="pm-online-label" style="flex:1;min-width:220px;" onclick="selectPaymentMethod('online')">
-            <input type="radio" name="paymentMethod" value="online" checked style="pointer-events:none">
-            <div class="payment-method-icon" style="pointer-events:none">&#x1F4B3;</div>
-            <div class="payment-method-info" style="pointer-events:none">
-              <div class="payment-method-title">Online Payment</div>
-              <div class="payment-method-desc">UPI, Cards, Net Banking, Wallets</div>
-            </div>
-            <span class="payment-method-badge" style="pointer-events:none">Secure</span>
-          </label>
-          <label class="payment-method-card" id="pm-cod-label" style="flex:1;min-width:220px;" onclick="selectPaymentMethod('cod')">
-            <input type="radio" name="paymentMethod" value="cod" style="pointer-events:none">
-            <div class="payment-method-icon" style="pointer-events:none">&#x1F4B5;</div>
-            <div class="payment-method-info" style="pointer-events:none">
-              <div class="payment-method-title">Cash on Delivery</div>
-              <div class="payment-method-desc">Pay when your order arrives</div>
-            </div>
-          </label>
-        </div>
-
-        <!-- Payment logos -->
-        <div class="payment-logos" id="payment-logos-row">
-          <span class="payment-logo-chip">🔷 UPI</span>
-          <span class="payment-logo-chip">💳 Visa</span>
-          <span class="payment-logo-chip">💳 Mastercard</span>
-          <span class="payment-logo-chip">🏦 Netbanking</span>
-          <span class="payment-logo-chip">📱 Wallets</span>
-        </div>
-
-        <!-- Pay Button -->
-        <div class="pay-btn-container">
-          <button type="submit" class="btn btn-primary btn-lg" id="pay-btn" disabled>
-            <span class="btn-lock-icon">🔒</span>
-            <span data-i18n="checkout.pay">Pay</span> ${Store.formatPrice(total)}
-          </button>
-          <div class="pay-security-row">
-            <span class="lock-dot"></span>
-            256-bit SSL · <span data-i18n="checkout.secure">Secured by Razorpay</span>
-          </div>
-        </div>
-      </form>
-    </div>
-
-    <!-- Payment Processing Overlay -->
-    <div id="payment-processing-overlay">
-      <div class="processing-spinner"></div>
-      <div class="processing-text">Processing Payment…</div>
-      <div class="processing-subtext">Please do not close this window</div>
     </div>
   `;
 
   applyStrings();
-
-  // Pincode enter key triggers check
-  const pinInput = document.getElementById('co-pin');
-  if (pinInput) {
-    pinInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        checkCourierServiceability();
-      }
-    });
-  }
-
-  // Payment method selection helper
-  window.selectPaymentMethod = function(val) {
-    const onlineLabel = document.getElementById('pm-online-label');
-    const codLabel = document.getElementById('pm-cod-label');
-    const logosRow = document.getElementById('payment-logos-row');
-    if (val === 'online') {
-      document.querySelector('input[value="online"]').checked = true;
-      onlineLabel?.classList.add('selected');
-      codLabel?.classList.remove('selected');
-      if (logosRow) logosRow.style.display = 'flex';
-    } else {
-      document.querySelector('input[value="cod"]').checked = true;
-      codLabel?.classList.add('selected');
-      onlineLabel?.classList.remove('selected');
-      if (logosRow) logosRow.style.display = 'none';
-    }
-    updatePaymentUI();
-  };
-
-  // Define payment UI toggler locally
-  window.updatePaymentUI = function() {
-    const isOnline = document.querySelector('input[name="paymentMethod"]:checked')?.value === 'online';
-    const payBtn = document.getElementById('pay-btn');
-    const stepPayment = document.getElementById('step-payment');
-    if (stepPayment) stepPayment.classList.toggle('active', true);
-
-    if (payBtn) {
-      const total = Store.getCartTotal() + _courierCharge + Math.round(Store.getCartTotal() * 0.18);
-      // Do NOT use data-i18n spans here — applyStrings() would overwrite the text
-      if (!isOnline) {
-        payBtn.innerHTML = `<span class="btn-lock-icon">&#x1F4E6;</span> Place Order (COD) &middot; ${Store.formatPrice(total)}`;
-      } else {
-        payBtn.innerHTML = `<span class="btn-lock-icon">&#x1F512;</span> Pay Securely &middot; ${Store.formatPrice(total)}`;
-      }
-    }
-  };
 
   // Handle Checkout
   const form = document.getElementById('checkout-form');
@@ -283,95 +192,48 @@ function renderCartPage() {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Check if user is logged in via PhoneAuth
-      if (!PhoneAuth.isLoggedIn()) {
-        showPhoneAuthModal();
-        return;
-      }
+      const btn     = document.getElementById('place-order-btn');
+      const btnText = document.getElementById('place-order-btn-text');
+      const btnIcon = document.getElementById('place-order-btn-icon');
 
-      const btn = document.getElementById('pay-btn');
-      if (btn.disabled || _courierOptions.length === 0) {
-        showToast('Please select a delivery partner first', 'warning');
-        return;
-      }
-      btn.disabled = true;
-      btn.innerHTML = '<span class="btn-lock-icon">⏳</span> Processing…';
-      // Show overlay
-      const overlay = document.getElementById('payment-processing-overlay');
-      if (overlay) overlay.classList.add('active');
+      btn.disabled  = true;
+      btnIcon.textContent = '⏳';
+      btnText.textContent = 'Placing Your Order…';
 
       const address = {
-        name:    document.getElementById('co-name').value,
-        phone:   document.getElementById('co-phone').value,
-        email:   document.getElementById('co-email').value,
-        address: document.getElementById('co-address').value,
-        city:    document.getElementById('co-city').value,
-        state:   document.getElementById('co-state').value,
-        pincode: document.getElementById('co-pin').value
+        name:    document.getElementById('co-name').value.trim(),
+        phone:   document.getElementById('co-phone').value.trim(),
+        email:   document.getElementById('co-email').value.trim(),
+        address: document.getElementById('co-address').value.trim(),
+        city:    document.getElementById('co-city').value.trim(),
+        state:   document.getElementById('co-state').value.trim(),
+        pincode: document.getElementById('co-pin').value.trim()
       };
-
-      const subtotal = Store.getCartTotal();
-      const tax      = Math.round(subtotal * 0.18);
-      const total    = subtotal + _courierCharge + tax;
-
-      const selectedCourier = _courierOptions[_selectedCourierIdx];
 
       const session = PhoneAuth.getUser();
       const orderPayload = {
         ...Store.buildOrderPayload({ address, userId: session?.uid }),
-        courierCompany: selectedCourier.name || selectedCourier.company || selectedCourier.courier_name || '',
-        courierCharge:  _courierCharge,
-        total:          total
+        payment:    'COD',
+        paymentId:  'COD_' + Date.now(),
+        shipping:   SHIPPING_CHARGE,
+        total:      Store.getCartTotal() + SHIPPING_CHARGE
       };
 
-      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-
-      if (paymentMethod === 'cod') {
-        orderPayload.payment = 'COD';
-        orderPayload.paymentId = 'COD_' + Date.now();
-        
-        try {
-          const orderId = await createOrder(orderPayload);
-          await processOrderAfterCreation(orderId, address, orderPayload, { paymentId: orderPayload.paymentId });
-        } catch (err) {
-          console.error('COD Order Error:', err);
-          showToast('Order creation failed. Contact support.', 'error');
-          const ov = document.getElementById('payment-processing-overlay');
-          if (ov) ov.classList.remove('active');
-          btn.disabled = false;
-          btn.innerHTML = `<span class="btn-lock-icon">📦</span> Place Order (COD) · ${Store.formatPrice(total)}`;
-        }
-      } else {
-        await RazorpayHelper.initiatePayment({
-          amount:       orderPayload.total,
-          customerName: address.name,
-          email:        address.email,
-          phone:        address.phone
-        }, async (res) => {
-          try {
-            orderPayload.payment = 'Razorpay';
-            orderPayload.paymentId = res.paymentId;
-            orderPayload.razorpayOrderId = res.orderId;
-            const orderId = await createOrder(orderPayload);
-            await processOrderAfterCreation(orderId, address, orderPayload, res);
-          } catch (err) {
-            console.error('Order save error:', err);
-            showToast('Payment successful, but order save failed. Contact support.', 'error');
-          }
-        }, (err) => {
-          const ov = document.getElementById('payment-processing-overlay');
-          if (ov) ov.classList.remove('active');
-          btn.disabled = false;
-          btn.innerHTML = `<span class="btn-lock-icon">&#x1F512;</span> Pay Securely &middot; ${Store.formatPrice(total)}`;
-        });
+      try {
+        const orderId = await createOrder(orderPayload);
+        await processOrderAfterCreation(orderId, address, orderPayload, { paymentId: orderPayload.paymentId });
+      } catch (err) {
+        console.error('Order Error:', err);
+        showToast('Order creation failed. Please try again.', 'error');
+        btn.disabled  = false;
+        btnIcon.textContent = '📦';
+        btnText.textContent = `Place Order · ${Store.formatPrice(Store.getCartTotal() + SHIPPING_CHARGE)}`;
       }
     });
   }
 }
 
-
-
-// Extracted to avoid duplicating SR logic for both COD and Razorpay
+// Process order after creation (kept for compatibility)
 async function processOrderAfterCreation(orderId, address, orderPayload, res) {
   const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
   const localOrder = {
@@ -383,274 +245,32 @@ async function processOrderAfterCreation(orderId, address, orderPayload, res) {
     address: address,
     items: orderPayload.items,
     subtotal: orderPayload.subtotal,
-    shipping: orderPayload.courierCharge,
-    tax: orderPayload.tax,
+    shipping: SHIPPING_CHARGE,
     total: orderPayload.total,
-    payment: orderPayload.payment || 'Razorpay',
+    payment: 'COD',
     paymentId: res.paymentId,
     status: 'processing',
-    courierCompany: orderPayload.courierCompany,
-    courierCharge: orderPayload.courierCharge,
-    createdAt: new Date().toISOString(),
-    srStatus: null,
-    trackingId: null,
-    awb: null,
-    srOrderId: null,
-    shipmentId: null
+    createdAt: new Date().toISOString()
   };
   localOrders.push(localOrder);
   localStorage.setItem('pa_orders', JSON.stringify(localOrders));
 
-  // Attempt Shiprocket order creation
-  try {
-    const srResult = await Shiprocket.createOrder({
-      orderId:       orderId,
-      orderDate:     new Date().toISOString().slice(0, 10),
-      customerName:  address.name,
-      address:       address.address,
-      city:          address.city,
-      pincode:       address.pincode,
-      state:         address.state,
-      country:       'India',
-      email:         address.email,
-      phone:         address.phone,
-      items:         orderPayload.items,
-      paymentMethod: orderPayload.payment === 'COD' ? 'COD' : 'Prepaid',
-      subtotal:      orderPayload.subtotal,
-      courierCompany: orderPayload.courierCompany,
-      weight:        Store.getCartWeight() || 0.5,
-      length:        Shiprocket.PICKUP?.length || 15,
-      breadth:       Shiprocket.PICKUP?.breadth || 10,
-      height:        Shiprocket.PICKUP?.height || 10
-    });
-
-    localOrder.srOrderId = srResult.srOrderId;
-    localOrder.shipmentId = srResult.shipmentId;
-    localOrder.srStatus = 'created';
-
-    // Assign AWB
-    try {
-      const awbResult = await Shiprocket.assignAWB(srResult.shipmentId, orderPayload.courierCompany);
-      localOrder.awb = awbResult.awb;
-      localOrder.trackingId = awbResult.awb;
-      localOrder.courierName = awbResult.courierName;
-      localOrder.srStatus = 'awb_assigned';
-
-      // Generate pickup
-      try {
-        await Shiprocket.generatePickup(srResult.shipmentId);
-        localOrder.srStatus = 'pickup_done';
-      } catch (pe) { console.warn('[Shiprocket] Pickup gen failed:', pe.message); }
-    } catch (ae) { console.warn('[Shiprocket] AWB assign failed:', ae.message); }
-
-    // Update localStorage
-    const idx = localOrders.findIndex(o => o.id === orderId);
-    if (idx >= 0) localOrders[idx] = localOrder;
-    localStorage.setItem('pa_orders', JSON.stringify(localOrders));
-
-    // Update Firebase
-    await updateOrderTracking(orderId, localOrder.trackingId || '', localOrder.shipmentId || '', {
-      courierCompany: localOrder.courierCompany,
-      courierCharge:  localOrder.courierCharge,
-      srOrderId:      localOrder.srOrderId,
-      shipmentId:     localOrder.shipmentId,
-      awb:            localOrder.awb,
-      courierName:    localOrder.courierName,
-      srStatus:       localOrder.srStatus
-    });
-  } catch (srErr) {
-    console.warn('[Shiprocket] Order creation failed:', srErr.message);
-  }
-
   Store.clearCart();
-  showOrderSuccess(orderId, {
-    awb: localOrder.awb || 'Processing',
-    courierName: localOrder.courierName || localOrder.courierCompany || '',
-    shipmentId: localOrder.shipmentId
-  });
+  showOrderSuccess(orderId);
 }
 
-async function checkCourierServiceability() {
-  const pinInput = document.getElementById('co-pin');
-  const pincode = pinInput?.value?.trim();
-  if (!pincode || pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
-    showToast('Enter a valid 6-digit pincode', 'warning');
-    return;
-  }
-
-  const section   = document.getElementById('courier-section');
-  const optionsEl = document.getElementById('courier-options');
-  const loadingEl = document.getElementById('courier-loading');
-  const errorEl   = document.getElementById('courier-error');
-
-  section.style.display   = 'block';
-  loadingEl.style.display = 'block';
-  optionsEl.style.display = 'none';
-  errorEl.style.display   = 'none';
-
-  _serviceabilityLoading = true;
-
-  try {
-    const pickupPin = (window.Shiprocket?.PICKUP?.pincode) || '414001';
-    const weight = Store.getCartWeight() || 0.5;
-
-    const couriers = await Shiprocket.checkServiceability(pickupPin, pincode, weight);
-
-    if (!couriers || couriers.length === 0) {
-      throw new Error('No couriers available for this pincode. Please check the pincode or contact support.');
-    }
-
-    // Parse courier data — SR returns various formats
-    _courierOptions = couriers.map(c => ({
-      name:       c.courier_name || c.name || c.company || 'Standard',
-      charge:     Number(c.freight_charge || c.charge || c.rate || 60),
-      etamin:     Number(c.etamin || c.eta_min || 2),
-      etamax:     Number(c.etamax || c.eta_max || 5),
-      cod:        c.cod === 1 || c.cod === true,
-      prepaid:    c.prepaid === 1 || c.prepaid === true,
-      weightTier: c.weight || weight
-    }));
-
-    // Sort by charge, cheapest first
-    _courierOptions.sort((a, b) => a.charge - b.charge);
-
-    // Pre-select cheapest
-    _selectedCourierIdx = 0;
-    _courierCharge = _courierOptions[0].charge;
-
-    // Update summary
-    updateCheckoutSummary();
-
-    // Render options
-    renderCourierOptions();
-
-    loadingEl.style.display = 'none';
-    optionsEl.style.display = 'flex';
-
-  } catch (err) {
-    console.error('[Shiprocket] Serviceability check failed:', err.message);
-    loadingEl.style.display = 'none';
-    errorEl.style.display   = 'block';
-    errorEl.innerHTML       = `⚠️ ${err.message}<br><span style="font-size:0.8rem;opacity:0.7">Using standard shipping at ${Store.formatPrice(60)}</span>`;
-
-    // Fallback: use default shipping
-    _courierOptions = [{ name: 'Standard Shipping', charge: 60, etamin: 3, etamax: 7, cod: true, prepaid: true }];
-    _selectedCourierIdx = 0;
-    _courierCharge = 60;
-    updateCheckoutSummary();
-  }
-
-  _serviceabilityLoading = false;
-}
-
-function renderCourierOptions() {
-  const optionsEl = document.getElementById('courier-options');
-  if (!optionsEl || _courierOptions.length === 0) return;
-
-  const courierIcons = {
-    'delhivery':    '🚚',
-    'ecom':         '📦',
-    'shadowfax':    '🚛',
-    'blue':         '📮',
-    'dtdc':         '🚐',
-    'fedex':        '✈️',
-    'amazon':       '📫',
-    'standard':     ''
-  };
-
-  const getIcon = (name) => {
-    const lower = (name || '').toLowerCase();
-    for (const [key, icon] of Object.entries(courierIcons)) {
-      if (lower.includes(key)) return icon;
-    }
-    return '';
-  };
-
-  const subtotal = Store.getCartTotal();
-  const tax      = Math.round(subtotal * 0.18);
-
-  optionsEl.innerHTML = _courierOptions.map((c, i) => {
-    const totalWithCourier = subtotal + c.charge + tax;
-    const isSelected = i === _selectedCourierIdx;
-    return `
-      <label style="
-        display:flex;align-items:center;gap:16px;padding:16px 20px;
-        border:2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'};
-        border-radius:12px;cursor:pointer;
-        background:${isSelected ? 'rgba(245,165,0,0.05)' : 'transparent'};
-        transition:all 0.2s ease;
-        ${_courierOptions.length > 1 ? '' : 'pointer-events:none;'}
-      " onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="if(${i}!==_selectedCourierIdx)this.style.borderColor='var(--border)'">
-        <input type="radio" name="courier" value="${i}" ${isSelected ? 'checked' : ''}
-          onchange="selectCourier(${i})"
-          style="accent-color:var(--gold);width:18px;height:18px;flex-shrink:0"/>
-        <span style="font-size:1.5rem;flex-shrink:0">${getIcon(c.name)}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;color:var(--text-primary);font-size:0.95rem">${c.name}</div>
-          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">
-            Est. ${c.etamin}–${c.etamax} days
-            ${c.cod ? ' · COD Available' : ''}
-          </div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-weight:700;color:var(--gold);font-size:1rem">${Store.formatPrice(c.charge)}</div>
-          <div style="font-size:0.72rem;color:var(--text-muted)">Total: ${Store.formatPrice(totalWithCourier)}</div>
-        </div>
-      </label>
-    `;
-  }).join('');
-}
-
-function selectCourier(idx) {
-  _selectedCourierIdx = idx;
-  _courierCharge = _courierOptions[idx].charge;
-  updateCheckoutSummary();
-  renderCourierOptions();
-}
-
-function updateCheckoutSummary() {
-  const subtotal = Store.getCartTotal();
-  const tax      = Math.round(subtotal * 0.18);
-  const total    = subtotal + _courierCharge + tax;
-
-  const shippingEl = document.getElementById('summary-shipping');
-  const totalEl    = document.getElementById('summary-total');
-  const payBtn     = document.getElementById('pay-btn');
-
-  if (shippingEl) {
-    shippingEl.innerHTML = _courierCharge === 0
-      ? '<span class="text-gold" data-i18n="cart.shipping.free">Free</span>'
-      : Store.formatPrice(_courierCharge);
-  }
-  if (totalEl) totalEl.textContent = Store.formatPrice(total);
-  if (payBtn) {
-    payBtn.disabled = _courierOptions.length === 0;
-    const isOnline = document.querySelector('input[name="paymentMethod"]:checked')?.value === 'online';
-    if (!isOnline) {
-      payBtn.innerHTML = `<span class="btn-lock-icon">&#x1F4E6;</span> Place Order (COD) &middot; ${Store.formatPrice(total)}`;
-    } else {
-      payBtn.innerHTML = `<span class="btn-lock-icon">&#x1F512;</span> Pay Securely &middot; ${Store.formatPrice(total)}`;
-    }
-  }
-}
-
-function showOrderSuccess(orderId, shiprocketData) {
-  // Dismiss processing overlay
-  const ov = document.getElementById('payment-processing-overlay');
-  if (ov) ov.classList.remove('active');
-
+function showOrderSuccess(orderId) {
   const container = document.getElementById('cart-container');
-  const awb = shiprocketData?.awb || 'Processing';
-  const courier = shiprocketData?.courierName || _courierOptions[_selectedCourierIdx]?.name || '';
-  const orderNum = orderId?.slice(-6)?.toUpperCase() || '—';
-  const now = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const orderNum  = orderId?.slice(-6)?.toUpperCase() || '—';
+  const now       = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
   container.innerHTML = `
     <div class="order-success">
       <div class="order-success-checkmark">✓</div>
-      <h1 class="mb-16" data-i18n="order.success.title">Order Placed!</h1>
-      <p style="color:var(--text-secondary);margin-bottom:32px;max-width:400px;margin-left:auto;margin-right:auto" data-i18n="order.success.desc">Thank you for your purchase. Your order is confirmed and will be dispatched soon.</p>
-
+      <h1 class="mb-16">Order Placed!</h1>
+      <p style="color:var(--text-secondary);margin-bottom:32px;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.7">
+        Thank you for your order! We'll call or WhatsApp you to confirm. Your Ayurvedic products will be on their way soon.
+      </p>
       <div class="order-success-card">
         <div class="order-detail-row">
           <span class="order-detail-label">Order #</span>
@@ -661,18 +281,17 @@ function showOrderSuccess(orderId, shiprocketData) {
           <span class="order-detail-value">${now}</span>
         </div>
         <div class="order-detail-row">
-          <span class="order-detail-label">Courier</span>
-          <span class="order-detail-value">${courier || '—'}</span>
+          <span class="order-detail-label">Payment</span>
+          <span class="order-detail-value">Cash on Delivery (COD)</span>
         </div>
         <div class="order-detail-row">
-          <span class="order-detail-label">AWB / Tracking</span>
-          <span class="order-detail-value" style="font-family:monospace;letter-spacing:0.05em">${awb}</span>
+          <span class="order-detail-label">Shipping</span>
+          <span class="order-detail-value">₹70 (collected on delivery)</span>
         </div>
       </div>
-
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="navigate('dashboard')" data-i18n="order.success.cta">View My Orders</button>
-        <button class="btn btn-outline" onclick="navigate('home')">Continue Shopping</button>
+        <button class="btn btn-primary" onclick="navigate('home')">Continue Shopping</button>
+        <button class="btn btn-outline" onclick="openUserDrawer()">View My Orders</button>
       </div>
     </div>
   `;

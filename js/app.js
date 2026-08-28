@@ -250,7 +250,7 @@ const ROUTES = {
   'about':     'pages/about.html',
   'catalog':   'pages/catalog.html',
   'product':   'pages/product.html',
-  'earn':      'pages/earn.html',
+
   'cart':      'pages/cart.html',
   'admin':     'pages/admin.html'
 };
@@ -355,7 +355,7 @@ async function navigate(hash, force = false) {
       'about':     initAbout,
       'catalog':   initCatalog,
       'product':   () => initProduct(param),
-      'earn':      () => {},
+
       'cart':      initCart,
       'dashboard': initDashboard,
       'admin':     initAdmin
@@ -1590,6 +1590,87 @@ window.updateAuthUI = async function() {
       });
     }
   });
+
+// ── SIDE CART DRAWER ──────────────────────────────────────────
+window.openCartDrawer = function() {
+  const overlay = document.getElementById('cart-drawer-overlay');
+  const drawer  = document.getElementById('cart-drawer');
+  if (!overlay || !drawer) return;
+  overlay.classList.add('active');
+  drawer.classList.add('open');
+  renderCartDrawer();
+};
+
+window.closeCartDrawer = function() {
+  const overlay = document.getElementById('cart-drawer-overlay');
+  const drawer  = document.getElementById('cart-drawer');
+  if (overlay) overlay.classList.remove('active');
+  if (drawer)  drawer.classList.remove('open');
+};
+
+function renderCartDrawer() {
+  const itemsEl    = document.getElementById('cart-drawer-items');
+  const footerEl   = document.getElementById('cart-drawer-footer');
+  const subtotalEl = document.getElementById('cart-drawer-subtotal');
+  if (!itemsEl) return;
+
+  const cart = Store.getCart();
+  const lang = localStorage.getItem('pa_lang') || 'en';
+
+  if (cart.length === 0) {
+    itemsEl.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+        <div style="font-size:3rem;margin-bottom:16px;opacity:0.4">🛒</div>
+        <p style="margin-bottom:16px">Your cart is empty</p>
+        <button class="btn btn-outline btn-sm" onclick="closeCartDrawer();navigate('catalog')">Browse Products</button>
+      </div>`;
+    if (footerEl) footerEl.style.display = 'none';
+    return;
+  }
+
+  itemsEl.innerHTML = cart.map(item => {
+    const name = lang === 'hi' ? (item.nameHi || item.name) : lang === 'mr' ? (item.nameMr || item.name) : item.name;
+    return `
+    <div class="side-cart-item">
+      <div class="side-cart-item-img">
+        <img src="${Store.convertDriveLink(item.image)}" alt="${name}" loading="lazy"/>
+      </div>
+      <div class="side-cart-item-info">
+        <div class="side-cart-item-name">${name}</div>
+        <div class="side-cart-item-price">${Store.formatPrice(item.price)}</div>
+        <div class="qty-control" style="margin-top:6px;transform:scale(0.85);transform-origin:left">
+          <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty - 1});renderCartDrawer()">−</button>
+          <span class="qty-value">${item.qty}</span>
+          <button class="qty-btn" onclick="Store.updateQty('${item.id}', ${item.qty + 1});renderCartDrawer()">+</button>
+        </div>
+      </div>
+      <div class="side-cart-item-right">
+        <div class="side-cart-item-total">${Store.formatPrice(item.price * item.qty)}</div>
+        <button onclick="Store.removeFromCart('${item.id}');renderCartDrawer()" class="side-cart-remove" title="Remove">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const subtotal = Store.getCartTotal();
+  if (subtotalEl) subtotalEl.textContent = Store.formatPrice(subtotal);
+  if (footerEl)   footerEl.style.display = 'block';
+}
+
+// Cart drawer overlay click to close
+document.addEventListener('DOMContentLoaded', () => {
+  const overlay = document.getElementById('cart-drawer-overlay');
+  if (overlay) overlay.addEventListener('click', closeCartDrawer);
+  const closeBtn = document.getElementById('cart-drawer-close');
+  if (closeBtn) closeBtn.addEventListener('click', closeCartDrawer);
+});
+
+// Re-render if cart updates while drawer is open
+document.addEventListener('cart:updated', () => {
+  const drawer = document.getElementById('cart-drawer');
+  if (drawer && drawer.classList.contains('open')) renderCartDrawer();
+});
 
 // ── USER PROFILE DRAWER ───────────────────────────────────────
 window.openUserDrawer = async function() {
