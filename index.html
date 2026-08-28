@@ -261,21 +261,32 @@
   </button>
 </div>
 
-<!-- ══ CHATBOT WINDOW ════════════════════════════════════════ -->
-<div class="chatbot-window" id="chatbot-window">
+<!-- ══ CHATBOT WINDOW (Rich Ayurvedic Assistant) ════════════ -->
+<div class="chatbot-window" id="chatbot-window" aria-label="Padmanabh AI Assistant">
   <div class="chat-header">
-    <h3>Padmanabh AI</h3>
-    <button class="btn btn-ghost" id="chatbot-close" style="padding:4px">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-    </button>
+    <div class="chat-header-profile">
+      <div class="chat-avatar-wrap">
+        <div class="chat-avatar">🌿</div>
+        <span class="chat-status-dot" title="Online"></span>
+      </div>
+      <div class="chat-header-text">
+        <div class="chat-header-title">Padmanabh AI</div>
+        <div class="chat-header-sub">Ayurvedic Wellness Expert</div>
+      </div>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-header-btn" id="chatbot-close" aria-label="Close Chat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
   </div>
   <div class="chat-body" id="chat-body">
     <!-- Messages injected by JS -->
   </div>
   <div class="chat-input-area">
-    <input type="text" id="chat-input" placeholder="Type your message..." autocomplete="off">
-    <button class="btn btn-primary" id="chat-send" style="padding:8px 12px">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    <input type="text" id="chat-input" placeholder="Ask about herbs, ailments, dosage..." autocomplete="off">
+    <button class="chat-send-btn" id="chat-send" aria-label="Send message">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
     </button>
   </div>
 </div>

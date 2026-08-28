@@ -853,11 +853,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const msg = document.createElement('div');
     msg.className = 'chat-msg bot';
     let html = typeof text === 'string' ? text : '';
+    // Format markdown bold & newlines
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
     if (options.length > 0) {
-      html += `<div class="chat-options" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">`;
+      html += `<div class="chat-options">`;
       options.forEach(o => {
         const safe = o.replace(/'/g, "\\'");
-        html += `<button class="btn btn-outline btn-sm" onclick="handleChatOption('${safe}')" style="text-align:left;font-size:0.8rem;padding:6px 10px">${o}</button>`;
+        html += `<button type="button" onclick="handleChatOption('${safe}')">${o}</button>`;
       });
       html += `</div>`;
     }
@@ -1453,8 +1455,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Lead Capture Questionnaire (Chatbot) ───────────────────
   const LEAD_QUESTIONS = [
-    { key: 'name', q: 'Hello! 👋 Before we start, may I know your name?' },
-    { key: 'phone', q: 'Thanks! What is your phone number so our experts can reach you if we get disconnected?' }
+    { key: 'name', q: 'Namaste! 🙏 Welcome to **Padmanabh Ayurvedics**.\nMay I have your name to personalize your consultation?' },
+    { key: 'phone', q: 'Wonderful! What is your phone number so our Ayurvedic Vaidya can reach you with personalized remedies?' }
   ];
 
   function startLeadCaptureFlow() {
