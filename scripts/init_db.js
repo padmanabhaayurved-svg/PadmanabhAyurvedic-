@@ -54,6 +54,8 @@ async function initDB() {
       total REAL,
       currency TEXT DEFAULT 'INR',
       status TEXT DEFAULT 'pending',
+      paymentMethod TEXT DEFAULT 'COD',
+      paymentId TEXT,
       trackingId TEXT,
       shipmentId TEXT,
       courierCompany TEXT,

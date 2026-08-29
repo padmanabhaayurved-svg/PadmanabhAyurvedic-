@@ -257,7 +257,10 @@ const Store = (() => {
       shipping,
       tax,
       total,
-      currency: 'INR'
+      currency: 'INR',
+      payment: 'COD',
+      paymentMethod: 'COD',
+      paymentStatus: 'pending'
     };
   }
 

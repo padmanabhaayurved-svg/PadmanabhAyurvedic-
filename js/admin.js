@@ -1145,7 +1145,7 @@ async function loadAdminOrders() {
           <td>${name}<br><span style="font-size:0.75rem;color:var(--text-muted)">${phone}</span></td>
           <td>${d}</td>
           <td>₹${o.total || 0}</td>
-          <td><span style="font-size:0.8rem">${o.payment || 'COD'}</span></td>
+          <td><span style="font-size:0.8rem">${((o.paymentMethod || o.payment || '').toUpperCase().includes('COD') || (o.paymentMethod || o.payment || '').toUpperCase().includes('CASH') || (o.paymentId && String(o.paymentId).startsWith('COD_'))) ? 'COD' : (o.paymentMethod || o.payment || 'Online')}</span></td>
           <td><span class="pill ${statusClass}">${(o.status || 'pending').toUpperCase()}</span></td>
           <td>
             <div style="display:flex;gap:6px;justify-content:flex-end">
@@ -1236,7 +1236,7 @@ function adminViewOrder(orderId) {
         <div class="order-info-grid">
           <div class="order-info-item"><div class="order-info-label">Customer</div><div class="order-info-value">${o.customerName || 'Guest'}</div></div>
           <div class="order-info-item"><div class="order-info-label">Phone</div><div class="order-info-value">${o.customerPhone || '-'}</div></div>
-          <div class="order-info-item"><div class="order-info-label">Payment</div><div class="order-info-value">${o.payment || 'COD'}</div></div>
+          <div class="order-info-item"><div class="order-info-label">Payment</div><div class="order-info-value">${((o.paymentMethod || o.payment || '').toUpperCase().includes('COD') || (o.paymentMethod || o.payment || '').toUpperCase().includes('CASH') || (o.paymentId && String(o.paymentId).startsWith('COD_'))) ? 'Cash on Delivery (COD)' : (o.paymentMethod || o.payment || 'Online')}</div></div>
           <div class="order-info-item"><div class="order-info-label">Date</div><div class="order-info-value">${new Date(o.createdAt).toLocaleString()}</div></div>
         </div>
         <div class="order-info-item" style="margin-bottom:16px"><div class="order-info-label">Delivery Address</div><div class="order-info-value">${o.address || '-'}</div></div>
@@ -1334,7 +1334,7 @@ function generateInvoice(orderId) {
           <div style="font-size: 0.75rem; text-transform: uppercase; color: #888; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;">Shipment Details</div>
           <div style="font-size: 0.9rem; color: #555;">
             AWB: ${o.trackingId || 'Pending'}<br>
-            Method: ${o.payment || 'Standard'}<br>
+            Method: ${((o.paymentMethod || o.payment || '').toUpperCase().includes('COD') || (o.paymentMethod || o.payment || '').toUpperCase().includes('CASH') || (o.paymentId && String(o.paymentId).startsWith('COD_'))) ? 'Cash on Delivery (COD)' : (o.paymentMethod || o.payment || 'Standard')}<br>
             Status: ${(o.status || 'Pending').toUpperCase()}
           </div>
         </div>
@@ -2425,7 +2425,8 @@ const PrinterManager = (() => {
     // Order meta
     bold(true); line(`ORDER #${order.id || '—'}`); bold(false);
     line(`Date : ${new Date(order.date || order.createdAt || Date.now()).toLocaleString()}`);
-    line(`Type : ${order.paymentMethod || 'Online'}`);
+    const isSlipCOD = ((order.paymentMethod || order.payment || '').toUpperCase().includes('COD') || (order.paymentMethod || order.payment || '').toUpperCase().includes('CASH') || (order.paymentId && String(order.paymentId).startsWith('COD_')));
+    line(`Type : ${isSlipCOD ? 'Cash on Delivery (COD)' : (order.paymentMethod || order.payment || 'Online')}`);
 
     // Customer
     if (s.printAddress) {
@@ -2926,7 +2927,7 @@ async function srCreateOrder(orderId) {
         qty: i.qty,
         price: i.price
       })),
-      paymentMethod: o.payment || 'Prepaid',
+      paymentMethod: ((o.paymentMethod || o.payment || '').toUpperCase().includes('COD') || (o.paymentMethod || o.payment || '').toUpperCase().includes('CASH') || (o.paymentId && String(o.paymentId).startsWith('COD_'))) ? 'COD' : 'Prepaid',
       subtotal:      o.subtotal || o.total || 0,
       courierCompany: o.courierCompany || o.courier || '',
       weight:        o.weight || 0.5,

@@ -158,7 +158,7 @@ const SR = {
         units:         i.qty,
         selling_price: i.price
       })),
-      payment_method:  order.paymentMethod || 'Prepaid',
+      payment_method:  ((order.paymentMethod || order.payment || '').toUpperCase().includes('COD') || (order.paymentMethod || order.payment || '').toUpperCase().includes('CASH') || (order.paymentId && String(order.paymentId).startsWith('COD_'))) ? 'COD' : 'Prepaid',
       sub_total:       order.subtotal || 0,
       length:          order.length || 15,
       breadth:         order.breadth || 10,
@@ -291,7 +291,7 @@ window.ShiprocketHelper = {
         qty: i.qty,
         price: i.price
       })),
-      paymentMethod: order.paymentMethod || 'Prepaid',
+      paymentMethod: ((order.paymentMethod || order.payment || '').toUpperCase().includes('COD') || (order.paymentMethod || order.payment || '').toUpperCase().includes('CASH') || (order.paymentId && String(order.paymentId).startsWith('COD_'))) ? 'COD' : 'Prepaid',
       subtotal:      order.subtotal || order.total || 0,
       courierCompany: order.courierCompany || order.courier || '',
       weight:        order.weight || 0.5

@@ -978,17 +978,28 @@ window.submitCheckout = async function() {
   const subtotal = Store.getCartTotal();
   const orderPayload = {
     ...Store.buildOrderPayload({ address, userId: session?.uid }),
-    payment:   'COD',
-    paymentId: 'COD_' + Date.now(),
-    shipping:  SHIPPING_CHARGE,
-    total:     subtotal + SHIPPING_CHARGE
+    payment:       'COD',
+    paymentMethod: 'COD',
+    paymentStatus: 'pending',
+    paymentId:     'COD_' + Date.now(),
+    shipping:      SHIPPING_CHARGE,
+    total:         subtotal + SHIPPING_CHARGE
   };
 
   try {
     const orderId = await createOrder(orderPayload);
     // Save locally
     const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
-    localOrders.push({ id: orderId, ...orderPayload, address, status: 'processing', createdAt: new Date().toISOString() });
+    localOrders.push({
+      id: orderId,
+      ...orderPayload,
+      payment: 'COD',
+      paymentMethod: 'COD',
+      paymentStatus: 'pending',
+      address,
+      status: 'processing',
+      createdAt: new Date().toISOString()
+    });
     localStorage.setItem('pa_orders', JSON.stringify(localOrders));
     Store.clearCart();
     showOrderConfirmed(orderId, address, orderPayload.total);

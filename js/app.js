@@ -9,8 +9,52 @@ if (window.__PA_INITIALIZED__) {
    SPA Router · i18n · Toast · Page Loader · Nav
    ============================================================ */
 
+// ── Order Payment Helpers ─────────────────────────────────────
+function formatOrderPaymentInfo(o) {
+  if (!o) return { isCOD: true, isOnline: false, isPaid: false, methodLabel: 'Cash on Delivery', statusLabel: 'Pending' };
+  
+  const rawMethod = String(o.paymentMethod || o.payment || '').trim();
+  const rawPayId  = String(o.paymentId || '').trim();
+  const rawStatus = String(o.status || '').toLowerCase();
+  const rawPayStatus = String(o.paymentStatus || '').toLowerCase();
+
+  // COD check: If method explicitly contains COD or CASH, or paymentId starts with COD_, or payment is neither online nor razorpay
+  const isCOD = rawMethod.toUpperCase().includes('COD') || 
+                rawMethod.toUpperCase().includes('CASH') || 
+                rawPayId.startsWith('COD_') || 
+                (!rawMethod.toLowerCase().includes('online') && !rawMethod.toLowerCase().includes('razorpay') && !rawPayId.startsWith('pay_') && !rawPayId.startsWith('Razorpay_'));
+
+  const isOnline = !isCOD && (
+    rawMethod.toLowerCase().includes('online') || 
+    rawMethod.toLowerCase().includes('razorpay') || 
+    rawPayId.startsWith('pay_') || 
+    rawPayId.startsWith('Razorpay_')
+  );
+
+  const methodLabel = isCOD ? 'Cash on Delivery' : (isOnline ? 'Online (Razorpay)' : (rawMethod || 'Cash on Delivery'));
+
+  // Paid check: An order is 'Paid' only if online payment succeeded or status is 'Paid'
+  const isPaid = !isCOD && (
+    rawStatus === 'paid' || 
+    rawPayStatus === 'paid' || 
+    rawPayId.startsWith('pay_') || 
+    rawPayId.startsWith('Razorpay_')
+  );
+
+  const statusLabel = isPaid ? 'Paid' : 'Pending';
+
+  return {
+    isCOD,
+    isOnline,
+    isPaid,
+    methodLabel,
+    statusLabel
+  };
+}
+if (typeof window !== 'undefined') window.formatOrderPaymentInfo = formatOrderPaymentInfo;
+
 // ── i18n ──────────────────────────────────────────────────────
-let _lang    = localStorage.getItem('pa_lang') || 'en';
+let _lang    = (typeof localStorage !== 'undefined' ? localStorage.getItem('pa_lang') : 'en') || 'en';
 let _strings = {};
 
 async function loadStrings(lang) {
@@ -1519,7 +1563,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.createOrder) orderId = await createOrder(orderData);
       if (window.linkOrderToUser) await linkOrderToUser(chatCtx.user.phone, orderId);
 
-      const localOrder = { id: orderId, userId: orderData.userId, customerName: chatCtx.user.name, customerPhone: chatCtx.user.phone, email: chatCtx.user.phone + '@padmanabh.site', address: orderData.address, items: orderData.items, subtotal: orderData.subtotal, shipping, tax: 0, total, payment: isCOD ? 'COD' : 'Online', paymentId: isCOD ? 'COD_' + Date.now() : 'Razorpay_' + Date.now(), status: 'pending', courierCompany: 'Standard Shipping', courierCharge: shipping, createdAt: new Date().toISOString(), srStatus: null, trackingId: null, awb: null, srOrderId: null, shipmentId: null };
+      const localOrder = {
+        id: orderId,
+        userId: orderData.userId,
+        customerName: chatCtx.user.name,
+        customerPhone: chatCtx.user.phone,
+        email: chatCtx.user.phone + '@padmanabh.site',
+        address: orderData.address,
+        items: orderData.items,
+        subtotal: orderData.subtotal,
+        shipping,
+        tax: 0,
+        total,
+        payment: isCOD ? 'COD' : 'Online',
+        paymentMethod: isCOD ? 'COD' : 'Online',
+        paymentStatus: isCOD ? 'pending' : 'paid',
+        paymentId: isCOD ? 'COD_' + Date.now() : 'Razorpay_' + Date.now(),
+        status: 'pending',
+        courierCompany: 'Standard Shipping',
+        courierCharge: shipping,
+        createdAt: new Date().toISOString(),
+        srStatus: null,
+        trackingId: null,
+        awb: null,
+        srOrderId: null,
+        shipmentId: null
+      };
       const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
       localOrders.push(localOrder);
       localStorage.setItem('pa_orders', JSON.stringify(localOrders));
@@ -1826,6 +1895,8 @@ window.openUserDrawer = async function() {
       if (o.status === 'shipped')    statusClass = 'pill-gold';
       if (o.status === 'delivered')  statusClass = 'pill-success';
       
+      const payInfo = formatOrderPaymentInfo(o);
+      
       return `
         <div class="order-card" style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:16px; transition:transform 0.2s ease;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='translateY(0)'">
           <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
@@ -1838,7 +1909,7 @@ window.openUserDrawer = async function() {
           <div style="background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:4px; margin-bottom:16px; font-size:0.8rem;">
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
               <span style="color:var(--text-muted)">Payment</span>
-              <span style="color:var(--text-primary)">${o.paymentMethod || 'Razorpay'} (${o.paymentId ? 'Paid' : 'Pending'})</span>
+              <span style="color:var(--text-primary)">${payInfo.methodLabel} (${payInfo.statusLabel})</span>
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span style="color:var(--text-muted)">Courier</span>
@@ -1942,6 +2013,8 @@ window.viewOrderDetails = function(orderId) {
     </div>
   `).join('');
 
+  const payInfo = formatOrderPaymentInfo(o);
+
   const modal = document.createElement('div');
   modal.className = 'modal-overlay active';
   modal.innerHTML = `
@@ -1998,15 +2071,15 @@ window.viewOrderDetails = function(orderId) {
           <div style="background:var(--bg-surface); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
             <div style="display:flex; justify-content:space-between;">
               <span style="color:var(--text-muted)">Method</span>
-              <span style="font-weight:500">${o.paymentMethod || 'COD'}</span>
+              <span style="font-weight:500">${payInfo.isCOD ? 'Cash on Delivery (COD)' : payInfo.methodLabel}</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:4px;">
               <span style="color:var(--text-muted)">Status</span>
-              <span style="font-weight:500; color:${o.paymentMethod === 'Online' ? 'var(--success)' : 'var(--warning)'}">${o.paymentMethod === 'Online' ? 'Paid' : 'Pending (COD)'}</span>
+              <span style="font-weight:500; color:${payInfo.isPaid ? 'var(--success)' : 'var(--warning)'}">${payInfo.isPaid ? 'Paid' : 'Pending (COD)'}</span>
             </div>
             ${o.paymentId ? `
               <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:0.8rem;">
-                <span style="color:var(--text-muted)">Transaction ID</span>
+                <span style="color:var(--text-muted)">${payInfo.isCOD ? 'Order Reference' : 'Transaction ID'}</span>
                 <span>${o.paymentId}</span>
               </div>
             ` : ''}
@@ -2032,6 +2105,7 @@ window.printInvoice = function(orderId) {
 
   const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'N/A';
   const orderNumber = (o.id || 'ORDER').slice(-6).toUpperCase();
+  const payInfo = formatOrderPaymentInfo(o);
   const items = o.items || [];
   const subtotal = o.subtotal || (o.total - (o.shipping || 0));
   const shipping = o.shipping || 0;
@@ -2114,9 +2188,9 @@ window.printInvoice = function(orderId) {
           <div class="box">
             <div class="box-title">Payment & Shipment</div>
             <div class="box-content">
-              Payment Method: <strong>${o.paymentMethod || 'COD'}</strong><br>
-              Payment Status: <strong>${o.paymentMethod === 'Online' ? 'Paid' : 'Pending (Cash on Delivery)'}</strong><br>
-              ${o.paymentId ? `Transaction ID: <span style="font-family:monospace">${o.paymentId}</span><br>` : ''}
+              Payment Method: <strong>${payInfo.isCOD ? 'Cash on Delivery (COD)' : payInfo.methodLabel}</strong><br>
+              Payment Status: <strong>${payInfo.isPaid ? 'Paid' : 'Pending (Cash on Delivery)'}</strong><br>
+              ${o.paymentId ? `${payInfo.isCOD ? 'Order Ref' : 'Transaction ID'}: <span style="font-family:monospace">${o.paymentId}</span><br>` : ''}
               Courier / Tracking: <strong>${o.awb ? o.awb : (o.courierName || 'Shiprocket Standard')}</strong>
             </div>
           </div>
@@ -2457,3 +2531,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Run autoplay try
   setTimeout(attemptPlay, 1000);
 });
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { formatOrderPaymentInfo };
+}
