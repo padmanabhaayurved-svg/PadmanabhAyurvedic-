@@ -566,31 +566,72 @@ async function renderAnalytics(type, customRange = null) {
   if (wrapper) wrapper.innerHTML = '<canvas id="traffic-chart"></canvas>';
   const ctx = document.getElementById('traffic-chart');
   if (!ctx) return;
+  const context2d = ctx.getContext('2d');
+  const gradient = context2d.createLinearGradient(0, 0, 0, 250);
+  gradient.addColorStop(0, 'rgba(100, 164, 53, 0.6)');
+  gradient.addColorStop(1, 'rgba(100, 164, 53, 0.0)');
 
   const labels = Object.keys(data.dailyViews).sort();
+  // Format labels to a cleaner "Aug 30" style
+  const formattedLabels = labels.map(dateStr => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+  
   const values = labels.map(k => data.dailyViews[k]);
 
   _adminTrafficChart = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
-      labels,
+      labels: formattedLabels,
       datasets: [{
         label: 'Views',
         data: values,
-        backgroundColor: '#64a435',
-        borderRadius: 4
+        backgroundColor: gradient,
+        borderColor: '#64a435',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#0a0a0a',
+        pointBorderColor: '#64a435',
+        pointBorderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#64a435',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: {
-        padding: { bottom: 15 }
+      interaction: { mode: 'index', intersect: false },
+      layout: { padding: { top: 10, bottom: 5 } },
+      plugins: { 
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          titleColor: '#888',
+          bodyColor: '#fff',
+          borderColor: '#333',
+          borderWidth: 1,
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: function(context) { return context.parsed.y + ' views'; }
+          }
+        }
       },
-      plugins: { legend: { display: false } },
       scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-        x: { grid: { display: false } }
+        y: { 
+          beginAtZero: true, 
+          grid: { color: 'rgba(255,255,255,0.06)', drawBorder: false },
+          ticks: { color: '#888', font: { family: "'Space Grotesk', sans-serif", size: 11 }, padding: 10 }
+        },
+        x: { 
+          grid: { display: false, drawBorder: false },
+          ticks: { color: '#888', font: { family: "'Space Grotesk', sans-serif", size: 11 }, maxRotation: 0, autoSkipPadding: 20 }
+        }
       }
     }
   });
