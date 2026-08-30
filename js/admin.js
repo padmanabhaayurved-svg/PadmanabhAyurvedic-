@@ -245,18 +245,17 @@ function adminLogout() {
 window.adminLogout = adminLogout;
 
 // ── 0. Danger Zone: Reset Data ───────────────────────────────
-window.resetDashboardData = async function() {
-  if(!confirm("⚠️ WARNING: This will permanently reset all Web Analytics, Finance, and Order data. This cannot be undone. Proceed?")) return;
+window.resetAnalyticsData = async function() {
+  if(!confirm("⚠️ WARNING: This will permanently reset all Web Analytics data (views, sessions). Proceed?")) return;
   
-  const btn = document.getElementById('btn-reset-data');
-  if(btn) { btn.disabled = true; btn.textContent = 'Resetting...'; }
+  const btns = document.querySelectorAll('.btn-reset-analytics');
+  btns.forEach(btn => { btn.disabled = true; btn.textContent = 'Resetting...'; });
 
   try {
     const db = firebase.firestore();
     let batch = db.batch();
     let count = 0;
     
-    // 1. Delete Analytics
     const analyticsSnap = await db.collection('analytics').get();
     analyticsSnap.forEach(doc => {
       batch.delete(doc.ref);
@@ -264,7 +263,28 @@ window.resetDashboardData = async function() {
       if(count === 490) { batch.commit(); batch = db.batch(); count = 0; }
     });
 
-    // 2. Soft-delete Orders (Rules prevent hard delete)
+    if(count > 0) await batch.commit();
+
+    showToast("Analytics reset successfully!", "success");
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    console.error(e);
+    showToast("Failed to reset: " + e.message, "error");
+    btns.forEach(btn => { btn.disabled = false; btn.innerHTML = '<span style="margin-right:6px">⚠️</span> Reset Analytics'; });
+  }
+};
+
+window.resetOrdersData = async function() {
+  if(!confirm("⚠️ WARNING: This will permanently reset all Orders and Finance data. Proceed?")) return;
+  
+  const btns = document.querySelectorAll('.btn-reset-orders');
+  btns.forEach(btn => { btn.disabled = true; btn.textContent = 'Resetting...'; });
+
+  try {
+    const db = firebase.firestore();
+    let batch = db.batch();
+    let count = 0;
+    
     const ordersSnap = await db.collection('orders').get();
     ordersSnap.forEach(doc => {
       batch.update(doc.ref, { _deleted: true });
@@ -275,12 +295,12 @@ window.resetDashboardData = async function() {
     if(count > 0) await batch.commit();
 
     localStorage.removeItem('pa_orders');
-    showToast("Data reset successfully!", "success");
+    showToast("Orders & Finance reset successfully!", "success");
     setTimeout(() => location.reload(), 1500);
   } catch(e) {
     console.error(e);
     showToast("Failed to reset: " + e.message, "error");
-    if(btn) { btn.disabled = false; btn.innerHTML = '<span style="margin-right:6px">⚠️</span> Reset Data'; }
+    btns.forEach(btn => { btn.disabled = false; btn.innerHTML = '<span style="margin-right:6px">⚠️</span> Reset Orders/Finance'; });
   }
 };
 

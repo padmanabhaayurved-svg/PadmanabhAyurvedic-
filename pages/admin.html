@@ -162,8 +162,8 @@
           <h2 class="admin-page-title">Storefront Analytics</h2>
           <p class="admin-page-subtitle">Real-time performance metrics</p>
         </div>
-        <button id="btn-reset-data" class="btn btn-outline" style="color:var(--danger); border-color:var(--danger); display:flex; align-items:center;" onclick="resetDashboardData()">
-          <span style="margin-right:6px">⚠️</span> Reset Data
+        <button class="btn btn-outline btn-reset-analytics" style="color:var(--danger); border-color:var(--danger); display:flex; align-items:center;" onclick="resetAnalyticsData()">
+          <span style="margin-right:6px">⚠️</span> Reset Analytics
         </button>
       </div>
 
@@ -573,8 +573,10 @@
           <p class="admin-page-subtitle">All customer orders. Enter tracking IDs and generate invoices.</p>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button class="btn btn-outline" onclick="loadAdminOrders()" style="display:flex;align-items:center;gap:6px;">🔄 Refresh Orders</button>
-
+          <button class="btn btn-outline" onclick="loadAdminOrders()" style="display:flex;align-items:center;gap:6px;">🔄 Refresh</button>
+          <button class="btn btn-outline btn-reset-orders" style="color:var(--danger); border-color:var(--danger); display:flex; align-items:center;" onclick="resetOrdersData()">
+            <span style="margin-right:6px">⚠️</span> Reset Orders
+          </button>
         </div>
       </div>
       <div class="data-table-wrap">
@@ -624,9 +626,14 @@
 
     <!-- 8. FINANCE & REPORTS TAB -->
     <div id="tab-finance" class="admin-tab">
-      <div class="admin-page-header">
-        <h2 class="admin-page-title">Finance &amp; Reports</h2>
-        <p class="admin-page-subtitle">Cash flow forecasts, MRR/ARR, churn analysis, and PDF reports.</p>
+      <div class="admin-page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <h2 class="admin-page-title">Finance &amp; Reports</h2>
+          <p class="admin-page-subtitle">Cash flow forecasts, MRR/ARR, churn analysis, and PDF reports.</p>
+        </div>
+        <button class="btn btn-outline btn-reset-orders" style="color:var(--danger); border-color:var(--danger); display:flex; align-items:center;" onclick="resetOrdersData()">
+          <span style="margin-right:6px">⚠️</span> Reset Finance Data
+        </button>
       </div>
 
       <!-- Finance KPI Row -->
