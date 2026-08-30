@@ -244,6 +244,46 @@ function adminLogout() {
 }
 window.adminLogout = adminLogout;
 
+// ── 0. Danger Zone: Reset Data ───────────────────────────────
+window.resetDashboardData = async function() {
+  if(!confirm("⚠️ WARNING: This will permanently reset all Web Analytics, Finance, and Order data. This cannot be undone. Proceed?")) return;
+  
+  const btn = document.getElementById('btn-reset-data');
+  if(btn) { btn.disabled = true; btn.textContent = 'Resetting...'; }
+
+  try {
+    const db = firebase.firestore();
+    let batch = db.batch();
+    let count = 0;
+    
+    // 1. Delete Analytics
+    const analyticsSnap = await db.collection('analytics').get();
+    analyticsSnap.forEach(doc => {
+      batch.delete(doc.ref);
+      count++;
+      if(count === 490) { batch.commit(); batch = db.batch(); count = 0; }
+    });
+
+    // 2. Soft-delete Orders (Rules prevent hard delete)
+    const ordersSnap = await db.collection('orders').get();
+    ordersSnap.forEach(doc => {
+      batch.update(doc.ref, { _deleted: true });
+      count++;
+      if(count === 490) { batch.commit(); batch = db.batch(); count = 0; }
+    });
+
+    if(count > 0) await batch.commit();
+
+    localStorage.removeItem('pa_orders');
+    showToast("Data reset successfully!", "success");
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    console.error(e);
+    showToast("Failed to reset: " + e.message, "error");
+    if(btn) { btn.disabled = false; btn.innerHTML = '<span style="margin-right:6px">⚠️</span> Reset Data'; }
+  }
+};
+
 // ── 1. Analytics ──────────────────────────────────────────────
 async function loadAdminData() {
   // Fix: Wait for Chart.js CDN to be available
@@ -279,7 +319,7 @@ async function loadAdminData() {
             createdAt: data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || new Date().toISOString(),
             updatedAt: data.updatedAt?.toDate?.()?.toISOString?.() || data.updatedAt || null
           };
-        });
+        }).filter(o => !o._deleted);
 
         // Save to local storage so other functions pull it
         try { localStorage.setItem('pa_orders', JSON.stringify(firestoreOrders)); } catch(e) {}

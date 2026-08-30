@@ -157,9 +157,14 @@
 
     <!-- 1. ANALYTICS TAB -->
     <div id="tab-analytics" class="admin-tab active">
-      <div class="admin-page-header">
-        <h2 class="admin-page-title">Storefront Analytics</h2>
-        <p class="admin-page-subtitle">Real-time performance metrics</p>
+      <div class="admin-page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <h2 class="admin-page-title">Storefront Analytics</h2>
+          <p class="admin-page-subtitle">Real-time performance metrics</p>
+        </div>
+        <button id="btn-reset-data" class="btn btn-outline" style="color:var(--danger); border-color:var(--danger); display:flex; align-items:center;" onclick="resetDashboardData()">
+          <span style="margin-right:6px">⚠️</span> Reset Data
+        </button>
       </div>
 
       <div class="charts-row">
