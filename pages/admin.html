@@ -1360,7 +1360,9 @@
             <input type="text" class="form-input" id="pm-gdrive-input" placeholder="Paste Google Drive view link..." />
             <button type="button" class="btn btn-outline" onclick="addGDriveImage()">Add</button>
           </div>
-          <p class="text-muted text-xs mt-8">Recommended size: 800x800px. Ensure link has "Anyone with link can view".</p>
+          <div style="background:rgba(100,164,53,0.1); border-left:3px solid var(--gold); padding:8px 12px; margin-top:8px; border-radius:4px; font-size:0.8rem; color:var(--text-secondary);">
+            <strong>💡 Image Size:</strong> 1:1 Square aspect ratio is highly recommended for best display (e.g., <strong>800x800px</strong> or 1000x1000px). Ensure your Google Drive link has "Anyone with link can view".
+          </div>
           <div class="image-preview-grid" id="pm-img-preview"></div>
           <!-- Hidden storage for URLs -->
           <input type="hidden" id="pm-img-urls"/>
