@@ -415,6 +415,9 @@ function renderOrderAnalytics(days = 30) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: { bottom: 15 }
+        },
         plugins: { legend: { display: false } },
         scales: {
           y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -460,6 +463,9 @@ function renderOrderAnalytics(days = 30) {
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: { left: 10, right: 20 }
+          },
           plugins: { legend: { display: false } },
           scales: {
             x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -518,6 +524,9 @@ async function renderAnalytics(type, customRange = null) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: { bottom: 15 }
+      },
       plugins: { legend: { display: false } },
       scales: {
         y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -967,6 +976,15 @@ async function loadContentConfig() {
     reviewsContainer.innerHTML = '';
     (content.reviews || []).forEach(r => addReviewItem(r.name, r.text, r.dp));
   }
+
+  if (content.footer) {
+    if (document.getElementById('cms-footer-tagline')) document.getElementById('cms-footer-tagline').value = content.footer.tagline || '';
+    if (document.getElementById('cms-footer-phone')) document.getElementById('cms-footer-phone').value = content.footer.phone || '';
+    if (document.getElementById('cms-footer-email')) document.getElementById('cms-footer-email').value = content.footer.email || '';
+    if (document.getElementById('cms-footer-insta')) document.getElementById('cms-footer-insta').value = content.footer.instagram || '';
+    if (document.getElementById('cms-footer-wa')) document.getElementById('cms-footer-wa').value = content.footer.whatsapp || '';
+    if (document.getElementById('cms-footer-yt')) document.getElementById('cms-footer-yt').value = content.footer.youtube || '';
+  }
 }
 window.loadContentConfig = loadContentConfig;
 
@@ -1028,7 +1046,15 @@ window.saveContentConfig = async function() {
   const data = {
     about: { title: aboutTitle, text: aboutText },
     faq: faqs,
-    reviews: reviews
+    reviews: reviews,
+    footer: {
+      tagline: document.getElementById('cms-footer-tagline')?.value.trim() || '',
+      phone: document.getElementById('cms-footer-phone')?.value.trim() || '',
+      email: document.getElementById('cms-footer-email')?.value.trim() || '',
+      instagram: document.getElementById('cms-footer-insta')?.value.trim() || '',
+      whatsapp: document.getElementById('cms-footer-wa')?.value.trim() || '',
+      youtube: document.getElementById('cms-footer-yt')?.value.trim() || ''
+    }
   };
 
   try {
@@ -1867,6 +1893,9 @@ function renderCashFlowForecast(months = 3) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: { bottom: 15 }
+      },
       plugins: { legend: { position: 'top' } },
       scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v } } }
     }
@@ -3272,6 +3301,20 @@ window.loadTeammates = async function() {
     } else {
        data = JSON.parse(localStorage.getItem('pa_teammates') || '[]');
     }
+
+    if (!data || data.length === 0) {
+      data = [
+        { id: 'tm_1', name: 'Vaidya Padmanabh Shinde', role: 'Owner & Head Practitioner', bio: 'With over 20 years of expertise in traditional Ayurvedic therapies, Vaidya Padmanabh founded this center with a vision to make authentic Ayurvedic care accessible.', status: 'active', featured: true, photo: '' },
+        { id: 'tm_2', name: 'Rohan Shinde', role: 'Co-Founder & Operations Head', bio: 'Rohan oversees day-to-day operations and supply chain, ensuring every product meets the highest purity standards. His background in business management drives the center\'s growth.', status: 'active', featured: true, photo: '' },
+        { id: 'tm_3', name: 'Priya Patil', role: 'Co-Founder & Product Dev', bio: 'Priya heads the formulation and research wing, working closely with Ayurvedic scholars to develop the signature product line with a passion for natural wellness.', status: 'active', featured: true, photo: '' },
+        { id: 'tm_4', name: 'Marketing Team', role: 'Marketing Head', bio: 'Leading our outreach and patient communication, ensuring our traditional Ayurvedic solutions reach the digital audience effectively across the region.', status: 'active', featured: true, photo: '' }
+      ];
+      if (typeof window.saveTeammateToDB === 'function') {
+        for (let t of data) await window.saveTeammateToDB(t.id, t);
+      } else {
+        localStorage.setItem('pa_teammates', JSON.stringify(data));
+      }
+    }
     
     _teammates = data;
     renderTeammates();
@@ -3484,6 +3527,41 @@ async function checkImageReachable(url) {
       resolve(false);
     }, 5000);
     img.src = url;
-  });
 }
 window.scanProductImages = scanProductImages;
+
+window.handleTeammatePhotoUpload = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 400;
+      const MAX_HEIGHT = 400;
+      let width = img.width;
+      let height = img.height;
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      document.getElementById('tm-photo').value = dataUrl;
+      if (window.showToast) window.showToast('Image compressed & ready', 'success');
+    }
+    img.src = e.target.result;
+  }
+  reader.readAsDataURL(file);
+};

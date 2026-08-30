@@ -115,30 +115,7 @@
     </div>
     <div class="grid grid-4 gap-32 stagger" id="team-grid">
       <!-- Populated dynamically by JS -->
-      <div class="team-card animate-on-scroll">
-        <div class="team-avatar" style="background-image:url('https://ui-avatars.com/api/?name=Vaidya+Padmanabh&background=2C4C3B&color=fff&size=200');background-size:cover;background-position:center;color:transparent;">V</div>
-        <h4 class="team-name">Vaidya Padmanabh Shinde</h4>
-        <p class="team-role">Owner &amp; Head Practitioner</p>
-        <p class="team-bio">With over 20 years of expertise in traditional Ayurvedic therapies, Vaidya Padmanabh founded this center with a vision to make authentic Ayurvedic care accessible.</p>
-      </div>
-      <div class="team-card animate-on-scroll">
-        <div class="team-avatar" style="background-image:url('https://ui-avatars.com/api/?name=Rohan+Shinde&background=2C4C3B&color=fff&size=200');background-size:cover;background-position:center;color:transparent;">R</div>
-        <h4 class="team-name">Rohan Shinde</h4>
-        <p class="team-role">Co-Founder &amp; Operations Head</p>
-        <p class="team-bio">Rohan oversees day-to-day operations and supply chain, ensuring every product meets the highest purity standards. His background in business management drives the center's growth.</p>
-      </div>
-      <div class="team-card animate-on-scroll">
-        <div class="team-avatar" style="background-image:url('https://ui-avatars.com/api/?name=Priya+Patil&background=2C4C3B&color=fff&size=200');background-size:cover;background-position:center;color:transparent;">P</div>
-        <h4 class="team-name">Priya Patil</h4>
-        <p class="team-role">Co-Founder &amp; Product Dev</p>
-        <p class="team-bio">Priya heads the formulation and research wing, working closely with Ayurvedic scholars to develop the signature product line with a passion for natural wellness.</p>
-      </div>
-      <div class="team-card animate-on-scroll">
-        <div class="team-avatar" style="background-image:url('https://ui-avatars.com/api/?name=Marketing+Team&background=2C4C3B&color=fff&size=200');background-size:cover;background-position:center;color:transparent;">M</div>
-        <h4 class="team-name">Marketing Team</h4>
-        <p class="team-role">Marketing Head</p>
-        <p class="team-bio">Leading our outreach and patient communication, ensuring our traditional Ayurvedic solutions reach the digital audience effectively across the region.</p>
-      </div>
+      <p class="text-center text-muted" style="grid-column: 1 / -1; padding: 40px;">Loading team members...</p>
     </div>
   </div>
 </section>
@@ -188,17 +165,19 @@ document.addEventListener('page:about', async () => {
         // Use ui-avatars for missing photos or broken local assets
         if (!photo || photo.startsWith('assets/')) {
           const encName = encodeURIComponent(tm.name || 'Team');
-          photo = `https://ui-avatars.com/api/?name=${encName}&background=2C4C3B&color=fff&size=200`;
+          photo = `https://ui-avatars.com/api/?name=${encName}&background=2C4C3B&color=fff&size=800`;
         }
 
         return `
           <div class="team-card animate-on-scroll">
-            <div class="team-avatar" style="background-image:url('${photo}');background-size:cover;background-position:center;color:transparent;">
-              ${tm.name ? tm.name.charAt(0) : 'T'}
+            <div class="team-card-img" style="background-image:url('${photo}');"></div>
+            <div class="team-card-overlay">
+              <h4 class="team-name">${tm.name}</h4>
+              <p class="team-role">${tm.role}</p>
+              <div class="team-bio-wrapper">
+                <p class="team-bio">${tm.bio || ''}</p>
+              </div>
             </div>
-            <h4 class="team-name">${tm.name}</h4>
-            <p class="team-role">${tm.role}</p>
-            <p class="team-bio">${tm.bio || ''}</p>
           </div>
         `;
       }).join('');

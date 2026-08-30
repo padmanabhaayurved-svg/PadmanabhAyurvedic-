@@ -2532,6 +2532,58 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(attemptPlay, 1000);
 });
 
+// ── Load Dynamic Footer Content ──────────────────────────────
+function loadFooterData() {
+  if (!window.pa_db) {
+    setTimeout(loadFooterData, 500);
+    return;
+  }
+  window.pa_db.collection('config').doc('content').get().then(snap => {
+    if (snap.exists) {
+      const { footer } = snap.data();
+      if (footer) {
+        if (footer.tagline) {
+          const tEl = document.getElementById('ui-footer-tagline');
+          if (tEl) tEl.textContent = footer.tagline;
+        }
+        if (footer.phone) {
+          const pl = document.getElementById('ui-footer-phone-link');
+          const pt = document.getElementById('ui-footer-phone-text');
+          if (pl) pl.href = 'tel:' + footer.phone.replace(/[^+\d]/g, '');
+          if (pt) pt.textContent = footer.phone;
+        }
+        if (footer.email) {
+          const el = document.getElementById('ui-footer-email-link');
+          const et = document.getElementById('ui-footer-email-text');
+          if (el) el.href = 'mailto:' + footer.email;
+          if (et) et.textContent = footer.email;
+        }
+        if (footer.instagram) {
+          const il = document.getElementById('ui-footer-insta');
+          if (il) { il.href = footer.instagram; il.style.display = 'inline-flex'; }
+        } else {
+          const il = document.getElementById('ui-footer-insta');
+          if (il) il.style.display = 'none';
+        }
+        if (footer.whatsapp) {
+          const wl = document.getElementById('ui-footer-wa');
+          if (wl) { wl.href = footer.whatsapp; wl.style.display = 'inline-flex'; }
+        } else {
+          const wl = document.getElementById('ui-footer-wa');
+          if (wl) wl.style.display = 'none';
+        }
+        if (footer.youtube) {
+          const yl = document.getElementById('ui-footer-yt');
+          if (yl) { yl.href = footer.youtube; yl.style.display = 'inline-flex'; }
+        } else {
+          const yl = document.getElementById('ui-footer-yt');
+          if (yl) yl.style.display = 'none';
+        }
+      }
+    }
+  }).catch(e => console.error('Failed to load footer', e));
+}
+document.addEventListener('DOMContentLoaded', loadFooterData);
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { formatOrderPaymentInfo };
 }
