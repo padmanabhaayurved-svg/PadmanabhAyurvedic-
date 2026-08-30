@@ -3527,6 +3527,7 @@ async function checkImageReachable(url) {
       resolve(false);
     }, 5000);
     img.src = url;
+  });
 }
 window.scanProductImages = scanProductImages;
 
