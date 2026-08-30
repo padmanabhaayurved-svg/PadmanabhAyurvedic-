@@ -267,7 +267,7 @@ async function getAdminOrders() {
         createdAt: data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || new Date().toISOString(),
         updatedAt: data.updatedAt?.toDate?.()?.toISOString?.() || data.updatedAt || null
       };
-    });
+    }).filter(o => !o._deleted);
   } catch (e) {
     console.warn('[Firebase] getAdminOrders error:', e.message);
     return null; // null signals "use localStorage fallback"
