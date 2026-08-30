@@ -932,8 +932,9 @@ window.addBannerInput = function(type, value = '') {
   const div = document.createElement('div');
   div.style.display = 'flex';
   div.style.gap = '8px';
+  const recSize = type === 'desktop' ? '1600x600px' : '800x1000px';
   div.innerHTML = `
-    <input type="text" class="form-input banner-input-${type}" style="flex:1" placeholder="GDrive Image Link" value="${value}"/>
+    <input type="text" class="form-input banner-input-${type}" style="flex:1" placeholder="GDrive Link (Rec: ${recSize})" value="${value}"/>
     <button class="btn btn-outline" style="padding:0 12px;color:var(--danger)" onclick="this.parentElement.remove();updateBannerPreview('${type}')">X</button>
   `;
   container.appendChild(div);
@@ -1014,7 +1015,7 @@ window.addReviewItem = function(name = '', text = '', dp = '') {
     <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; gap:8px;">
         <input type="text" class="form-input review-name" placeholder="Customer Name" value="${name}" style="flex:1"/>
-        <input type="text" class="form-input review-dp" placeholder="DP Link (Optional)" value="${dp}" style="flex:1" onchange="this.value = convertGDriveUrl(this.value)"/>
+        <input type="text" class="form-input review-dp" placeholder="DP Link (Rec: 100x100px)" value="${dp}" style="flex:1" onchange="this.value = convertGDriveUrl(this.value)"/>
       </div>
       <textarea class="form-textarea review-text" placeholder="Review Content" style="min-height:60px">${text}</textarea>
     </div>
