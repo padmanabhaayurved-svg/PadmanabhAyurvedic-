@@ -614,8 +614,7 @@
 /* Hide global floating elements and upper navigator on mobile checkout for a distraction-free and clean UI */
 @media (max-width: 768px) {
   body[data-route="cart"] #floating-mobile-nav,
-  body[data-route="cart"] .fab-container,
-  .co-top-nav {
+  body[data-route="cart"] .fab-container {
     display: none !important;
   }
   body[data-route="cart"] #app {
@@ -981,7 +980,6 @@ window.submitCheckout = async function() {
     pincode: document.getElementById('co-pin').value.trim()
   };
 
-  const session  = PhoneAuth.getUser();
   const subtotal = Store.getCartTotal();
   const orderPayload = {
     ...Store.buildOrderPayload({ address, userId: session?.uid }),

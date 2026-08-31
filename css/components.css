@@ -1570,7 +1570,8 @@
   transform: scale(1.1) translateY(-2px);
   box-shadow: 0 8px 30px rgba(201, 168, 76, 0.6);
 }
-.cart-fab .cart-badge {
+.cart-fab .cart-badge,
+.glass-btn .cart-badge {
   position: absolute;
   top: -6px;
   right: -6px;
