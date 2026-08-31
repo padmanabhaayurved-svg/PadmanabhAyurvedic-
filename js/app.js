@@ -356,7 +356,11 @@ async function navigate(hash, force = false) {
     });
 
     app.classList.remove('transitioning');
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Force instant scroll to top on all browsers (bypassing smooth scroll)
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    document.documentElement.style.scrollBehavior = '';
 
     _currentRoute = route;
     document.body.setAttribute('data-route', route);

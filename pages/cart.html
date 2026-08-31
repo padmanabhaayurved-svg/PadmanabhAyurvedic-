@@ -931,11 +931,12 @@ function setupInputValidation() {
 
 window.submitCheckout = async function() {
   const session = typeof PhoneAuth !== 'undefined' ? PhoneAuth.getUser() : null;
-  if (!session) {
-    showToast('Please log in to place an order', 'error');
-    if (typeof openUserDrawer === 'function') openUserDrawer();
-    return;
-  }
+  // Login is no longer compulsory for checkout
+  // if (!session) {
+  //   showToast('Please log in to place an order', 'error');
+  //   if (typeof openUserDrawer === 'function') openUserDrawer();
+  //   return;
+  // }
 
   const btn  = document.getElementById('co-place-btn');
   const icon = document.getElementById('co-btn-icon');
