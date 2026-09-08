@@ -2562,6 +2562,10 @@ function loadFooterData() {
           if (el) el.href = 'mailto:' + footer.email;
           if (et) et.textContent = footer.email;
         }
+        if (footer.location) {
+          const locEl = document.getElementById('ui-footer-location-text');
+          if (locEl) locEl.textContent = footer.location;
+        }
         if (footer.instagram) {
           const il = document.getElementById('ui-footer-insta');
           if (il) { il.href = footer.instagram; il.style.display = 'inline-flex'; }

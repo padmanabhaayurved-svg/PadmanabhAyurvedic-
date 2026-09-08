@@ -1083,6 +1083,7 @@ async function loadContentConfig() {
     if (document.getElementById('cms-footer-tagline')) document.getElementById('cms-footer-tagline').value = content.footer.tagline || '';
     if (document.getElementById('cms-footer-phone')) document.getElementById('cms-footer-phone').value = content.footer.phone || '';
     if (document.getElementById('cms-footer-email')) document.getElementById('cms-footer-email').value = content.footer.email || '';
+    if (document.getElementById('cms-footer-location')) document.getElementById('cms-footer-location').value = content.footer.location || '';
     if (document.getElementById('cms-footer-insta')) document.getElementById('cms-footer-insta').value = content.footer.instagram || '';
     if (document.getElementById('cms-footer-wa')) document.getElementById('cms-footer-wa').value = content.footer.whatsapp || '';
     if (document.getElementById('cms-footer-yt')) document.getElementById('cms-footer-yt').value = content.footer.youtube || '';
@@ -1153,6 +1154,7 @@ window.saveContentConfig = async function() {
       tagline: document.getElementById('cms-footer-tagline')?.value.trim() || '',
       phone: document.getElementById('cms-footer-phone')?.value.trim() || '',
       email: document.getElementById('cms-footer-email')?.value.trim() || '',
+      location: document.getElementById('cms-footer-location')?.value.trim() || '',
       instagram: document.getElementById('cms-footer-insta')?.value.trim() || '',
       whatsapp: document.getElementById('cms-footer-wa')?.value.trim() || '',
       youtube: document.getElementById('cms-footer-yt')?.value.trim() || ''
