@@ -211,30 +211,43 @@ async function initAdminHub() {
 
 window.adminGoogleLogin = async function() {
   try {
-    const res = await window.signInWithGoogle();
-    const user = res.user;
-    
-    // Hardcoded check for the authorized admin email
-    if (user.email === 'padmanabhaayurved@gmail.com') {
-      sessionStorage.setItem('pa_admin_auth', 'true');
-      sessionStorage.setItem('pa_auth_provider', 'google');
-      
-      const loginView = document.getElementById('admin-login-view');
-      const shellView = document.getElementById('admin-shell');
-      if (loginView) loginView.style.display = 'none';
-      if (shellView) shellView.style.display = 'flex';
-      
-      loadAdminData();
-      showToast('Logged in successfully', 'success');
-    } else {
-      showToast('Unauthorized access. Admin only.', 'error');
-      if (window.signOut) await window.signOut();
-    }
+    // Saves a flag so we know to check redirect result when page reloads
+    sessionStorage.setItem('pa_admin_google_pending', 'true');
+    await window.signInWithGoogle(); // triggers redirect; page leaves here
   } catch (e) {
     console.error('Admin login error:', e);
-    showToast('Failed to sign in via Google', 'error');
+    sessionStorage.removeItem('pa_admin_google_pending');
+    showToast('Failed to start Google Sign-In: ' + (e.message || 'Unknown error'), 'error');
   }
 };
+
+// Called when user returns from Google redirect (fired by firebase.js initFirebase)
+window.addEventListener('pa:googleRedirectResult', async (e) => {
+  if (!sessionStorage.getItem('pa_admin_google_pending')) return; // not an admin login attempt
+  sessionStorage.removeItem('pa_admin_google_pending');
+
+  const user = e.detail.user;
+  if (user.email === 'padmanabhaayurved@gmail.com') {
+    sessionStorage.setItem('pa_admin_auth', 'true');
+    sessionStorage.setItem('pa_auth_provider', 'google');
+
+    const loginView = document.getElementById('admin-login-view');
+    const shellView = document.getElementById('admin-shell');
+    if (loginView) loginView.style.display = 'none';
+    if (shellView) shellView.style.display = 'flex';
+
+    loadAdminData();
+    showToast('Logged in successfully', 'success');
+  } else {
+    showToast('Unauthorized. Admin account only.', 'error');
+    if (window.signOut) await window.signOut();
+  }
+});
+
+window.addEventListener('pa:googleRedirectError', () => {
+  sessionStorage.removeItem('pa_admin_google_pending');
+  showToast('Google Sign-In failed. Please try again.', 'error');
+});
 
 function adminLogout() {
   sessionStorage.removeItem('pa_admin_auth');

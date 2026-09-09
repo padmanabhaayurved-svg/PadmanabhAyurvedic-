@@ -2297,38 +2297,44 @@ window.showPhoneAuthModal = function() {
 
 window.handleGoogleLogin = async function() {
   try {
-    const res = await window.signInWithGoogle();
-    const user = res.user;
-    
-    // We map email to phone to keep database backwards compatibility
-    const userData = {
-      phone: user.email, 
-      name: user.displayName || user.email.split('@')[0],
-      email: user.email,
-      uid: user.uid,
-      lastLoginAt: new Date().toISOString()
-    };
-    
-    await window.createOrUpdateUser(user.email, userData);
-    
-    // Store session
-    localStorage.setItem('pa_user_session', JSON.stringify({ 
-      phone: user.email, 
-      name: userData.name, 
-      uid: user.uid 
-    }));
-    
-    if (window.updateAuthUI) window.updateAuthUI();
-    
-    const overlay = document.getElementById('phone-auth-overlay');
-    if (overlay) overlay.remove();
-    
-    showToast('Signed in successfully!', 'success');
+    sessionStorage.setItem('pa_user_google_pending', 'true');
+    await window.signInWithGoogle(); // triggers redirect; page leaves here
   } catch(e) {
     console.error('Google Sign-in Error:', e);
-    showToast('Failed to sign in', 'error');
+    sessionStorage.removeItem('pa_user_google_pending');
+    showToast('Failed to start Google Sign-In', 'error');
   }
 };
+
+// Called when user returns from Google redirect (fired by firebase.js initFirebase)
+window.addEventListener('pa:googleRedirectResult', async (e) => {
+  if (!sessionStorage.getItem('pa_user_google_pending')) return; // not a user login attempt
+  sessionStorage.removeItem('pa_user_google_pending');
+
+  const user = e.detail.user;
+  const userData = {
+    phone: user.email,
+    name: user.displayName || user.email.split('@')[0],
+    email: user.email,
+    uid: user.uid,
+    lastLoginAt: new Date().toISOString()
+  };
+
+  await window.createOrUpdateUser(user.email, userData);
+
+  localStorage.setItem('pa_user_session', JSON.stringify({
+    phone: user.email,
+    name: userData.name,
+    uid: user.uid
+  }));
+
+  if (window.updateAuthUI) window.updateAuthUI();
+
+  const overlay = document.getElementById('phone-auth-overlay');
+  if (overlay) overlay.remove();
+
+  showToast('Signed in successfully!', 'success');
+});
 
 
 

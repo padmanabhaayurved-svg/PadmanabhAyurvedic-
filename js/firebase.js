@@ -51,6 +51,19 @@ function initFirebase() {
       })
     };
   }
+
+  // Handle the Google redirect result when user returns from Google Sign-In
+  if (firebaseReady && _auth) {
+    _auth.getRedirectResult().then(result => {
+      if (!result || !result.user) return; // no redirect in progress, normal load
+      const user = result.user;
+      // Fire a global event so admin.js and app.js can react
+      window.dispatchEvent(new CustomEvent('pa:googleRedirectResult', { detail: { user } }));
+    }).catch(err => {
+      console.warn('[Firebase] getRedirectResult error:', err.message);
+      window.dispatchEvent(new CustomEvent('pa:googleRedirectError', { detail: { error: err } }));
+    });
+  }
 }
 
 // ── Firestore Helpers ─────────────────────────────────────────
@@ -409,7 +422,9 @@ async function signOut() {
 async function signInWithGoogle() {
   if (!firebaseReady) throw new Error('Firebase not ready');
   const provider = new firebase.auth.GoogleAuthProvider();
-  return await _auth.signInWithPopup(provider);
+  // Use redirect instead of popup — works on all domains without popup blockers
+  await _auth.signInWithRedirect(provider);
+  // Will not reach here; page redirects to Google and comes back
 }
 
 function onAuthChange(callback) {
