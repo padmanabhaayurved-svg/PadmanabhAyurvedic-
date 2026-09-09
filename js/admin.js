@@ -1105,6 +1105,13 @@ async function loadContentConfig() {
     if (document.getElementById('cms-footer-wa')) document.getElementById('cms-footer-wa').value = content.footer.whatsapp || '';
     if (document.getElementById('cms-footer-yt')) document.getElementById('cms-footer-yt').value = content.footer.youtube || '';
   }
+
+  if (content.policies) {
+    if (document.getElementById('cms-policy-privacy')) document.getElementById('cms-policy-privacy').value = content.policies.privacy || '';
+    if (document.getElementById('cms-policy-terms')) document.getElementById('cms-policy-terms').value = content.policies.terms || '';
+    if (document.getElementById('cms-policy-refund')) document.getElementById('cms-policy-refund').value = content.policies.refund || '';
+    if (document.getElementById('cms-policy-shipping')) document.getElementById('cms-policy-shipping').value = content.policies.shipping || '';
+  }
 }
 window.loadContentConfig = loadContentConfig;
 
@@ -1175,6 +1182,12 @@ window.saveContentConfig = async function() {
       instagram: document.getElementById('cms-footer-insta')?.value.trim() || '',
       whatsapp: document.getElementById('cms-footer-wa')?.value.trim() || '',
       youtube: document.getElementById('cms-footer-yt')?.value.trim() || ''
+    },
+    policies: {
+      privacy: document.getElementById('cms-policy-privacy')?.value.trim() || '',
+      terms: document.getElementById('cms-policy-terms')?.value.trim() || '',
+      refund: document.getElementById('cms-policy-refund')?.value.trim() || '',
+      shipping: document.getElementById('cms-policy-shipping')?.value.trim() || ''
     }
   };
 

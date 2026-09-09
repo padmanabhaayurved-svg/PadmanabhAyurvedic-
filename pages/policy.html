@@ -8,12 +8,12 @@
 </div>
 
 <script>
-document.addEventListener('page:policy', (e) => {
+document.addEventListener('page:policy', async (e) => {
   const type = e.detail.type || 'privacy';
   const titleEl = document.getElementById('policy-title');
   const contentEl = document.getElementById('policy-content');
   
-  const policies = {
+  const defaultPolicies = {
     privacy: {
       title: 'Privacy Policy',
       content: `
@@ -77,10 +77,22 @@ document.addEventListener('page:policy', (e) => {
     }
   };
 
-  const selected = policies[type] || policies.privacy;
-  if (titleEl) titleEl.textContent = selected.title;
-  if (contentEl) contentEl.innerHTML = selected.content;
+  const selectedDefault = defaultPolicies[type] || defaultPolicies.privacy;
+  
+  if (titleEl) titleEl.textContent = selectedDefault.title;
+  if (contentEl) contentEl.innerHTML = selectedDefault.content;
   
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Fetch overrides from Firebase CMS if available
+  if (window.getContentConfig) {
+    const config = await window.getContentConfig();
+    if (config && config.policies && config.policies[type]) {
+       const customHtml = config.policies[type].trim();
+       if (customHtml) {
+         if (contentEl) contentEl.innerHTML = customHtml;
+       }
+    }
+  }
 });
 </script>
