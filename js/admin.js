@@ -15,8 +15,8 @@ document.addEventListener('page:admin', initAdminHub);
 
 async function initAdminHub() {
   // Auto-login for local development
-  if (window.location.hostname === 'localhost' || 
-      window.location.hostname === '127.0.0.1' || 
+  if (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
       window.location.hostname === '' ||
       window.location.protocol === 'file:') {
     sessionStorage.setItem('pa_admin_auth', 'true');
@@ -25,8 +25,30 @@ async function initAdminHub() {
 
   document.title = 'Neural Hub — Padmanabh Ayurvedics';
 
+  // ── Check if this is a return from a Google Sign-In redirect ──
+  if (sessionStorage.getItem('pa_admin_google_pending') && window._pa_getRedirectResult) {
+    try {
+      const result = await window._pa_getRedirectResult();
+      if (result && result.user) {
+        const user = result.user;
+        sessionStorage.removeItem('pa_admin_google_pending');
+        if (user.email === 'padmanabhaayurved@gmail.com') {
+          sessionStorage.setItem('pa_admin_auth', 'true');
+          sessionStorage.setItem('pa_auth_provider', 'google');
+          showToast('Logged in successfully', 'success');
+        } else {
+          showToast('Unauthorized. Admin account only.', 'error');
+          if (window.signOut) await window.signOut();
+        }
+      }
+    } catch (e) {
+      console.error('Redirect result error:', e);
+      sessionStorage.removeItem('pa_admin_google_pending');
+      showToast('Google Sign-In failed. Please try again.', 'error');
+    }
+  }
+
   const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
-  const provider = sessionStorage.getItem('pa_auth_provider');
 
   const loginView = document.getElementById('admin-login-view');
   const shellView = document.getElementById('admin-shell');
@@ -211,7 +233,6 @@ async function initAdminHub() {
 
 window.adminGoogleLogin = async function() {
   try {
-    // Saves a flag so we know to check redirect result when page reloads
     sessionStorage.setItem('pa_admin_google_pending', 'true');
     await window.signInWithGoogle(); // triggers redirect; page leaves here
   } catch (e) {
@@ -220,41 +241,6 @@ window.adminGoogleLogin = async function() {
     showToast('Failed to start Google Sign-In: ' + (e.message || 'Unknown error'), 'error');
   }
 };
-
-// Called when user returns from Google redirect (fired by firebase.js initFirebase)
-window.addEventListener('pa:googleRedirectResult', async (e) => {
-  if (!sessionStorage.getItem('pa_admin_google_pending')) return; // not an admin login attempt
-  sessionStorage.removeItem('pa_admin_google_pending');
-
-  const user = e.detail.user;
-  if (user.email === 'padmanabhaayurved@gmail.com') {
-    sessionStorage.setItem('pa_admin_auth', 'true');
-    sessionStorage.setItem('pa_auth_provider', 'google');
-
-    // Re-initialize the admin hub to pick up the new auth state.
-    // The page:admin event may have already fired with isAuth=false (login screen shown).
-    // We force a re-run by navigating to admin fresh.
-    if (window.navigate) {
-      window.navigate('admin', true); // force=true re-renders even if already on admin
-    } else {
-      // Fallback: manipulate DOM directly if navigate isn't ready yet
-      const loginView = document.getElementById('admin-login-view');
-      const shellView = document.getElementById('admin-shell');
-      if (loginView) loginView.style.display = 'none';
-      if (shellView) shellView.style.display = 'flex';
-      loadAdminData();
-    }
-    showToast('Logged in successfully', 'success');
-  } else {
-    showToast('Unauthorized. Admin account only.', 'error');
-    if (window.signOut) await window.signOut();
-  }
-});
-
-window.addEventListener('pa:googleRedirectError', () => {
-  sessionStorage.removeItem('pa_admin_google_pending');
-  showToast('Google Sign-In failed. Please try again.', 'error');
-});
 
 function adminLogout() {
   sessionStorage.removeItem('pa_admin_auth');
