@@ -231,12 +231,19 @@ window.addEventListener('pa:googleRedirectResult', async (e) => {
     sessionStorage.setItem('pa_admin_auth', 'true');
     sessionStorage.setItem('pa_auth_provider', 'google');
 
-    const loginView = document.getElementById('admin-login-view');
-    const shellView = document.getElementById('admin-shell');
-    if (loginView) loginView.style.display = 'none';
-    if (shellView) shellView.style.display = 'flex';
-
-    loadAdminData();
+    // Re-initialize the admin hub to pick up the new auth state.
+    // The page:admin event may have already fired with isAuth=false (login screen shown).
+    // We force a re-run by navigating to admin fresh.
+    if (window.navigate) {
+      window.navigate('admin', true); // force=true re-renders even if already on admin
+    } else {
+      // Fallback: manipulate DOM directly if navigate isn't ready yet
+      const loginView = document.getElementById('admin-login-view');
+      const shellView = document.getElementById('admin-shell');
+      if (loginView) loginView.style.display = 'none';
+      if (shellView) shellView.style.display = 'flex';
+      loadAdminData();
+    }
     showToast('Logged in successfully', 'success');
   } else {
     showToast('Unauthorized. Admin account only.', 'error');

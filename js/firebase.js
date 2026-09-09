@@ -52,17 +52,21 @@ function initFirebase() {
     };
   }
 
-  // Handle the Google redirect result when user returns from Google Sign-In
+  // Handle the Google redirect result when user returns from Google Sign-In.
+  // Defer until DOMContentLoaded so admin.js event listeners are registered first.
   if (firebaseReady && _auth) {
-    _auth.getRedirectResult().then(result => {
-      if (!result || !result.user) return; // no redirect in progress, normal load
-      const user = result.user;
-      // Fire a global event so admin.js and app.js can react
-      window.dispatchEvent(new CustomEvent('pa:googleRedirectResult', { detail: { user } }));
-    }).catch(err => {
-      console.warn('[Firebase] getRedirectResult error:', err.message);
-      window.dispatchEvent(new CustomEvent('pa:googleRedirectError', { detail: { error: err } }));
-    });
+    const _authRef = _auth;
+    window.addEventListener('DOMContentLoaded', () => {
+      _authRef.getRedirectResult().then(result => {
+        if (!result || !result.user) return; // no redirect in progress, normal load
+        const user = result.user;
+        // Fire a global event so admin.js and app.js can react
+        window.dispatchEvent(new CustomEvent('pa:googleRedirectResult', { detail: { user } }));
+      }).catch(err => {
+        console.warn('[Firebase] getRedirectResult error:', err.message);
+        window.dispatchEvent(new CustomEvent('pa:googleRedirectError', { detail: { error: err } }));
+      });
+    }, { once: true });
   }
 }
 
