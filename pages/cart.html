@@ -994,6 +994,14 @@ window.submitCheckout = async function() {
 
   try {
     const orderId = await createOrder(orderPayload);
+    
+    // Call email API
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, orderPayload })
+    }).catch(e => console.error('Email API failed:', e));
+
     // Save locally
     const localOrders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
     localOrders.push({
@@ -1072,9 +1080,6 @@ function showOrderConfirmed(orderId, address, total) {
           WhatsApp Order Info
         </button>
       </div>
-      <p style="color:var(--text-muted);font-size:0.78rem;margin-top:24px">
-        📱 Confirmation SMS will be sent to ${address.phone}
-      </p>
     </div>
   `;
   applyStrings();

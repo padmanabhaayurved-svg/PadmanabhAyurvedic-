@@ -1,0 +1,86 @@
+<div class="container section" style="padding-top: calc(var(--nav-h) + 40px); min-height: 70vh;">
+  <div style="max-width: 800px; margin: 0 auto; background: var(--bg-card); padding: 40px; border-radius: 12px; border: 1px solid var(--border);">
+    <h1 id="policy-title" style="font-size: 2.5rem; color: var(--gold); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1px;">Policy</h1>
+    <div id="policy-content" style="line-height: 1.8; color: var(--text-secondary); font-size: 1.05rem;">
+      <!-- Content injected by script -->
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('page:policy', (e) => {
+  const type = e.detail.type || 'privacy';
+  const titleEl = document.getElementById('policy-title');
+  const contentEl = document.getElementById('policy-content');
+  
+  const policies = {
+    privacy: {
+      title: 'Privacy Policy',
+      content: `
+        <h3>1. Information Collection</h3>
+        <p>We collect information from you when you register on our site, place an order, subscribe to our newsletter or fill out a form.</p>
+        
+        <h3>2. Use of Information</h3>
+        <p>Any of the information we collect from you may be used to personalize your experience, improve our website, improve customer service, and process transactions.</p>
+        
+        <h3>3. Data Protection</h3>
+        <p>We implement a variety of security measures to maintain the safety of your personal information when you place an order or enter, submit, or access your personal information.</p>
+        
+        <h3>4. Disclosure to Third Parties</h3>
+        <p>We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information. This does not include trusted third parties who assist us in operating our website, conducting our business, or servicing you, so long as those parties agree to keep this information confidential.</p>
+      `
+    },
+    terms: {
+      title: 'Terms of Service',
+      content: `
+        <h3>1. Agreement to Terms</h3>
+        <p>By accessing or using our website, you agree to be bound by these Terms of Service and all applicable laws and regulations.</p>
+        
+        <h3>2. Intellectual Property</h3>
+        <p>The site and its original content, features, and functionality are owned by Padmanabh Ayurvedics and are protected by international copyright, trademark, patent, trade secret, and other intellectual property or proprietary rights laws.</p>
+        
+        <h3>3. Product Information</h3>
+        <p>All Ayurvedic products listed are based on traditional knowledge. Please consult your physician before starting any new herbal supplement, especially if you have existing health conditions.</p>
+        
+        <h3>4. Limitation of Liability</h3>
+        <p>In no event shall Padmanabh Ayurvedics be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the service.</p>
+      `
+    },
+    refund: {
+      title: 'Refund & Cancellation',
+      content: `
+        <h3>1. Cancellations</h3>
+        <p>Orders can be cancelled free of charge if they have not yet been dispatched. Once an order is shipped, cancellation is not possible.</p>
+        
+        <h3>2. Returns</h3>
+        <p>We accept returns within 7 days of delivery only if the product is damaged, defective, or incorrect. To be eligible for a return, your item must be unused, sealed, and in the same condition that you received it.</p>
+        
+        <h3>3. Refunds</h3>
+        <p>Once your return is received and inspected, we will notify you of the approval or rejection of your refund. If approved, your refund will be processed and automatically applied to your original method of payment within 5-7 business days.</p>
+      `
+    },
+    shipping: {
+      title: 'Shipping Policy',
+      content: `
+        <h3>1. Processing Time</h3>
+        <p>All orders are processed within 1-2 business days. Orders are not shipped or delivered on weekends or holidays.</p>
+        
+        <h3>2. Shipping Rates & Delivery Estimates</h3>
+        <p>Shipping charges for your order will be calculated and displayed at checkout. Standard delivery typically takes 3-5 business days within India.</p>
+        
+        <h3>3. Shipment Confirmation & Order Tracking</h3>
+        <p>You will receive a Shipment Confirmation email/SMS once your order has shipped containing your tracking number(s). The tracking number will be active within 24 hours.</p>
+        
+        <h3>4. Damages</h3>
+        <p>Padmanabh Ayurvedics is not liable for any products damaged or lost during shipping. If you received your order damaged, please contact the shipment carrier to file a claim or reach out to our support team with photographic evidence.</p>
+      `
+    }
+  };
+
+  const selected = policies[type] || policies.privacy;
+  if (titleEl) titleEl.textContent = selected.title;
+  if (contentEl) contentEl.innerHTML = selected.content;
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+</script>

@@ -4,7 +4,6 @@
   "hero.subtitle": "Authentic Ayurvedic formulations for holistic well-being.",
   "hero.cta": "Explore Collection",
   "hero.cta2": "Our Story",
-
   "nav.home": "Home",
   "nav.about": "About",
   "nav.shop": "Shop",
@@ -14,7 +13,6 @@
   "nav.tagline": "Pure Ayurvedic Wellness",
   "nav.catalog": "Shop",
   "nav.earn": "Earn",
-
   "footer.tagline": "Pure Ayurvedic Wellness since generations.",
   "footer.links": "Quick Links",
   "footer.contact": "Contact Us",
@@ -22,7 +20,6 @@
   "footer.privacy": "Privacy Policy",
   "footer.terms": "Terms of Service",
   "footer.refund": "Refund Policy",
-
   "home.collections.label": "Curated for You",
   "home.collections.title": "Featured Collections",
   "home.trust.label": "Why Padmanabh?",
@@ -37,7 +34,6 @@
   "home.trust.support.desc": "Talk to our Ayurvedic practitioners anytime.",
   "home.testimonials.label": "What Our Customers Say",
   "home.testimonials.title": "Voices of Wellness",
-
   "about.label": "Our Heritage",
   "about.title": "Rooted in Ayurveda,<br>Blossoming for Generations",
   "about.subtitle": "A story of tradition, purity, and purpose.",
@@ -51,7 +47,6 @@
   "about.values.transparency": "Transparency",
   "about.values.sustainability": "Sustainability",
   "about.timeline.title": "Our Journey",
-
   "catalog.label": "Our Products",
   "catalog.title": "The Collection",
   "catalog.filter.all": "All",
@@ -66,14 +61,12 @@
   "catalog.sort.price_asc": "Price: Low–High",
   "catalog.sort.price_desc": "Price: High–Low",
   "catalog.empty": "No products found.",
-
   "product.related": "You May Also Like",
   "product.add_to_cart": "Add to Cart",
   "product.buy_now": "Buy Now",
   "product.tab.about": "About",
   "product.tab.usage": "How to Use",
   "product.tab.ingredients": "Ingredients",
-
   "cart.empty": "Your cart is empty.",
   "cart.empty.cta": "Start Shopping",
   "cart.title": "Your Cart",
@@ -83,7 +76,6 @@
   "cart.shipping.free": "Free",
   "cart.tax": "GST (18%)",
   "cart.total": "Total",
-
   "checkout.address.title": "Delivery Address",
   "checkout.name": "Full Name",
   "checkout.phone": "Phone Number",
@@ -95,11 +87,9 @@
   "checkout.pay": "Pay",
   "checkout.place_order": "Place Order",
   "checkout.secure": "Payments secured by Razorpay",
-
   "order.success.title": "Order Placed!",
   "order.success.desc": "Thank you for your purchase. Your order is confirmed.",
   "order.success.cta": "View My Orders",
-
   "dashboard.login.title": "Welcome Back",
   "dashboard.register.title": "Create Account",
   "dashboard.register.name": "Full Name",
@@ -121,12 +111,11 @@
   "status.processing": "PROCESSING",
   "status.shipped": "SHIPPED",
   "status.delivered": "DELIVERED",
-
   "admin.login.title": "Neural Hub",
   "admin.login.subtitle": "Admin Access Only",
   "admin.login.user": "Username",
   "admin.login.pass": "Password",
   "admin.login.submit": "Enter Hub",
-
-  "common.loading": "Loading..."
+  "common.loading": "Loading...",
+  "footer.shipping": "Shipping Policy"
 }

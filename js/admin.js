@@ -14,8 +14,6 @@ let _historyProducts = [];
 document.addEventListener('page:admin', initAdminHub);
 
 async function initAdminHub() {
-  console.log('[Admin] Initializing Neural Hub...');
-
   // Auto-login for local development
   if (window.location.hostname === 'localhost' || 
       window.location.hostname === '127.0.0.1' || 
@@ -32,9 +30,6 @@ async function initAdminHub() {
 
   const loginView = document.getElementById('admin-login-view');
   const shellView = document.getElementById('admin-shell');
-
-  console.log('[Admin] Auth state:', { isAuth, provider });
-
   if (!isAuth) {
     if (loginView) loginView.style.display = 'flex';
     if (shellView) shellView.style.display = 'none';
@@ -214,28 +209,32 @@ async function initAdminHub() {
   }
 }
 
-// Delegated Login Handler (more robust than direct assignment)
-document.addEventListener('submit', e => {
-  if (e.target.id === 'admin-login-form') {
-    e.preventDefault();
-    console.log('[Admin] Intercepted login submission');
-    const u = document.getElementById('admin-user').value;
-    const p = document.getElementById('admin-pass').value;
-    const loginView = document.getElementById('admin-login-view');
-    const shellView = document.getElementById('admin-shell');
-
-    if (u === 'admin' && p === 'padmanabh2026848587') {
+window.adminGoogleLogin = async function() {
+  try {
+    const res = await window.signInWithGoogle();
+    const user = res.user;
+    
+    // Hardcoded check for the authorized admin email
+    if (user.email === 'padmanabhaayurved@gmail.com') {
       sessionStorage.setItem('pa_admin_auth', 'true');
-      sessionStorage.setItem('pa_auth_provider', 'local');
+      sessionStorage.setItem('pa_auth_provider', 'google');
+      
+      const loginView = document.getElementById('admin-login-view');
+      const shellView = document.getElementById('admin-shell');
       if (loginView) loginView.style.display = 'none';
       if (shellView) shellView.style.display = 'flex';
+      
       loadAdminData();
       showToast('Logged in successfully', 'success');
     } else {
-      showToast('Invalid credentials', 'error');
+      showToast('Unauthorized access. Admin only.', 'error');
+      if (window.signOut) await window.signOut();
     }
+  } catch (e) {
+    console.error('Admin login error:', e);
+    showToast('Failed to sign in via Google', 'error');
   }
-});
+};
 
 function adminLogout() {
   sessionStorage.removeItem('pa_admin_auth');
@@ -362,7 +361,6 @@ async function loadAdminData() {
           });
 
           if (hasNewOrder) {
-            console.log('[Admin] New order received! Playing notification sound...');
             const audio = new Audio('/assets/notification.mp3');
             audio.play().catch(e => {
               console.warn('[Admin] Audio playback blocked by browser interaction policy. Click anywhere on the dashboard to enable audio.', e);
@@ -941,11 +939,14 @@ async function loadHeroConfig() {
   document.getElementById('desktop-banner-inputs').innerHTML = '';
   document.getElementById('mobile-banner-inputs').innerHTML = '';
 
-  if (dImages.length === 0) addBannerInput('desktop', '');
-  else dImages.forEach(img => addBannerInput('desktop', img));
+  const dNorm = dImages.map(item => typeof item === 'string' ? { url: item, link: '' } : item);
+  const mNorm = mImages.map(item => typeof item === 'string' ? { url: item, link: '' } : item);
 
-  if (mImages.length === 0) addBannerInput('mobile', '');
-  else mImages.forEach(img => addBannerInput('mobile', img));
+  if (dNorm.length === 0) addBannerInput('desktop', '', '');
+  else dNorm.forEach(img => addBannerInput('desktop', img.url, img.link));
+
+  if (mNorm.length === 0) addBannerInput('mobile', '', '');
+  else mNorm.forEach(img => addBannerInput('mobile', img.url, img.link));
 
   updateBannerPreview('desktop');
   updateBannerPreview('mobile');
@@ -999,12 +1000,19 @@ async function saveHeroConfigAdmin() {
   btn.disabled = true;
   btn.textContent = 'Publishing...';
 
-  const desktopLines = Array.from(document.querySelectorAll('.banner-input-desktop')).map(el => el.value.trim()).filter(Boolean);
-  const mobileLines = Array.from(document.querySelectorAll('.banner-input-mobile')).map(el => el.value.trim()).filter(Boolean);
+  const desktopItems = Array.from(document.querySelectorAll('.banner-item-desktop')).map(el => ({
+    url: convertGDriveUrl(el.querySelector('.banner-img-desktop').value.trim()),
+    link: el.querySelector('.banner-link-desktop').value.trim()
+  })).filter(item => item.url);
+
+  const mobileItems = Array.from(document.querySelectorAll('.banner-item-mobile')).map(el => ({
+    url: convertGDriveUrl(el.querySelector('.banner-img-mobile').value.trim()),
+    link: el.querySelector('.banner-link-mobile').value.trim()
+  })).filter(item => item.url);
 
   const data = {
-    desktopBanner: desktopLines.map(convertGDriveUrl),
-    mobileBanner:  mobileLines.map(convertGDriveUrl),
+    desktopBanner: desktopItems,
+    mobileBanner: mobileItems,
     collections: []
   };
 
@@ -1028,24 +1036,33 @@ async function saveHeroConfigAdmin() {
 }
 window.saveHeroConfigAdmin = saveHeroConfigAdmin;
 
-window.addBannerInput = function(type, value = '') {
+window.addBannerInput = function(type, imgValue = '', linkValue = '') {
   const container = document.getElementById(`${type}-banner-inputs`);
   const div = document.createElement('div');
   div.style.display = 'flex';
+  div.style.flexDirection = 'column';
   div.style.gap = '8px';
+  div.style.padding = '8px';
+  div.style.border = '1px solid var(--border)';
+  div.style.borderRadius = '8px';
+  div.className = `banner-item-${type}`;
+  
   const recSize = type === 'desktop' ? '1600x600px' : '800x1000px';
   div.innerHTML = `
-    <input type="text" class="form-input banner-input-${type}" style="flex:1" placeholder="GDrive Link (Rec: ${recSize})" value="${value}"/>
-    <button class="btn btn-outline" style="padding:0 12px;color:var(--danger)" onclick="this.parentElement.remove();updateBannerPreview('${type}')">X</button>
+    <div style="display:flex; gap:8px">
+      <input type="text" class="form-input banner-img-${type}" style="flex:1" placeholder="Image Link (Rec: ${recSize})" value="${imgValue}"/>
+      <button class="btn btn-outline" style="padding:0 12px;color:var(--danger)" onclick="this.closest('.banner-item-${type}').remove();updateBannerPreview('${type}')">X</button>
+    </div>
+    <input type="text" class="form-input banner-link-${type}" placeholder="Click Link (e.g. #catalog or /product.html?id=...)" value="${linkValue}"/>
   `;
   container.appendChild(div);
-  div.querySelector('input').addEventListener('input', () => updateBannerPreview(type));
+  div.querySelector('.banner-img-' + type).addEventListener('input', () => updateBannerPreview(type));
 };
 
 window.updateBannerPreview = function(type) {
-  const inputs = document.querySelectorAll(`.banner-input-${type}`);
+  const inputs = document.querySelectorAll(`.banner-img-${type}`);
   if (inputs.length > 0 && inputs[0].value) {
-    document.getElementById(`preview-${type}`).innerHTML = `<img src="${convertGDriveUrl(inputs[0].value)}" alt=""/>`;
+    document.getElementById(`preview-${type}`).innerHTML = `<img src="${convertGDriveUrl(inputs[0].value)}" alt="" style="width:100%; height:100%; object-fit:cover;"/>`;
   } else {
     document.getElementById(`preview-${type}`).innerHTML = '';
   }
@@ -1245,8 +1262,6 @@ async function loadAdminOrders() {
     const firestoreOrders = await getAdminOrders();
     if (firestoreOrders !== null) {
       orders = firestoreOrders;
-      console.log('[Admin] Loaded', orders.length, 'orders from Firestore');
-
       // Merge into localStorage so offline/print functions still work
       try { localStorage.setItem('pa_orders', JSON.stringify(orders)); } catch(e) {}
     }
@@ -1255,7 +1270,6 @@ async function loadAdminOrders() {
   // ── Fallback: localStorage ───────────────────────────────────
   if (orders.length === 0) {
     try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
-    console.log('[Admin] Loaded', orders.length, 'orders from localStorage (fallback)');
   }
 
   if (orders.length === 0) {
@@ -2272,16 +2286,14 @@ function cancelReset() {
   document.getElementById('reset-step-3').classList.add('hidden');
   const input = document.getElementById('reset-confirm-input');
   if (input) input.value = '';
-  const pass = document.getElementById('reset-admin-pass');
-  if (pass) pass.value = '';
 }
 window.cancelReset = cancelReset;
 
 function executeSystemReset() {
-  const pass = document.getElementById('reset-admin-pass').value;
-  // Use the same admin password defined in login logic
-  if (pass !== 'padmanabh2026848587') {
-    showToast('Incorrect admin password', 'error');
+  // Use the same admin Google Auth constraint (already verified to enter page)
+  const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
+  if (!isAuth) {
+    showToast('Unauthorized', 'error');
     return;
   }
   // Wipe all known keys
@@ -2812,7 +2824,6 @@ loadAdminData = async function() {
         }
         return result;
       };
-      console.log('[Printer] Patched', fnName, 'for auto-print');
     }
   });
 

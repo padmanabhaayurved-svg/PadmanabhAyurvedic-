@@ -8,7 +8,6 @@
   "nav.tagline": "शुद्ध आयुर्वेदिक आरोग्य",
   "nav.catalog": "दुकान",
   "nav.earn": "कमवा",
-
   "footer.tagline": "पिढ्यानपिढ्या शुद्ध आयुर्वेदिक आरोग्य.",
   "footer.links": "महत्वाचे दुवे",
   "footer.contact": "आमच्याशी संपर्क साधा",
@@ -16,13 +15,11 @@
   "footer.privacy": "गोपनीयता धोरण",
   "footer.terms": "सेवेच्या अटी",
   "footer.refund": "परतावा धोरण",
-
   "hero.label": "प्राचीन ज्ञानाच्या मुळांशी",
   "hero.title": "निसर्गाचे सर्वोत्तम,<br>तुमच्यासाठी",
   "hero.subtitle": "होलिस्टिक हेल्थसाठी ऑथेंटिक आयुर्वेदिक फॉर्म्युलेशन्स.",
   "hero.cta": "कलेक्शन पाहा",
   "hero.cta2": "आमची स्टोरी",
-
   "home.collections.label": "तुमच्यासाठी खास",
   "home.collections.title": "फीचर्ड कलेक्शन",
   "home.trust.label": "पद्मनाभ का?",
@@ -37,7 +34,6 @@
   "home.trust.support.desc": "आमच्या आयुर्वेदिक एक्सपर्ट्सशी कधीही बोला.",
   "home.testimonials.label": "आमचे कस्टमर्स काय म्हणतात",
   "home.testimonials.title": "हेल्थचे आवाज",
-
   "about.label": "आमचा वारसा",
   "about.title": "आयुर्वेदामध्ये मुळे,<br>पिढ्यांसाठी",
   "about.subtitle": "परंपरा, शुद्धता आणि उद्देशाची कहाणी.",
@@ -51,7 +47,6 @@
   "about.values.transparency": "ट्रान्सपरन्सी",
   "about.values.sustainability": "सस्टेनेबिलिटी",
   "about.timeline.title": "आमचा प्रवास",
-
   "catalog.label": "आमचे प्रॉडक्ट्स",
   "catalog.title": "कलेक्शन",
   "catalog.filter.all": "सर्व",
@@ -66,14 +61,12 @@
   "catalog.sort.price_asc": "किंमत: कमी ते जास्त",
   "catalog.sort.price_desc": "किंमत: जास्त ते कमी",
   "catalog.empty": "कोणताही प्रॉडक्ट सापडला नाही.",
-
   "product.related": "तुम्हाला हे देखील आवडेल",
   "product.add_to_cart": "कार्टमध्ये टाका",
   "product.buy_now": "आता खरेदी करा",
   "product.tab.about": "प्रॉडक्ट डिटेल्स",
   "product.tab.usage": "कसे वापरावे",
   "product.tab.ingredients": "घटक",
-
   "cart.empty": "तुमची कार्ट रिकामी आहे.",
   "cart.empty.cta": "शॉपिंग सुरू करा",
   "cart.title": "तुमची कार्ट",
@@ -83,7 +76,6 @@
   "cart.shipping.free": "फ्री",
   "cart.tax": "GST (18%)",
   "cart.total": "टोटल",
-
   "checkout.address.title": "डिलिव्हरी ऍड्रेस",
   "checkout.name": "पूर्ण नाव",
   "checkout.phone": "मोबाईल नंबर",
@@ -95,11 +87,9 @@
   "checkout.pay": "पेमेंट करा",
   "checkout.place_order": "ऑर्डर प्लेस करा",
   "checkout.secure": "रेझरपे द्वारे सुरक्षित पेमेंट्स",
-
   "order.success.title": "ऑर्डर कन्फर्म झाली!",
   "order.success.desc": "शॉपिंगसाठी धन्यवाद. तुमची ऑर्डर कन्फर्म झाली आहे.",
   "order.success.cta": "माझ्या ऑर्डर्स पाहा",
-
   "dashboard.login.title": "वेलकम बॅक",
   "dashboard.register.title": "अकाऊंट तयार करा",
   "dashboard.register.name": "पूर्ण नाव",
@@ -121,12 +111,11 @@
   "status.processing": "प्रोसेसिंग",
   "status.shipped": "शिप्ड",
   "status.delivered": "डिलिव्हर्ड",
-
   "admin.login.title": "न्यूरल हब",
   "admin.login.subtitle": "फक्त अॅडमिनसाठी",
   "admin.login.user": "युझरनेम",
   "admin.login.pass": "पासवर्ड",
   "admin.login.submit": "लॉगिन करा",
-
-  "common.loading": "लोड होत आहे..."
+  "common.loading": "लोड होत आहे...",
+  "footer.shipping": "शिपिंग धोरण"
 }

@@ -38,9 +38,13 @@ http.createServer(async (req, res) => {
 
   // Mock API routing for local testing
   if (cleanUrl.startsWith('/api/')) {
-    if (cleanUrl === '/api/razorpay' || cleanUrl === '/api/razorpay-webhook') {
+    if (cleanUrl === '/api/razorpay' || cleanUrl === '/api/razorpay-webhook' || cleanUrl === '/api/send-email') {
       try {
-        const handlerName = cleanUrl === '/api/razorpay' ? './api/razorpay.js' : './api/razorpay-webhook.js';
+        let handlerName;
+        if (cleanUrl === '/api/razorpay') handlerName = './api/razorpay.js';
+        else if (cleanUrl === '/api/razorpay-webhook') handlerName = './api/razorpay-webhook.js';
+        else if (cleanUrl === '/api/send-email') handlerName = './api/send-email.js';
+        
         const handler = require(handlerName);
         // Parse JSON body manually (since we don't have express.json())
         if (req.method === 'POST') {

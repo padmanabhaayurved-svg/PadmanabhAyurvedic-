@@ -1,5 +1,4 @@
 if (window.__PA_INITIALIZED__) {
-  console.log('[App] Already initialized. Skipping duplicate execution.');
 } else {
   window.__PA_INITIALIZED__ = true;
 
@@ -134,7 +133,6 @@ window.closeModal = closeModal;
 const FALLBACK_IMG = `data:image/svg+xml;base64,${btoa(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%231a1a1a'/><g fill='%23c9a84c' opacity='0.5'><circle cx='200' cy='160' r='50'/><path d='M130 270 Q200 220 270 270 Q200 310 130 270'/><path d='M170 130 Q200 100 230 130'/></g><text x='200' y='330' text-anchor='middle' fill='%23c9a84c' font-size='14' font-family='serif'>Padmanabh Ayurvedics</text></svg>`)}`;
 
 function initImageFixer() {
-  console.log('[ImageFixer] Active — Watching for broken renders.');
   // Capture image errors globally
   window.addEventListener('error', (e) => {
     if (e.target.tagName === 'IMG') {
@@ -184,7 +182,6 @@ function fixBrokenImage(img) {
 
 // ── Cinematic Boot Sequence ───────────────────────────────────
 function runInitializationSequence() {
-  console.log('[App] Starting initialization sequence...');
   initImageFixer(); // Start watching early
   const loader = document.getElementById('page-loader');
   const splash = document.getElementById('lang-splash');
@@ -192,7 +189,6 @@ function runInitializationSequence() {
   // ── Returning visitor: lang already chosen — go straight to app ──
   const langAlreadySet = localStorage.getItem('pa_lang');
   if (langAlreadySet) {
-    console.log('[App] Returning visitor (' + langAlreadySet + ') — skipping intro, loading app.');
     // Both elements start as display:none in HTML — nothing to hide
     startApp();
     return;
@@ -215,7 +211,6 @@ function runInitializationSequence() {
 
     // After 3.5 s hide loader and show language picker
     setTimeout(() => {
-      console.log('[App] Hiding loader, showing lang splash...');
       loader.style.display = 'none';
       if (loader.parentNode) loader.remove();
 
@@ -223,7 +218,6 @@ function runInitializationSequence() {
 
       document.querySelectorAll('.splash-lang-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
-          console.log('[App] Language selected:', btn.dataset.lang);
           splash.style.display = 'none';
           if (splash.parentNode) splash.remove();
           await setLang(btn.dataset.lang);
@@ -235,7 +229,6 @@ function runInitializationSequence() {
 
   } else {
     // Elements missing — just start the app immediately
-    console.log('[App] Overlay elements missing, starting app directly.');
     startApp();
   }
 }
@@ -296,7 +289,8 @@ const ROUTES = {
   'product':   'pages/product.html',
 
   'cart':      'pages/cart.html',
-  'admin':     'pages/admin.html'
+  'admin':     'pages/admin.html',
+  'policy':    'pages/policy.html'
 };
 
 async function navigate(hash, force = false) {
@@ -408,7 +402,8 @@ async function navigate(hash, force = false) {
 
       'cart':      initCart,
       'dashboard': initDashboard,
-      'admin':     initAdmin
+      'admin':     initAdmin,
+      'policy':    () => initPolicy(param)
     };
     if (inits[route]) {
       if (route === 'admin') {
@@ -509,13 +504,13 @@ function initProduct(id) { setTimeout(() => document.dispatchEvent(new CustomEve
 function initCart()      { setTimeout(() => document.dispatchEvent(new Event('page:cart')), 50); }
 function initDashboard() { setTimeout(() => document.dispatchEvent(new Event('page:dashboard')), 50); }
 function initAdmin()     { setTimeout(() => document.dispatchEvent(new Event('page:admin')), 50); }
+function initPolicy(type) { setTimeout(() => document.dispatchEvent(new CustomEvent('page:policy', { detail: { type } })), 50); }
 
 // ── Global nav helper ─────────────────────────────────────────
 window.navigate = navigate;
 
 // ── Boot ──────────────────────────────────────────────────────
 async function boot() {
-  console.log('[App] Booting...');
   try {
     await loadStrings(_lang);
     initNavbar();
@@ -544,7 +539,6 @@ window.addEventListener('hashchange', () => {
 document.addEventListener('submit', e => {
   if (e.target.closest('#admin-login-form') || e.target.closest('#product-form')) {
     e.preventDefault();
-    console.log('[App] Intercepted form submit for:', e.target.id);
   }
 });
 
@@ -578,7 +572,6 @@ async function trackTraffic() {
       userAgent: navigator.userAgent
     };
     
-    console.log('[Analytics] Recording visit in Firebase:', visitData);
     
     if (window.trackPageView) {
       await trackPageView('visit:' + visitData.location);
@@ -624,7 +617,6 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       try {
-        console.log('[Lead Captured] Sending to Firebase', data);
         
         if (window.saveLead) {
           await saveLead(data);
@@ -2279,169 +2271,66 @@ window.showPhoneAuthModal = function() {
   overlay.id = 'phone-auth-overlay';
   overlay.className = 'modal-overlay active';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:420px">
+    <div class="modal" style="max-width:380px; text-align:center;">
       <div class="modal-header">
-        <h3 class="modal-title" id="phone-auth-title">Login / Register</h3>
+        <h3 class="modal-title" id="phone-auth-title">Sign In</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
       <div class="modal-body">
-        <p style="color:var(--text-muted);margin-bottom:20px;font-size:0.9rem;">
-          Please login or create a new account to view your orders and checkout faster.
+        <p style="color:var(--text-muted);margin-bottom:24px;font-size:0.95rem;">
+          Sign in to view your orders and checkout faster.
         </p>
-
-        <!-- Login/Register Tabs -->
-        <div style="display:flex;gap:8px;margin-bottom:20px">
-          <button class="btn btn-outline btn-sm" id="pa-login-tab" onclick="switchPaAuthTab('login')" style="flex:1;border-color:var(--gold);color:var(--gold)">Login</button>
-          <button class="btn btn-outline btn-sm" id="pa-register-tab" onclick="switchPaAuthTab('register')" style="flex:1">Register</button>
-        </div>
-
-        <!-- Login Form -->
-        <div id="pa-login-form">
-          <div class="form-group" style="margin-bottom:16px">
-            <label class="form-label">Phone Number</label>
-            <input type="tel" class="form-input" id="pa-login-phone" placeholder="10-digit number" pattern="[0-9]{10}" required style="width:100%">
-          </div>
-          <div class="form-group" style="margin-bottom:20px">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-input" id="pa-login-pass" placeholder="Enter password" required style="width:100%">
-          </div>
-          <button class="btn btn-primary btn-full" onclick="handlePaLogin()" id="pa-login-btn">Login</button>
-          <div id="pa-login-error" style="color:var(--error);font-size:0.85rem;margin-top:12px;display:none"></div>
-        </div>
-
-        <!-- Register Form -->
-        <div id="pa-register-form" style="display:none">
-          <div class="form-group" style="margin-bottom:16px">
-            <label class="form-label">Full Name</label>
-            <input type="text" class="form-input" id="pa-reg-name" placeholder="Your name" required style="width:100%">
-          </div>
-          <div class="form-group" style="margin-bottom:16px">
-            <label class="form-label">Phone Number</label>
-            <input type="tel" class="form-input" id="pa-reg-phone" placeholder="10-digit number" pattern="[0-9]{10}" required style="width:100%">
-          </div>
-          <div class="form-group" style="margin-bottom:20px">
-            <label class="form-label">Create Password</label>
-            <input type="password" class="form-input" id="pa-reg-pass" placeholder="Min 6 characters" minlength="6" required style="width:100%">
-          </div>
-          <button class="btn btn-primary btn-full" onclick="handlePaRegister()" id="pa-reg-btn">Create Account</button>
-          <div id="pa-reg-error" style="color:var(--error);font-size:0.85rem;margin-top:12px;display:none"></div>
-        </div>
+        <button class="btn btn-outline btn-full" onclick="handleGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:12px;">
+          <svg width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Sign in with Google
+        </button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
 };
 
-window.switchPaAuthTab = function(tab) {
-  const loginTab = document.getElementById('pa-login-tab');
-  const regTab = document.getElementById('pa-register-tab');
-  const loginForm = document.getElementById('pa-login-form');
-  const regForm = document.getElementById('pa-register-form');
-
-  if (tab === 'login') {
-    loginTab.style.borderColor = 'var(--gold)';
-    loginTab.style.color = 'var(--gold)';
-    regTab.style.borderColor = 'var(--border)';
-    regTab.style.color = 'var(--text-primary)';
-    loginForm.style.display = 'block';
-    regForm.style.display = 'none';
-  } else {
-    regTab.style.borderColor = 'var(--gold)';
-    regTab.style.color = 'var(--gold)';
-    loginTab.style.borderColor = 'var(--border)';
-    loginTab.style.color = 'var(--text-primary)';
-    loginForm.style.display = 'none';
-    regForm.style.display = 'block';
-  }
-  document.getElementById('pa-login-error').style.display = 'none';
-  document.getElementById('pa-reg-error').style.display = 'none';
-};
-
-window.handlePaLogin = async function() {
-  const phone = document.getElementById('pa-login-phone').value.trim();
-  const password = document.getElementById('pa-login-pass').value;
-  const btn = document.getElementById('pa-login-btn');
-  const errEl = document.getElementById('pa-login-error');
-
-  if (!phone || phone.length !== 10) {
-    errEl.textContent = 'Enter a valid 10-digit phone number';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (!password || password.length < 6) {
-    errEl.textContent = 'Password must be at least 6 characters';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Logging in...';
-  errEl.style.display = 'none';
-
+window.handleGoogleLogin = async function() {
   try {
-    await PhoneAuth.login(phone, password);
-    document.getElementById('phone-auth-overlay')?.remove();
-    showToast('Logged in successfully!', 'success');
+    const res = await window.signInWithGoogle();
+    const user = res.user;
     
-    const checkoutForm = document.getElementById('checkout-form');
-    if (checkoutForm) {
-      checkoutForm.requestSubmit();
-    } else {
-      openUserDrawer();
-    }
-  } catch (e) {
-    errEl.textContent = e.message || 'Login failed. Check your credentials.';
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Login';
+    // We map email to phone to keep database backwards compatibility
+    const userData = {
+      phone: user.email, 
+      name: user.displayName || user.email.split('@')[0],
+      email: user.email,
+      uid: user.uid,
+      lastLoginAt: new Date().toISOString()
+    };
+    
+    await window.createOrUpdateUser(user.email, userData);
+    
+    // Store session
+    localStorage.setItem('pa_user_session', JSON.stringify({ 
+      phone: user.email, 
+      name: userData.name, 
+      uid: user.uid 
+    }));
+    
+    if (window.updateAuthUI) window.updateAuthUI();
+    
+    const overlay = document.getElementById('phone-auth-overlay');
+    if (overlay) overlay.remove();
+    
+    showToast('Signed in successfully!', 'success');
+  } catch(e) {
+    console.error('Google Sign-in Error:', e);
+    showToast('Failed to sign in', 'error');
   }
 };
 
-window.handlePaRegister = async function() {
-  const name = document.getElementById('pa-reg-name').value.trim();
-  const phone = document.getElementById('pa-reg-phone').value.trim();
-  const password = document.getElementById('pa-reg-pass').value;
-  const btn = document.getElementById('pa-reg-btn');
-  const errEl = document.getElementById('pa-reg-error');
 
-  if (!name) {
-    errEl.textContent = 'Please enter your name';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (!phone || phone.length !== 10) {
-    errEl.textContent = 'Enter a valid 10-digit phone number';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (!password || password.length < 6) {
-    errEl.textContent = 'Password must be at least 6 characters';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Creating account...';
-  errEl.style.display = 'none';
-
-  try {
-    await PhoneAuth.register(phone, name, password);
-    document.getElementById('phone-auth-overlay')?.remove();
-    showToast('Account created! Welcome ' + name, 'success');
-    
-    const checkoutForm = document.getElementById('checkout-form');
-    if (checkoutForm) {
-      checkoutForm.requestSubmit();
-    } else {
-      openUserDrawer();
-    }
-  } catch (e) {
-    errEl.textContent = e.message || 'Registration failed. Please try again.';
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Create Account';
-  }
-};
 
 }
 
@@ -2482,17 +2371,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMuted) return;
     try {
       await bgm.play();
-      console.log('[BGM] Autoplay successful');
       updateMusicUI();
     } catch(err) {
-      console.log('[BGM] Autoplay blocked, waiting for interaction');
       // Wait for first user interaction
       const startBGMOnInteraction = async () => {
         try {
           if (!isMuted && bgm.paused) {
             await bgm.play();
             updateMusicUI();
-            console.log('[BGM] Started on user interaction');
           }
         } catch(e) {
           console.warn('[BGM] Failed to start on interaction', e);

@@ -8,7 +8,6 @@
   "nav.tagline": "शुद्ध आयुर्वेदिक वेलनेस",
   "nav.catalog": "शॉप",
   "nav.earn": "कमाएं",
-
   "footer.tagline": "पीढ़ियों से शुद्ध आयुर्वेदिक स्वास्थ्य।",
   "footer.links": "महत्वपूर्ण लिंक्स",
   "footer.contact": "संपर्क करें",
@@ -16,13 +15,11 @@
   "footer.privacy": "गोपनीयता नीति",
   "footer.terms": "सेवा की शर्तें",
   "footer.refund": "धनवापसी नीति",
-
   "hero.label": "प्राचीन ज्ञान की जड़ें",
   "hero.title": "प्रकृति का सर्वश्रेष्ठ,<br>आपके लिए",
   "hero.subtitle": "होलिस्टिक हेल्थ के लिए ऑथेंटिक आयुर्वेदिक फॉर्मूलेशन।",
   "hero.cta": "कलेक्शन देखें",
   "hero.cta2": "हमारी स्टोरी",
-
   "home.collections.label": "आपके लिए खास",
   "home.collections.title": "फीचर्ड कलेक्शन",
   "home.trust.label": "पद्मनाभ ही क्यों?",
@@ -37,7 +34,6 @@
   "home.trust.support.desc": "हमारे आयुर्वेदिक एक्सपर्ट्स से कभी भी बात करें।",
   "home.testimonials.label": "हमारे कस्टमर्स क्या कहते हैं",
   "home.testimonials.title": "हेल्थ की आवाज़ें",
-
   "about.label": "हमारी विरासत",
   "about.title": "आयुर्वेद में जड़ें,<br>पीढ़ियों के लिए",
   "about.subtitle": "ट्रेडिशन, प्योरिटी और उद्देश्य की कहानी।",
@@ -51,7 +47,6 @@
   "about.values.transparency": "ट्रांसपेरेंसी",
   "about.values.sustainability": "सस्टेनेबिलिटी",
   "about.timeline.title": "हमारा सफर",
-
   "catalog.label": "हमारे प्रोडक्ट्स",
   "catalog.title": "कलेक्शन",
   "catalog.filter.all": "सभी",
@@ -66,14 +61,12 @@
   "catalog.sort.price_asc": "प्राइस: कम से ज्यादा",
   "catalog.sort.price_desc": "प्राइस: ज्यादा से कम",
   "catalog.empty": "कोई प्रोडक्ट नहीं मिला।",
-
   "product.related": "आपको यह भी पसंद आ सकता है",
   "product.add_to_cart": "कार्ट में डालें",
   "product.buy_now": "अभी खरीदें",
   "product.tab.about": "प्रोडक्ट डिटेल्स",
   "product.tab.usage": "कैसे इस्तेमाल करें",
   "product.tab.ingredients": "इंग्रेडिएंट्स",
-
   "cart.empty": "आपका कार्ट खाली है।",
   "cart.empty.cta": "शॉपिंग शुरू करें",
   "cart.title": "आपका कार्ट",
@@ -83,7 +76,6 @@
   "cart.shipping.free": "फ्री",
   "cart.tax": "GST (18%)",
   "cart.total": "टोटल",
-
   "checkout.address.title": "डिलीवरी एड्रेस",
   "checkout.name": "पूरा नाम",
   "checkout.phone": "मोबाइल नंबर",
@@ -95,11 +87,9 @@
   "checkout.pay": "पेमेंट करें",
   "checkout.place_order": "ऑर्डर प्लेस करें",
   "checkout.secure": "रेज़रपे द्वारा सिक्योर्ड पेमेंट्स",
-
   "order.success.title": "ऑर्डर प्लेस हो गया!",
   "order.success.desc": "शॉपिंग के लिए थैंक यू। आपका ऑर्डर कन्फर्म हो गया है।",
   "order.success.cta": "मेरे ऑर्डर्स देखें",
-
   "dashboard.login.title": "वेलकम बैक",
   "dashboard.register.title": "अकाउंट बनाएं",
   "dashboard.register.name": "पूरा नाम",
@@ -121,12 +111,11 @@
   "status.processing": "प्रोसेसिंग",
   "status.shipped": "शिप्ड",
   "status.delivered": "डिलीवर्ड",
-
   "admin.login.title": "न्यूरल हब",
   "admin.login.subtitle": "सिर्फ एडमिन के लिए",
   "admin.login.user": "यूजरनेम",
   "admin.login.pass": "पासवर्ड",
   "admin.login.submit": "लॉगिन करें",
-
-  "common.loading": "लोड हो रहा है..."
+  "common.loading": "लोड हो रहा है...",
+  "footer.shipping": "शिपिंग नीति"
 }

@@ -23,7 +23,6 @@ let firebaseReady = false;
 
 function initFirebase() {
   if (FIREBASE_CONFIG.apiKey.includes('PLACEHOLDER')) {
-    console.log('[Firebase] Using placeholder config. Forcing offline mode.');
     firebaseReady = false;
     return;
   }
@@ -34,7 +33,6 @@ function initFirebase() {
     _auth    = firebase.auth();
     _storage = firebase.storage();
     firebaseReady = true;
-    console.log('[Firebase] Initialized successfully');
   } catch (e) {
     console.warn('[Firebase] Init failed — running in offline mode:', e.message);
     firebaseReady = false;
@@ -66,7 +64,6 @@ async function getProducts() {
       .get();
     const products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (products.length === 0) {
-      console.log('[Firebase] products collection is empty — falling back to sample products.');
       return getSampleProducts();
     }
     return products.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
@@ -113,7 +110,6 @@ async function getDeletedProducts() {
 /** Add new product */
 async function addProduct(data) {
   if (!firebaseReady) {
-    console.log('[Firebase Offline] Simulated addProduct');
     return 'mock-id-' + Date.now();
   }
   const now = firebase.firestore.FieldValue.serverTimestamp();
@@ -130,7 +126,6 @@ async function addProduct(data) {
 /** Update product */
 async function updateProduct(id, data) {
   if (!firebaseReady) {
-    console.log('[Firebase Offline] Simulated updateProduct');
     return;
   }
   const now = firebase.firestore.FieldValue.serverTimestamp();
@@ -140,7 +135,6 @@ async function updateProduct(id, data) {
 /** Soft delete product */
 async function deleteProduct(id) {
   if (!firebaseReady) {
-    console.log('[Firebase Offline] Simulated deleteProduct');
     return;
   }
   const now = firebase.firestore.FieldValue.serverTimestamp();
@@ -150,7 +144,6 @@ async function deleteProduct(id) {
 /** Republish (restore) deleted product */
 async function republishProduct(id) {
   if (!firebaseReady) {
-    console.log('[Firebase Offline] Simulated republishProduct');
     return;
   }
   const now = firebase.firestore.FieldValue.serverTimestamp();
@@ -160,7 +153,6 @@ async function republishProduct(id) {
 /** Permanently delete product */
 async function permanentDeleteProduct(id) {
   if (!firebaseReady) {
-    console.log('[Firebase Offline] Simulated permanentDeleteProduct');
     return;
   }
   await _db.collection('products').doc(id).delete();
@@ -169,7 +161,6 @@ async function permanentDeleteProduct(id) {
 /** Update product sort orders */
 async function updateProductOrder(orderedIds) {
   if (!firebaseReady) {
-    console.log('[Firebase Offline] Simulated updateProductOrder');
     return;
   }
   const batch = _db.batch();
@@ -302,7 +293,6 @@ async function updateOrderTracking(orderId, trackingId, shipmentId, extra = {}) 
 /** Save consultation lead */
 async function saveLead(data) {
   if (!firebaseReady) {
-    console.log('[Firebase Offline] Simulated saveLead', data);
     return;
   }
   await _db.collection('leads').add({
@@ -414,6 +404,12 @@ async function signUp(email, password) {
 async function signOut() {
   if (!firebaseReady) return;
   return await _auth.signOut();
+}
+
+async function signInWithGoogle() {
+  if (!firebaseReady) throw new Error('Firebase not ready');
+  const provider = new firebase.auth.GoogleAuthProvider();
+  return await _auth.signInWithPopup(provider);
 }
 
 function onAuthChange(callback) {
@@ -726,7 +722,6 @@ document.addEventListener('DOMContentLoaded', initFirebase);
 /** ── Teammate Helpers ────────────────────────────────────────── **/
 
 async function getTeammates() {
-  console.log('[Firebase] getTeammates called. firebaseReady:', firebaseReady);
   if (!firebaseReady) return [];
   try {
     const snap = await _db.collection('teammates').orderBy('name', 'asc').get();
@@ -738,7 +733,6 @@ async function getTeammates() {
 }
 
 async function saveTeammateToDB(id, payload) {
-  console.log('[Firebase] saveTeammateToDB called for id:', id, 'payload:', payload);
   if (!firebaseReady) {
     console.warn('[Firebase] Firebase not ready, returning null');
     return null;
@@ -746,11 +740,9 @@ async function saveTeammateToDB(id, payload) {
   try {
     if (id) {
       await _db.collection('teammates').doc(id).set(payload, { merge: true });
-      console.log('[Firebase] Teammate updated successfully');
       return id;
     } else {
       const docRef = await _db.collection('teammates').add({ ...payload, createdAt: new Date().toISOString() });
-      console.log('[Firebase] Teammate added successfully, id:', docRef.id);
       return docRef.id;
     }
   } catch (err) {
@@ -834,3 +826,5 @@ window.createOrUpdateUser = createOrUpdateUser;
 window.linkOrderToUser = linkOrderToUser;
 window.getContentConfig = getContentConfig;
 
+
+window.signInWithGoogle = signInWithGoogle;
