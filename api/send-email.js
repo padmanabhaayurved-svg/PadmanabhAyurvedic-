@@ -15,6 +15,11 @@ module.exports = async function handler(req, res) {
 
     const { address, items, total, paymentMethod } = orderPayload;
     
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+      console.error('Email config missing: GMAIL_USER or GMAIL_PASS is not set in environment.');
+      return res.status(500).json({ error: 'Server email configuration is missing.' });
+    }
+
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
