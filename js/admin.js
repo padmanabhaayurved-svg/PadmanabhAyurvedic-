@@ -1090,11 +1090,20 @@ window.addBannerInput = function(type, imgValue = '', linkValue = '') {
   div.className = `banner-item-${type}`;
   
   const products = (window._adminProducts || []);
-  let prodOptions = '<option value="">-- Link to Product --</option>';
+  let prodOptions = '<option value="">-- Select Banner Link --</option>';
+  prodOptions += '<option value="external">?? External Link (Type URL)</option>';
+  prodOptions += '<optgroup label="Pages">';
   prodOptions += '<option value="#catalog">All Products (Catalog)</option>';
-  products.forEach(p => {
-    prodOptions += `<option value="#product/${p.id}">${p.name}</option>`;
-  });
+  prodOptions += '<option value="#about">About Us</option>';
+  prodOptions += '</optgroup>';
+  
+  if (products.length > 0) {
+    prodOptions += '<optgroup label="Products">';
+    products.forEach(p => {
+      prodOptions += `<option value="#product/${p.id}">${p.name}</option>`;
+    });
+    prodOptions += '</optgroup>';
+  }
   
   const recSize = type === 'desktop' ? '1600x600px' : '800x1000px';
   div.innerHTML = `
@@ -1103,8 +1112,8 @@ window.addBannerInput = function(type, imgValue = '', linkValue = '') {
       <button class="btn btn-outline" style="padding:0 12px;color:var(--danger)" onclick="this.closest('.banner-item-${type}').remove();updateBannerPreview('${type}')">X</button>
     </div>
     <div style="display:flex; gap:8px">
-      <input type="text" class="form-input banner-link-${type}" style="flex:1" placeholder="Click Link (e.g. #catalog)" value="${linkValue}"/>
-      <select class="form-input" style="max-width:180px; padding:0 8px; font-size:12px;" onchange="if(this.value) this.previousElementSibling.value = this.value; this.value='';">
+      <input type="text" class="form-input banner-link-${type}" style="flex:1" placeholder="Type URL or select..." value="${linkValue}"/>
+      <select class="form-input" style="flex:1;background:var(--bg-secondary)" onchange="if(this.value==='external'){ this.previousElementSibling.value='https://'; this.previousElementSibling.focus(); } else { this.previousElementSibling.value = this.value; }">
         ${prodOptions}
       </select>
     </div>
