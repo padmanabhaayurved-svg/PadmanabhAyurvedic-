@@ -976,15 +976,22 @@ async function loadHeroConfig() {
   const config = await getHeroConfig();
 
   const dImages = Array.isArray(config.desktopBanner) ? config.desktopBanner : (config.desktopBanner ? [config.desktopBanner] : []);
+  const mImages = Array.isArray(config.mobileBanner) ? config.mobileBanner : (config.mobileBanner ? [config.mobileBanner] : []);
 
   document.getElementById('desktop-banner-inputs').innerHTML = '';
+  document.getElementById('mobile-banner-inputs').innerHTML = '';
 
   const dNorm = dImages.map(item => typeof item === 'string' ? { url: item, link: '' } : item);
+  const mNorm = mImages.map(item => typeof item === 'string' ? { url: item, link: '' } : item);
 
   if (dNorm.length === 0) addBannerInput('desktop', '', '');
   else dNorm.forEach(img => addBannerInput('desktop', img.url, img.link));
 
+  if (mNorm.length === 0) addBannerInput('mobile', '', '');
+  else mNorm.forEach(img => addBannerInput('mobile', img.url, img.link));
+
   updateBannerPreview('desktop');
+  updateBannerPreview('mobile');
 
   const grid = document.getElementById('collection-config-grid');
   if (!grid) return;
@@ -1040,9 +1047,14 @@ async function saveHeroConfigAdmin() {
     link: el.querySelector('.banner-link-desktop').value.trim()
   })).filter(item => item.url);
 
+  const mobileItems = Array.from(document.querySelectorAll('.banner-item-mobile')).map((el, index) => ({
+    url: convertGDriveUrl(el.querySelector('.banner-img-mobile').value.trim()),
+    link: desktopItems[index] ? desktopItems[index].link : ''
+  })).filter(item => item.url);
+
   const data = {
     desktopBanner: desktopItems,
-    mobileBanner: desktopItems,
+    mobileBanner: mobileItems,
     collections: []
   };
 
