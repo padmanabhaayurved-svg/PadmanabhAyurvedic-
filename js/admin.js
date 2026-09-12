@@ -360,7 +360,7 @@ async function loadAdminData() {
   renderAnalytics(30);
   renderOrderAnalytics(30);
   loadShipmentTracker();
-  loadProductsTable();
+  await loadProductsTable();
   loadHeroConfig();
   loadContentConfig();
   loadLeads();
@@ -1124,10 +1124,23 @@ window.addBannerInput = function(type, imgValue = '', linkValue = '') {
 
 window.updateBannerPreview = function(type) {
   const inputs = document.querySelectorAll(`.banner-img-${type}`);
-  if (inputs.length > 0 && inputs[0].value) {
-    document.getElementById(`preview-${type}`).innerHTML = `<img src="${convertGDriveUrl(inputs[0].value)}" alt="" style="width:100%; height:100%; object-fit:cover;"/>`;
+  let html = '';
+  inputs.forEach(input => {
+    if (input.value) {
+      html += `<img src="${convertGDriveUrl(input.value)}" alt="" style="flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start;"/>`;
+    }
+  });
+  
+  const preview = document.getElementById(`preview-${type}`);
+  if (html) {
+    preview.style.overflowX = 'auto';
+    preview.style.scrollSnapType = 'x mandatory';
+    preview.style.justifyContent = 'flex-start';
+    preview.innerHTML = html;
   } else {
-    document.getElementById(`preview-${type}`).innerHTML = '';
+    preview.innerHTML = '';
+    preview.style.overflowX = 'hidden';
+    preview.style.justifyContent = 'center';
   }
 };
 

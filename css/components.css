@@ -509,6 +509,18 @@
   padding-right: 36px;
 }
 
+.form-select option {
+  background: #1e1e1e;
+  color: #f5f5f5;
+}
+
+.form-select optgroup {
+  background: #111;
+  color: #a8a096;
+  font-weight: 600;
+  font-style: normal;
+}
+
 .form-textarea {
   resize: vertical;
   min-height: 100px;
