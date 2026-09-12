@@ -169,8 +169,9 @@ var initHero = async () => {
 
   let initialImages = [];
   if (cachedConfig) {
-    let mImgs = normalize(cachedConfig.mobileBanner).map(item => ({ ...item, url: Store.convertDriveLink(item.url) }));
     let dImgs = normalize(cachedConfig.desktopBanner).map(item => ({ ...item, url: Store.convertDriveLink(item.url) }));
+    let mImgs = normalize(cachedConfig.mobileBanner).map(item => ({ ...item, url: Store.convertDriveLink(item.url) }));
+    if (mImgs.length === 0) mImgs = dImgs;
     initialImages = isMobile ? mImgs : dImgs;
   }
 
@@ -220,8 +221,9 @@ var initHero = async () => {
     // Cache the config for next time
     localStorage.setItem('pa_hero_config', JSON.stringify(config));
 
-    let mImages = normalize(config.mobileBanner).map(item => ({ ...item, url: Store.convertDriveLink(item.url) }));
     let dImages = normalize(config.desktopBanner).map(item => ({ ...item, url: Store.convertDriveLink(item.url) }));
+    let mImages = normalize(config.mobileBanner).map(item => ({ ...item, url: Store.convertDriveLink(item.url) }));
+    if (mImages.length === 0) mImages = dImages;
     let dbImages = isMobile ? mImages : dImages;
 
     // Only re-render if the new images are different from initial
