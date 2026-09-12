@@ -25,31 +25,11 @@ async function initAdminHub() {
 
   document.title = 'Neural Hub - Padmanabh Ayurvedics';
 
-  // Check Firebase Auth State robustly
-  const user = await new Promise(resolve => {
-    const unsubscribe = firebase.auth().onAuthStateChanged(u => {
-      unsubscribe();
-      resolve(u);
-    });
-  });
-
-  if (user) {
-    if (user.email === 'padmanabhaayurved@gmail.com') {
-      sessionStorage.setItem('pa_admin_auth', 'true');
-      sessionStorage.setItem('pa_auth_provider', 'google');
-    } else {
-      // Wrong account
-      showToast('Unauthorized. Admin account only.', 'error');
-      if (window.signOut) await window.signOut();
-      sessionStorage.removeItem('pa_admin_auth');
-    }
-  }
-
-  // Fallback for local development or if auth was set manually
-  const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
-
   const loginView = document.getElementById('admin-login-view');
   const shellView = document.getElementById('admin-shell');
+
+  // 1. Initial UI state based on session storage
+  const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
   if (!isAuth) {
     if (loginView) loginView.style.display = 'flex';
     if (shellView) shellView.style.display = 'none';
@@ -58,6 +38,49 @@ async function initAdminHub() {
     if (shellView) shellView.style.display = 'flex';
     loadAdminData();
   }
+
+  // 2. Trigger redirect result processing in the background (if returning from Google)
+  if (window._pa_getRedirectResult) {
+    window._pa_getRedirectResult().then(result => {
+      if (result && result.user) {
+        if (result.user.email === 'padmanabhaayurved@gmail.com') {
+           showToast('Google Sign-In successful', 'success');
+        } else {
+           showToast('Unauthorized. Admin account only.', 'error');
+        }
+      }
+    }).catch(e => {
+      console.error('Redirect result error:', e);
+      if (sessionStorage.getItem('pa_admin_google_pending')) {
+        showToast('Google Sign-In failed. Please try again.', 'error');
+        sessionStorage.removeItem('pa_admin_google_pending');
+      }
+    });
+  }
+
+  // 3. Continuous Firebase Auth Listener (Bulletproof)
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+      if (user.email === 'padmanabhaayurved@gmail.com') {
+        sessionStorage.setItem('pa_admin_auth', 'true');
+        sessionStorage.setItem('pa_auth_provider', 'google');
+        sessionStorage.removeItem('pa_admin_google_pending');
+        
+        // Update UI if it was showing login
+        if (loginView && loginView.style.display !== 'none') {
+          loginView.style.display = 'none';
+          if (shellView) shellView.style.display = 'flex';
+          loadAdminData();
+        }
+      } else {
+        // Wrong account
+        if (window.signOut) await window.signOut();
+        sessionStorage.removeItem('pa_admin_auth');
+        if (loginView) loginView.style.display = 'flex';
+        if (shellView) shellView.style.display = 'none';
+      }
+    }
+  });
 
   // Mobile sidebar controls
   function openAdminMobileSidebar() {

@@ -241,17 +241,24 @@ async function startApp() {
     btn.addEventListener('click', () => setLang(btn.dataset.lang));
   });
 
-  // Initial Auth UI update
-  if (sessionStorage.getItem('pa_user_google_pending')) {
-    const user = await new Promise(resolve => {
-      const unsubscribe = firebase.auth().onAuthStateChanged(u => {
-        unsubscribe();
-        resolve(u);
-      });
+  // 1. Trigger redirect result processing in the background
+  if (window._pa_getRedirectResult) {
+    window._pa_getRedirectResult().catch(e => {
+      console.error('Google Redirect Error:', e);
+      if (sessionStorage.getItem('pa_user_google_pending')) {
+        showToast('Google Sign-In failed', 'error');
+        sessionStorage.removeItem('pa_user_google_pending');
+      }
     });
+  }
 
+  // 2. Continuous Auth Listener for User
+  firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
-      sessionStorage.removeItem('pa_user_google_pending');
+      if (sessionStorage.getItem('pa_user_google_pending')) {
+        sessionStorage.removeItem('pa_user_google_pending');
+        showToast('Signed in successfully!', 'success');
+      }
       const userData = {
         phone: user.email,
         name: user.displayName || user.email.split('@')[0],
@@ -265,12 +272,11 @@ async function startApp() {
         name: userData.name,
         uid: user.uid
       }));
-      showToast('Signed in successfully!', 'success');
-    } else {
-      sessionStorage.removeItem('pa_user_google_pending');
-      // If null, they probably didn't complete the login
+      updateAuthUI();
+      const overlay = document.getElementById('phone-auth-overlay');
+      if (overlay) overlay.remove();
     }
-  }
+  });
 
   updateAuthUI();
 
