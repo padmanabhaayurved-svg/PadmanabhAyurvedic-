@@ -1830,9 +1830,10 @@ function loadShipmentTracker() {
     const updatedAt  = o.updatedAt || o.createdAt || null;
     const timeStr    = updatedAt ? new Date(updatedAt).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '-';
     const hasAwb     = awb !== '-';
+    const displayId  = orderId.startsWith('ORD-') ? orderId : '#' + orderId.slice(-6).toUpperCase();
 
     return `<tr id="row-${orderId}">
-      <td style="font-family:monospace;font-size:0.8rem;color:var(--gold)">${orderId}</td>
+      <td style="font-family:monospace;font-size:0.8rem;color:var(--gold)">${displayId}</td>
       <td>
         <div style="font-weight:600;color:var(--text-primary)">${customer}</div>
         <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">${new Date(o.createdAt||Date.now()).toLocaleDateString('en-IN')}</div>
