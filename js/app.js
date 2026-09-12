@@ -2368,7 +2368,9 @@ document.addEventListener('DOMContentLoaded', runInitializationSequence);
 
 // ── Background Devotional Violin BGM ─────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const bgm = new Audio('assets/bgm.mp3');
+  const bgm = new Audio();
+  bgm.preload = 'none';
+  bgm.src = 'assets/bgm.mp3';
   bgm.loop = true;
   bgm.volume = 0.5; // Premium balanced volume
 

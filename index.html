@@ -31,10 +31,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <!-- CSS -->
-  <link rel="stylesheet" href="css/base.css?v=9"/>
-  <link rel="stylesheet" href="css/components.css?v=9"/>
-  <link rel="stylesheet" href="css/pages.css?v=9"/>
-  <link rel="stylesheet" href="css/admin.css?v=9"/>
+  <link rel="preload" href="css/base.css?v=10" as="style">
+  <link rel="stylesheet" href="css/base.css?v=10"/>
+  <link rel="stylesheet" href="css/components.css?v=10"/>
+  <link rel="stylesheet" href="css/pages.css?v=10"/>
+  <link rel="stylesheet" href="css/admin.css?v=10" media="print" onload="this.media='all'"/>
 
   <!-- Schema.org -->
   <script type="application/ld+json">
@@ -49,12 +50,7 @@
   }
   </script>
 
-  <!-- Firebase SDK (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-</head>
+  </head>
 <body>
 
 <!-- ══ PAGE LOADER ════════════════════════════════════════════ -->
@@ -211,7 +207,7 @@
         <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:16px;line-height:1.6">Get Ayurvedic wellness tips and exclusive offers.</p>
         <form class="footer-newsletter" onsubmit="event.preventDefault(); showToast('Thank you for subscribing!', 'success')">
           <input type="email" class="footer-newsletter-input" placeholder="Your email address" required />
-          <button type="submit" class="footer-newsletter-btn">
+          <button type="submit" class="footer-newsletter-btn" aria-label="Subscribe to newsletter">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </form>
@@ -311,7 +307,7 @@
 <div class="modal-overlay hidden" id="lead-modal">
   <div class="modal lead-catcher-modal">
     <div class="modal-content">
-      <button class="modal-close" onclick="closeModal('lead-modal')" style="position:absolute;top:16px;right:16px;width:40px;height:40px;font-size:1.5rem;">×</button>
+      <button class="modal-close" onclick="closeModal('lead-modal')" aria-label="Close modal" style="position:absolute;top:16px;right:16px;width:40px;height:40px;font-size:1.5rem;">&times;</button>
       <h2>Claim Your Free Consultation</h2>
       <p style="margin-bottom:24px; color:var(--text-secondary); font-size:0.9rem">Get personalized Ayurvedic advice from our experts.</p>
       <form id="lead-form">
@@ -345,7 +341,7 @@
 <div class="side-drawer" id="user-drawer">
   <div class="side-drawer-header">
     <h3 class="side-drawer-title" id="user-drawer-title">My Account</h3>
-    <button class="btn btn-ghost" id="user-drawer-close" style="padding:4px">
+    <button class="btn btn-ghost" id="user-drawer-close" style="padding:4px" aria-label="Close user menu">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </button>
   </div>
@@ -359,13 +355,19 @@
 <div id="toast-container" aria-live="polite"></div>
 
 <!-- ══ SCRIPTS ═══════════════════════════════════════════════ -->
-<script src="js/firebase.js?v=28"></script>
-<script src="js/phone-auth.js?v=28"></script>
-<script src="js/store.js?v=28"></script>
-<script src="js/razorpay.js?v=28"></script>
-<script src="js/shiprocket.js?v=28"></script>
-<script src="js/admin.js?v=28"></script>
-<script src="js/app.js?v=28"></script>
+<!-- Firebase SDK (compat) -->
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<script defer src="js/firebase.js?v=29"></script>
+<script defer src="js/phone-auth.js?v=29"></script>
+<script defer src="js/store.js?v=29"></script>
+<script defer src="js/razorpay.js?v=29"></script>
+<script defer src="js/shiprocket.js?v=29"></script>
+<script defer src="js/admin.js?v=29"></script>
+<script defer src="js/app.js?v=29"></script>
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
