@@ -242,31 +242,33 @@ async function startApp() {
   });
 
   // Initial Auth UI update
-  if (sessionStorage.getItem('pa_user_google_pending') && window._pa_getRedirectResult) {
-    try {
-      const result = await window._pa_getRedirectResult();
-      if (result && result.user) {
-        sessionStorage.removeItem('pa_user_google_pending');
-        const user = result.user;
-        const userData = {
-          phone: user.email,
-          name: user.displayName || user.email.split('@')[0],
-          email: user.email,
-          uid: user.uid,
-          lastLoginAt: new Date().toISOString()
-        };
-        await window.createOrUpdateUser(user.email, userData);
-        localStorage.setItem('pa_user_session', JSON.stringify({
-          phone: user.email,
-          name: userData.name,
-          uid: user.uid
-        }));
-        showToast('Signed in successfully!', 'success');
-      }
-    } catch (e) {
-      console.error('Google Redirect Error:', e);
+  if (sessionStorage.getItem('pa_user_google_pending')) {
+    const user = await new Promise(resolve => {
+      const unsubscribe = firebase.auth().onAuthStateChanged(u => {
+        unsubscribe();
+        resolve(u);
+      });
+    });
+
+    if (user) {
       sessionStorage.removeItem('pa_user_google_pending');
-      showToast('Google Sign-In failed', 'error');
+      const userData = {
+        phone: user.email,
+        name: user.displayName || user.email.split('@')[0],
+        email: user.email,
+        uid: user.uid,
+        lastLoginAt: new Date().toISOString()
+      };
+      await window.createOrUpdateUser(user.email, userData);
+      localStorage.setItem('pa_user_session', JSON.stringify({
+        phone: user.email,
+        name: userData.name,
+        uid: user.uid
+      }));
+      showToast('Signed in successfully!', 'success');
+    } else {
+      sessionStorage.removeItem('pa_user_google_pending');
+      // If null, they probably didn't complete the login
     }
   }
 

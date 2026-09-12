@@ -23,31 +23,29 @@ async function initAdminHub() {
     sessionStorage.setItem('pa_auth_provider', 'local');
   }
 
-  document.title = 'Neural Hub — Padmanabh Ayurvedics';
+  document.title = 'Neural Hub - Padmanabh Ayurvedics';
 
-  // ── Check if this is a return from a Google Sign-In redirect ──
-  if (sessionStorage.getItem('pa_admin_google_pending') && window._pa_getRedirectResult) {
-    try {
-      const result = await window._pa_getRedirectResult();
-      if (result && result.user) {
-        const user = result.user;
-        sessionStorage.removeItem('pa_admin_google_pending');
-        if (user.email === 'padmanabhaayurved@gmail.com') {
-          sessionStorage.setItem('pa_admin_auth', 'true');
-          sessionStorage.setItem('pa_auth_provider', 'google');
-          showToast('Logged in successfully', 'success');
-        } else {
-          showToast('Unauthorized. Admin account only.', 'error');
-          if (window.signOut) await window.signOut();
-        }
-      }
-    } catch (e) {
-      console.error('Redirect result error:', e);
-      sessionStorage.removeItem('pa_admin_google_pending');
-      showToast('Google Sign-In failed. Please try again.', 'error');
+  // Check Firebase Auth State robustly
+  const user = await new Promise(resolve => {
+    const unsubscribe = firebase.auth().onAuthStateChanged(u => {
+      unsubscribe();
+      resolve(u);
+    });
+  });
+
+  if (user) {
+    if (user.email === 'padmanabhaayurved@gmail.com') {
+      sessionStorage.setItem('pa_admin_auth', 'true');
+      sessionStorage.setItem('pa_auth_provider', 'google');
+    } else {
+      // Wrong account
+      showToast('Unauthorized. Admin account only.', 'error');
+      if (window.signOut) await window.signOut();
+      sessionStorage.removeItem('pa_admin_auth');
     }
   }
 
+  // Fallback for local development or if auth was set manually
   const isAuth = sessionStorage.getItem('pa_admin_auth') === 'true';
 
   const loginView = document.getElementById('admin-login-view');
