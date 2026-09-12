@@ -1362,15 +1362,13 @@
         <div class="form-grid-2">
           <div class="form-group">
             <label class="form-label">Category *</label>
-            <input class="form-input" list="pm-cat-list" id="pm-cat" required placeholder="E.g. wellness">
-            <datalist id="pm-cat-list">
-              <option value="wellness">
-              <option value="skincare">
-              <option value="haircare">
-              <option value="immunity">
-              <option value="digestion">
-              <option value="orthopedic">
-            </datalist>
+            <select class="form-select" id="pm-cat" required>
+              <option value="wellness">Wellness</option>
+              <option value="skincare">Skincare</option>
+              <option value="haircare">Haircare</option>
+              <option value="immunity">Immunity</option>
+              <option value="digestion">Digestion</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Stock Status</label>
