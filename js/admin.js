@@ -254,11 +254,26 @@ async function initAdminHub() {
 
 window.adminGoogleLogin = async function() {
   try {
-    sessionStorage.setItem('pa_admin_google_pending', 'true');
-    await window.signInWithGoogle(); // triggers redirect; page leaves here
+    const result = await window.signInWithGoogle();
+    if (result && result.user) {
+      if (result.user.email === 'padmanabhaayurved@gmail.com') {
+        sessionStorage.setItem('pa_admin_auth', 'true');
+        sessionStorage.setItem('pa_auth_provider', 'google');
+        showToast('Google Sign-In successful', 'success');
+        
+        // Hide login view, show shell
+        const loginView = document.getElementById('admin-login-view');
+        const shellView = document.getElementById('admin-shell');
+        if (loginView) loginView.style.display = 'none';
+        if (shellView) shellView.style.display = 'flex';
+        loadAdminData();
+      } else {
+        showToast('Unauthorized. Admin account only.', 'error');
+        if (window.signOut) await window.signOut();
+      }
+    }
   } catch (e) {
     console.error('Admin login error:', e);
-    sessionStorage.removeItem('pa_admin_google_pending');
     showToast('Failed to start Google Sign-In: ' + (e.message || 'Unknown error'), 'error');
   }
 };

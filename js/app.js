@@ -2333,11 +2333,29 @@ window.showPhoneAuthModal = function() {
 
 window.handleGoogleLogin = async function() {
   try {
-    sessionStorage.setItem('pa_user_google_pending', 'true');
-    await window.signInWithGoogle(); // triggers redirect; page leaves here
+    const result = await window.signInWithGoogle();
+    if (result && result.user) {
+      const user = result.user;
+      const userData = {
+        phone: user.email,
+        name: user.displayName || user.email.split('@')[0],
+        email: user.email,
+        uid: user.uid,
+        lastLoginAt: new Date().toISOString()
+      };
+      await window.createOrUpdateUser(user.email, userData);
+      localStorage.setItem('pa_user_session', JSON.stringify({
+        phone: user.email,
+        name: userData.name,
+        uid: user.uid
+      }));
+      showToast('Signed in successfully!', 'success');
+      updateAuthUI();
+      const overlay = document.getElementById('phone-auth-overlay');
+      if (overlay) overlay.remove();
+    }
   } catch(e) {
     console.error('Google Sign-in Error:', e);
-    sessionStorage.removeItem('pa_user_google_pending');
     showToast('Failed to start Google Sign-In', 'error');
   }
 };

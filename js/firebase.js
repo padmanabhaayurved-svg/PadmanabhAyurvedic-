@@ -415,9 +415,8 @@ async function signOut() {
 async function signInWithGoogle() {
   if (!firebaseReady) throw new Error('Firebase not ready');
   const provider = new firebase.auth.GoogleAuthProvider();
-  // Use redirect instead of popup — works on all domains without popup blockers
-  await _auth.signInWithRedirect(provider);
-  // Will not reach here; page redirects to Google and comes back
+  // Using popup for better reliability and keeping app state/hash intact.
+  return await _auth.signInWithPopup(provider);
 }
 
 function onAuthChange(callback) {

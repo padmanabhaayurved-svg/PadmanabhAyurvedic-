@@ -196,8 +196,8 @@ const Store = (() => {
     for (let reg of driveRegex) {
       const match = url.match(reg);
       if (match && match[1]) {
-        // Use uc API for full resolution image display
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        // Use thumbnail API to bypass Google Drive's third-party hosting block on the uc endpoint
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
       }
     }
 
