@@ -1047,9 +1047,9 @@ async function saveHeroConfigAdmin() {
     link: el.querySelector('.banner-link-desktop').value.trim()
   })).filter(item => item.url);
 
-  const mobileItems = Array.from(document.querySelectorAll('.banner-item-mobile')).map(el => ({
+  const mobileItems = Array.from(document.querySelectorAll('.banner-item-mobile')).map((el, index) => ({
     url: convertGDriveUrl(el.querySelector('.banner-img-mobile').value.trim()),
-    link: el.querySelector('.banner-link-mobile').value.trim()
+    link: desktopItems[index] ? desktopItems[index].link : ''
   })).filter(item => item.url);
 
   const data = {
@@ -1107,12 +1107,14 @@ window.addBannerInput = function(type, imgValue = '', linkValue = '') {
       <input type="text" class="form-input banner-img-${type}" style="flex:1" placeholder="Image Link (Rec: ${recSize})" value="${imgValue}"/>
       <button class="btn btn-outline" style="padding:0 12px;color:var(--danger)" onclick="this.closest('.banner-item-${type}').remove();updateBannerPreview('${type}')">X</button>
     </div>
+    ${type === 'desktop' ? `
     <div style="display:flex; gap:8px">
       <input type="text" class="form-input banner-link-${type}" style="flex:1" placeholder="Type URL or select..." value="${linkValue}"/>
       <select class="form-input" style="flex:1;background:var(--bg-secondary)" onchange="if(this.value==='external'){ this.previousElementSibling.value='https://'; this.previousElementSibling.focus(); } else { this.previousElementSibling.value = this.value; }">
         ${prodOptions}
       </select>
     </div>
+    ` : ''}
   `;
   container.appendChild(div);
   div.querySelector('.banner-img-' + type).addEventListener('input', () => updateBannerPreview(type));
