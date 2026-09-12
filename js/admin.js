@@ -1053,13 +1053,25 @@ window.addBannerInput = function(type, imgValue = '', linkValue = '') {
   div.style.borderRadius = '8px';
   div.className = `banner-item-${type}`;
   
+  const products = (window._adminProducts || []);
+  let prodOptions = '<option value="">-- Link to Product --</option>';
+  prodOptions += '<option value="#catalog">All Products (Catalog)</option>';
+  products.forEach(p => {
+    prodOptions += `<option value="#product/${p.id}">${p.name}</option>`;
+  });
+  
   const recSize = type === 'desktop' ? '1600x600px' : '800x1000px';
   div.innerHTML = `
     <div style="display:flex; gap:8px">
       <input type="text" class="form-input banner-img-${type}" style="flex:1" placeholder="Image Link (Rec: ${recSize})" value="${imgValue}"/>
       <button class="btn btn-outline" style="padding:0 12px;color:var(--danger)" onclick="this.closest('.banner-item-${type}').remove();updateBannerPreview('${type}')">X</button>
     </div>
-    <input type="text" class="form-input banner-link-${type}" placeholder="Click Link (e.g. #catalog or /product.html?id=...)" value="${linkValue}"/>
+    <div style="display:flex; gap:8px">
+      <input type="text" class="form-input banner-link-${type}" style="flex:1" placeholder="Click Link (e.g. #catalog)" value="${linkValue}"/>
+      <select class="form-input" style="max-width:180px; padding:0 8px; font-size:12px;" onchange="if(this.value) this.previousElementSibling.value = this.value; this.value='';">
+        ${prodOptions}
+      </select>
+    </div>
   `;
   container.appendChild(div);
   div.querySelector('.banner-img-' + type).addEventListener('input', () => updateBannerPreview(type));

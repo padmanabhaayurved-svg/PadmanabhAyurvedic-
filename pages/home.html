@@ -187,15 +187,15 @@ var initHero = async () => {
         ];
   }
 
-  const renderImages = (imgs) => {
-    console.log('[Home] Rendering hero images:', imgs.length);
-    carousel.innerHTML = imgs.map((item, i) => `
-      <a href="${item.link || '#'}" class="carousel-img" style="position:absolute;top:0;left:0;width:100%;height:100%;display:block;opacity:${i===0 ? 1 : 0};transition:opacity 2s ease-in-out;z-index:2;">
-        <img src="${item.url}" alt="Ayurvedic wellness" referrerpolicy="no-referrer" loading="${i === 0 ? 'eager' : 'lazy'}" style="width:100%;height:100%;object-fit:cover;"/>
-      </a>
-    `).join('');
-    
-    // Restart Interval
+    const renderImages = (imgs) => {
+      console.log('[Home] Rendering hero images:', imgs.length);
+      carousel.innerHTML = imgs.map((item, i) => `
+        <a href="${item.link || '#'}" class="carousel-img" style="position:${i===0 ? 'relative' : 'absolute'};top:0;left:0;width:100%;display:block;opacity:${i===0 ? 1 : 0};transition:opacity 2s ease-in-out;z-index:2;">
+          <img src="${item.url}" alt="Ayurvedic wellness" referrerpolicy="no-referrer" loading="${i === 0 ? 'eager' : 'lazy'}" style="width:100%;height:auto;display:block;"/>
+        </a>
+      `).join('');
+      
+      // Restart Interval
     let currentIndex = 0;
     const imgElements = carousel.querySelectorAll('.carousel-img');
     if (window.heroInterval) clearInterval(window.heroInterval);
