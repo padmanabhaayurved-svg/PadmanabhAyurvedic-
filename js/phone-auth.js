@@ -33,7 +33,7 @@ const PhoneAuth = (() => {
 
   function isLoggedIn() {
     const s = _getSession();
-    return !!(s && s.phone);
+    return !!(s && (s.phone || s.email || s.uid));
   }
 
   async function register(phone, name, password) {
@@ -138,11 +138,35 @@ const PhoneAuth = (() => {
     return true;
   }
 
+  async function loginWithGoogle() {
+    if (!window.signInWithGoogle) throw new Error('Google Sign-In not initialized');
+    const result = await window.signInWithGoogle();
+    const user = result.user;
+    const uid = user.uid;
+    const email = user.email;
+    const name = user.displayName || 'Google User';
+
+    let userData = null;
+    try {
+      userData = await window.getUserByPhone(uid); // using uid as the doc id for google users too
+    } catch(e) {}
+    
+    if (!userData) {
+      userData = { email, name, uid, registeredAt: new Date().toISOString(), orderIds: [] };
+      await window.createOrUpdateUser(uid, userData);
+    }
+
+    _setSession({ email, name: userData.name, uid });
+    if (window.updateAuthUI) window.updateAuthUI();
+    return userData;
+  }
+
   return {
     getUser,
     isLoggedIn,
     register,
     login,
+    loginWithGoogle,
     logout,
     requireAuth,
     hashPassword // Export to make hashing accessible in admin panel too!
