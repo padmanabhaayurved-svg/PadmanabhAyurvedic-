@@ -731,8 +731,10 @@ document.addEventListener('DOMContentLoaded', initFirebase);
 async function getTeammates() {
   if (!firebaseReady) return [];
   try {
-    const snap = await _db.collection('teammates').orderBy('name', 'asc').get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const snap = await _db.collection('teammates').get();
+    let data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    data.sort((a, b) => (a.order !== undefined ? a.order : 999) - (b.order !== undefined ? b.order : 999));
+    return data;
   } catch (err) {
     console.error('getTeammates failed', err);
     return [];

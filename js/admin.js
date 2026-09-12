@@ -3534,7 +3534,7 @@ function renderTeammates() {
     return;
   }
 
-  body.innerHTML = _teammates.map(tm => `
+  body.innerHTML = _teammates.map((tm, idx) => `
     <tr>
       <td>
         <img src="${convertGDriveUrl(tm.photo) || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(tm.name) + '&background=random'}" 
@@ -3552,6 +3552,8 @@ function renderTeammates() {
         ${tm.featured ? '<div style="font-size:0.7rem;color:var(--gold);margin-top:4px">★ Featured</div>' : ''}
       </td>
       <td style="text-align:right">
+        <button class="btn btn-ghost btn-sm" onclick="moveTeammate(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+        <button class="btn btn-ghost btn-sm" onclick="moveTeammate(${idx}, 1)" ${idx === _teammates.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
         <button class="btn btn-ghost btn-sm" onclick="openTeammateModal('${tm.id}')">Edit</button>
         <button class="btn btn-ghost btn-sm" style="color:var(--error)" onclick="deleteTeammate('${tm.id}')">Delete</button>
       </td>
@@ -3604,6 +3606,39 @@ window.saveTeammate = async function() {
   }
 };
 
+
+window.moveTeammate = async function(idx, direction) {
+  if (direction === -1 && idx === 0) return;
+  if (direction === 1 && idx === _teammates.length - 1) return;
+
+  const targetIdx = idx + direction;
+  
+  // Swap in array
+  const temp = _teammates[idx];
+  _teammates[idx] = _teammates[targetIdx];
+  _teammates[targetIdx] = temp;
+
+  // Update order fields
+  _teammates.forEach((tm, i) => { tm.order = i; });
+  
+  // Render immediately for UX
+  renderTeammates();
+  
+  try {
+    if (typeof window.saveTeammateToDB === 'function') {
+      // Save just the swapped ones to save writes, or all if we want to be safe
+      // Let's save all to ensure consistency
+      for (let tm of _teammates) {
+        await window.saveTeammateToDB(tm.id, tm);
+      }
+    } else {
+      localStorage.setItem('pa_teammates', JSON.stringify(_teammates));
+    }
+  } catch (err) {
+    console.error('Failed to save teammate order', err);
+    showToast('Failed to save order', 'error');
+  }
+};
 
 window.deleteTeammate = async function(id) {
   if (!confirm('Are you sure you want to remove this teammate?')) return;
