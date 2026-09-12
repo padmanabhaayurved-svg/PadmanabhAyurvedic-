@@ -286,7 +286,8 @@ const Store = (() => {
     formatPrice,
     getSavings,
     buildOrderPayload,
-    convertDriveLink
+    convertDriveLink,
+    FALLBACK_IMG: STORE_FALLBACK_IMG
   };
 })();
 

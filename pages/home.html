@@ -237,7 +237,7 @@ var initHero = async () => {
       const labels = { en: 'Shop Collection', hi: 'संग्रह खरीदें', mr: 'संग्रह खरेदी करा' };
       grid.innerHTML = config.collections.map(c => `
         <div class="collection-card animate-in loading-skeleton" onclick="navigate('catalog')">
-          <img src="${Store.convertDriveLink(c.image)}" alt="${c.title}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton')"/>
+          <img src="${Store.convertDriveLink(c.image)}" alt="${c.title}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton'); this.onerror=null; this.src=Store.FALLBACK_IMG"/>
           <div class="collection-card-overlay">
             <div class="collection-card-title">${c.title}</div>
             <div class="collection-card-label">${labels[lang] || labels.en} →</div>
