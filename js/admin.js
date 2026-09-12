@@ -1089,13 +1089,9 @@ window.addBannerInput = function(type, imgValue = '', linkValue = '') {
   div.style.borderRadius = '8px';
   div.className = `banner-item-${type}`;
   
-  const products = (window._adminProducts || []);
+  const products = _adminProducts || [];
   let prodOptions = '<option value="">-- Select Banner Link --</option>';
-  prodOptions += '<option value="external">?? External Link (Type URL)</option>';
-  prodOptions += '<optgroup label="Pages">';
-  prodOptions += '<option value="#catalog">All Products (Catalog)</option>';
-  prodOptions += '<option value="#about">About Us</option>';
-  prodOptions += '</optgroup>';
+  prodOptions += '<option value="external">✅ External Link (Type URL)</option>';
   
   if (products.length > 0) {
     prodOptions += '<optgroup label="Products">';
@@ -2283,7 +2279,7 @@ function exportRetargetCSV() {
 function populateProductFilter() {
   const select = document.getElementById('rt-product-filter');
   if (!select) return;
-  const products = (window._adminProducts || []);
+  const products = _adminProducts || [];
   const options = products.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
   select.innerHTML = `<option value="">All Products</option>` + options;
 }
