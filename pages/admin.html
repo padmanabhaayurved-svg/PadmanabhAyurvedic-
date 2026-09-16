@@ -105,6 +105,14 @@
         <span class="sidebar-icon">🤝</span>
         <span class="sidebar-label">Teammates</span>
       </button>
+      <button class="sidebar-item" data-target="tab-chats" onclick="loadAdminChats()">
+        <span class="sidebar-icon">💬</span>
+        <span class="sidebar-label">Chat Sessions</span>
+      </button>
+      <button class="sidebar-item" data-target="tab-faq" onclick="loadFAQManager()">
+        <span class="sidebar-icon">❓</span>
+        <span class="sidebar-label">FAQ Manager</span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <button class="sidebar-item" onclick="adminLogout()">
@@ -1324,6 +1332,27 @@
     </div>
   </main>
 </div>
+
+<!-- Chat Sessions Tab -->
+<script>
+document.getElementById('admin-main').insertAdjacentHTML('beforeend',
+  '<div id="tab-chats" class="admin-tab">' +
+  '<div class="admin-actions-row"><div>' +
+  '<h2 class="admin-page-title">Chat Sessions</h2>' +
+  '<p class="admin-page-subtitle">View all recorded customer chat conversations.</p>' +
+  '</div></div>' +
+  '<div class="admin-card" style="padding:20px"><div id="admin-chats-wrap"><p style="color:var(--text-muted)">Click &quot;Chat Sessions&quot; in the sidebar to load.</p></div></div>' +
+  '</div>' +
+  '<div id="tab-faq" class="admin-tab">' +
+  '<div class="admin-actions-row"><div>' +
+  '<h2 class="admin-page-title">FAQ Manager</h2>' +
+  '<p class="admin-page-subtitle">Add, edit, and remove chatbot FAQ entries.</p>' +
+  '</div></div>' +
+  '<div class="admin-card" style="padding:20px"><div id="admin-faq-wrap"><p style="color:var(--text-muted)">Click &quot;FAQ Manager&quot; in the sidebar to load.</p></div></div>' +
+  '</div>'
+);
+</script>
+<script src="../js/admin-chat.js"></script>
 
 <!-- Add/Edit Product Modal -->
 <div id="product-modal" class="modal-overlay hidden">

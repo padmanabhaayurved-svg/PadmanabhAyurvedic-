@@ -29,8 +29,21 @@ export default async function handler(req, res) {
     headers,
   };
 
-  if (body) {
-    options.body = typeof body === 'string' ? body : JSON.stringify(body);
+  let finalBody = body;
+  
+  // Secure Server-Side Injection for Authentication
+  if (endpoint === '/auth/login' && method.toUpperCase() === 'POST') {
+    finalBody = {
+      email: process.env.SHIPROCKET_EMAIL,
+      password: process.env.SHIPROCKET_PASSWORD
+    };
+    if (!finalBody.email || !finalBody.password) {
+      return res.status(500).json({ error: 'Shiprocket credentials missing on server.' });
+    }
+  }
+
+  if (finalBody) {
+    options.body = typeof finalBody === 'string' ? finalBody : JSON.stringify(finalBody);
   }
 
   try {

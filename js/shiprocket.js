@@ -6,11 +6,7 @@
 
 const SR = {
   BASE: 'https://apiv2.shiprocket.in/v1/external',
-  CREDENTIALS: {
-    email:    'padmanabhaayurved@gmail.com',
-    password: 'I5#6ASqv5flJN7j0TMgbRGRoI$fqvZO4'
-  },
-  // Pickup location defaults — update these in admin settings later
+  // Pickup location defaults - update these in admin settings later
   PICKUP: {
     name:    'Primary',
     pincode: '414001',
@@ -19,7 +15,7 @@ const SR = {
     country: 'India'
   },
 
-  // ── Token Management ────────────────────────────────────
+  //  Token Management 
   _getToken() {
     try { return JSON.parse(localStorage.getItem('sr_token') || 'null'); }
     catch { return null; }
@@ -41,8 +37,8 @@ const SR = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           endpoint: '/auth/login', 
-          method: 'POST', 
-          body: { email: this.CREDENTIALS.email, password: this.CREDENTIALS.password } 
+          method: 'POST',
+          body: {} // Backend will securely inject credentials
         })
       });
       const data = await res.json();
