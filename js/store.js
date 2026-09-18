@@ -69,10 +69,7 @@ const Store = (() => {
     _saveCart();
     showToast(`"${product.name}" added to cart`, 'success');
     trackCartAdd(product.id).catch(() => {});
-    // Open side cart drawer
-    if (typeof openCartDrawer === 'function') {
-      setTimeout(openCartDrawer, 200);
-    }
+    // Open side cart drawer logic removed to allow ATC flash panel to handle it
   }
 
   function removeFromCart(productId) {
