@@ -649,10 +649,35 @@ async function fetchShippingRate() {
   const shipValEl = document.getElementById('cart-shipping-val');
   if (shipValEl) shipValEl.innerHTML = '<span class="spinner" style="border-top-color:var(--gold);width:14px;height:14px;border-width:2px;display:inline-block"></span>';
   
+  const pincode = pinEl.value.trim();
+  
+  // Auto-fill City & State
+  try {
+    const resp = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+    const data = await resp.json();
+    if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+      const po = data[0].PostOffice[0];
+      const cityEl = document.getElementById('co-city');
+      const stateEl = document.getElementById('co-state');
+      if (cityEl && (!cityEl.value || cityEl.value.trim() === '')) {
+        cityEl.value = po.District || po.Block || po.Region || po.Name;
+        cityEl.classList.add('valid');
+        cityEl.style.animation = 'successPop 0.3s ease';
+        window.cartFormState['co-city'] = cityEl.value;
+      }
+      if (stateEl && (!stateEl.value || stateEl.value.trim() === '')) {
+        stateEl.value = po.State;
+        stateEl.classList.add('valid');
+        stateEl.style.animation = 'successPop 0.3s ease';
+        window.cartFormState['co-state'] = stateEl.value;
+      }
+    }
+  } catch(e) { console.warn('Pincode autofill failed', e); }
+  
   try {
     const cart = Store.getCart();
     const weight = cart.reduce((acc, item) => acc + (item.weight || 0.5) * item.qty, 0);
-    const couriers = await Shiprocket.checkServiceability(null, pinEl.value.trim(), weight);
+    const couriers = await Shiprocket.checkServiceability(null, pincode, weight);
     
     if (couriers && couriers.length > 0) {
       window.shippingCouriers = couriers.sort((a,b) => a.rate - b.rate);
@@ -1136,12 +1161,22 @@ window.submitCheckout = async function() {
     return;
   }
 
-  // Loading State
-  btn.disabled = true;
-  icon.textContent = '⏳';
-  text.textContent = 'Placing Your Order…';
+    // Loading State
+    btn.disabled = true;
+    icon.innerHTML = '<span class="spinner" style="border-top-color:#000;width:16px;height:16px;border-width:2px;display:inline-block"></span>';
+    text.textContent = 'Processing Order...';
+    btn.style.boxShadow = '0 0 15px rgba(201,168,76,0.8)';
+    
+    // Add pulsing animation inline
+    if (!document.getElementById('btn-pulse-style')) {
+      const style = document.createElement('style');
+      style.id = 'btn-pulse-style';
+      style.textContent = `@keyframes btnPulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.85; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }`;
+      document.head.appendChild(style);
+    }
+    btn.style.animation = 'btnPulse 1.5s infinite';
 
-  const address = {
+    const address = {
     name:    document.getElementById('co-name').value.trim(),
     phone:   document.getElementById('co-phone').value.trim(),
     email:   document.getElementById('co-email').value.trim(),
@@ -1192,6 +1227,8 @@ window.submitCheckout = async function() {
     console.error('Order error:', err);
     showToast('Order failed. Please try again.', 'error');
     btn.disabled = false;
+    btn.style.animation = '';
+    btn.style.boxShadow = '';
     icon.textContent = '📦';
     const t = Store.getCartTotal() + window.currentShipping;
     text.textContent = 'Place Order · ₹' + t.toLocaleString('en-IN');
