@@ -655,16 +655,70 @@ async function fetchShippingRate() {
     const couriers = await Shiprocket.checkServiceability(null, pinEl.value.trim(), weight);
     
     if (couriers && couriers.length > 0) {
-      const cheapest = couriers.reduce((prev, curr) => (prev.rate < curr.rate) ? prev : curr);
-      window.currentShipping = cheapest.rate;
+      window.shippingCouriers = couriers.sort((a,b) => a.rate - b.rate);
+      
+      // Keep previous selection if it's still available
+      const existing = window.shippingCouriers.find(c => c.courier_company_id == window.selectedCourierId);
+      if (existing) {
+        window.currentShipping = existing.rate;
+      } else {
+        window.currentShipping = window.shippingCouriers[0].rate;
+        window.selectedCourierId = window.shippingCouriers[0].courier_company_id;
+      }
     } else {
+      window.shippingCouriers = [];
       window.currentShipping = 70;
     }
   } catch (e) {
+    window.shippingCouriers = [];
     window.currentShipping = 70;
   }
   window.isShippingCalculated = true;
   updateCartTotals();
+  renderShippingOptions();
+}
+
+function renderShippingOptions() {
+  const container = document.getElementById('co-shipping-options');
+  if (!container) return;
+  
+  if (!window.shippingCouriers || window.shippingCouriers.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  let html = '<label class="co-label" style="margin-bottom:10px; display:block;">Select Shipping Option</label>';
+  html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+  
+  // Show top 3 couriers
+  const topCouriers = window.shippingCouriers.slice(0, 3);
+  
+  topCouriers.forEach((c, idx) => {
+    // Coerce IDs to string for comparison
+    const isSelected = window.selectedCourierId ? String(c.courier_company_id) === String(window.selectedCourierId) : idx === 0;
+    html += `
+      <label style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}; border-radius:8px; cursor:pointer; background:${isSelected ? 'rgba(201,168,76,0.05)' : 'var(--bg-elevated)'}; transition:all 0.2s;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="radio" name="shipping_courier" value="${c.courier_company_id}" ${isSelected ? 'checked' : ''} onchange="selectCourier('${c.courier_company_id}', ${c.rate})" style="accent-color:var(--gold); width:16px; height:16px;">
+          <div style="display:flex; flex-direction:column;">
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-primary)">${c.courier_name}</span>
+            <span style="font-size:0.7rem; color:var(--text-muted)">Est. Delivery: ${c.estimated_delivery_days || c.etd || '3-5'} Days</span>
+          </div>
+        </div>
+        <span style="font-weight:700; color:var(--gold); font-size:0.9rem;">${c.rate === 0 ? 'FREE' : '₹' + c.rate}</span>
+      </label>
+    `;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+window.selectCourier = function(id, rate) {
+  window.selectedCourierId = id;
+  window.currentShipping = parseFloat(rate);
+  updateCartTotals();
+  renderShippingOptions();
 }
 
 function updateCartTotals() {
@@ -808,6 +862,7 @@ function renderCartPage() {
                   <input type="text" class="co-input" id="co-pin" placeholder="400001" required pattern="[0-9]{6}" maxlength="6" inputmode="numeric"/>
                 </div>
               </div>
+              <div id="co-shipping-options" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; display: none;"></div>
             </div>
           </form>
         </div>
@@ -942,6 +997,7 @@ function renderCartPage() {
   // Live input validation
   setupInputValidation();
   applyStrings();
+  renderShippingOptions();
 }
 
 window.handleGoogleCheckoutSignIn = async function(event) {
@@ -1103,6 +1159,7 @@ window.submitCheckout = async function() {
     paymentStatus: 'pending',
     paymentId:     'COD_' + Date.now(),
     shipping:      window.currentShipping,
+    courierCompany: window.shippingCouriers && window.selectedCourierId ? window.shippingCouriers.find(c => String(c.courier_company_id) === String(window.selectedCourierId))?.courier_name : 'Standard',
     total:         subtotal + window.currentShipping
   };
 

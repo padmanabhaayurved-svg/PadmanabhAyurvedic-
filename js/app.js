@@ -1585,6 +1585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (couriers && couriers.length > 0) {
           const cheapest = couriers.reduce((prev, curr) => (prev.rate < curr.rate) ? prev : curr);
           shipping = cheapest.rate;
+          chatCtx.shippingCourier = cheapest.courier_name;
         }
       } catch (e) {
         console.warn('Failed to fetch chatbot shipping rate', e);
@@ -1628,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paymentStatus: isCOD ? 'pending' : 'paid',
         paymentId: isCOD ? 'COD_' + Date.now() : 'Razorpay_' + Date.now(),
         status: 'pending',
-        courierCompany: 'Standard Shipping',
+        courierCompany: chatCtx.shippingCourier || 'Standard Shipping',
         courierCharge: shipping,
         createdAt: new Date().toISOString(),
         srStatus: null,
