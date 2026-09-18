@@ -8,7 +8,10 @@ const test = async () => {
     body: JSON.stringify({
       endpoint: '/auth/login',
       method: 'POST',
-      body: { email: 'padmanabhaayurved@gmail.com', password: 'I5#6ASqv5flJN7j0TMgbRGRoI$fqvZO4' }
+      body: { 
+        email: process.env.SHIPROCKET_EMAIL || 'YOUR_EMAIL', 
+        password: process.env.SHIPROCKET_PASSWORD || 'YOUR_PASSWORD' 
+      }
     })
   });
   const authData = await authRes.json();
