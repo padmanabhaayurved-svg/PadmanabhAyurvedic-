@@ -713,13 +713,20 @@ function renderShippingOptions() {
   }
   
   container.style.display = 'block';
-  let html = '<label class="co-label" style="margin-bottom:10px; display:block;">Select Shipping Option</label>';
-  html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+  let html = `
+    <style>
+      .courier-scroll-list::-webkit-scrollbar { width: 4px; }
+      .courier-scroll-list::-webkit-scrollbar-track { background: var(--bg-elevated); border-radius: 4px; }
+      .courier-scroll-list::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
+    </style>
+  `;
+  html += '<label class="co-label" style="margin-bottom:10px; display:block;">Select Shipping Option</label>';
+  html += '<div class="courier-scroll-list" style="display:flex; flex-direction:column; gap:8px; max-height: 260px; overflow-y: auto; padding-right: 5px;">';
   
-  // Show top 3 couriers
-  const topCouriers = window.shippingCouriers.slice(0, 3);
+  // Show all couriers
+  const displayCouriers = window.shippingCouriers;
   
-  topCouriers.forEach((c, idx) => {
+  displayCouriers.forEach((c, idx) => {
     // Coerce IDs to string for comparison
     const isSelected = window.selectedCourierId ? String(c.courier_company_id) === String(window.selectedCourierId) : idx === 0;
     html += `
