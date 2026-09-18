@@ -1574,7 +1574,23 @@ document.addEventListener('DOMContentLoaded', () => {
     appendLoader("Placing your order...");
     const cart = Store.getCart();
     const cartTotal = Store.getCartTotal();
-    const shipping = cartTotal >= 499 ? 0 : 60;
+    
+    let shipping = 70; // Fallback
+    let pincodeMatch = chatCtx.checkoutAddress.match(/\b\d{6}\b/);
+    let extractedPin = pincodeMatch ? pincodeMatch[0] : '';
+    if (extractedPin && window.Shiprocket) {
+      try {
+        const weight = cart.length > 0 ? cart.reduce((acc, item) => acc + (item.weight || 0.5) * item.qty, 0) : 0.5;
+        const couriers = await Shiprocket.checkServiceability(null, extractedPin, weight);
+        if (couriers && couriers.length > 0) {
+          const cheapest = couriers.reduce((prev, curr) => (prev.rate < curr.rate) ? prev : curr);
+          shipping = cheapest.rate;
+        }
+      } catch (e) {
+        console.warn('Failed to fetch chatbot shipping rate', e);
+      }
+    }
+
     const total = cartTotal + shipping;
     const isCOD = paymentText.toLowerCase().includes('cod');
 

@@ -628,12 +628,59 @@
 </div>
 
 <script>
-const SHIPPING_CHARGE = 70;
+window.cartFormState = window.cartFormState || {};
+window.currentShipping = window.currentShipping || 0;
+window.isShippingCalculated = window.isShippingCalculated || false;
 
-document.addEventListener('page:cart', renderCartPage);
+document.addEventListener('page:cart', () => {
+  window.cartFormState = {}; 
+  window.currentShipping = 0;
+  window.isShippingCalculated = false;
+  renderCartPage();
+});
 document.addEventListener('cart:updated', () => {
   if (window._currentRoute === 'cart') renderCartPage();
 });
+
+async function fetchShippingRate() {
+  const pinEl = document.getElementById('co-pin');
+  if (!pinEl || !/^[0-9]{6}$/.test(pinEl.value.trim())) return;
+  
+  const shipValEl = document.getElementById('cart-shipping-val');
+  if (shipValEl) shipValEl.innerHTML = '<span class="spinner" style="border-top-color:var(--gold);width:14px;height:14px;border-width:2px;display:inline-block"></span>';
+  
+  try {
+    const cart = Store.getCart();
+    const weight = cart.reduce((acc, item) => acc + (item.weight || 0.5) * item.qty, 0);
+    const couriers = await Shiprocket.checkServiceability(null, pinEl.value.trim(), weight);
+    
+    if (couriers && couriers.length > 0) {
+      const cheapest = couriers.reduce((prev, curr) => (prev.rate < curr.rate) ? prev : curr);
+      window.currentShipping = cheapest.rate;
+    } else {
+      window.currentShipping = 70;
+    }
+  } catch (e) {
+    window.currentShipping = 70;
+  }
+  window.isShippingCalculated = true;
+  updateCartTotals();
+}
+
+function updateCartTotals() {
+  const subtotal = Store.getCartTotal();
+  const total = subtotal + window.currentShipping;
+  
+  const shipValEl = document.getElementById('cart-shipping-val');
+  const totalValEl = document.getElementById('cart-total-val');
+  const btnText = document.getElementById('co-btn-text');
+  const badge = document.getElementById('cart-shipping-badge');
+  
+  if (shipValEl) shipValEl.textContent = window.isShippingCalculated ? Store.formatPrice(window.currentShipping) : 'Enter Pincode';
+  if (badge) badge.textContent = window.isShippingCalculated ? 'Calculated' : 'Pending';
+  if (totalValEl) totalValEl.textContent = Store.formatPrice(total);
+  if (btnText) btnText.textContent = 'Place Order · ' + Store.formatPrice(total);
+}
 
 function renderCartPage() {
   const container = document.getElementById('cart-container');
@@ -658,7 +705,7 @@ function renderCartPage() {
 
   const lang     = localStorage.getItem('pa_lang') || 'en';
   const subtotal = Store.getCartTotal();
-  const total    = subtotal + SHIPPING_CHARGE;
+  const total    = subtotal + window.currentShipping;
 
   container.innerHTML = `
     <!-- Back + Progress -->
@@ -839,14 +886,14 @@ function renderCartPage() {
             <div class="co-calc-row">
               <span class="co-calc-label" style="display:flex;align-items:center;gap:6px">
                 Shipping
-                <span style="font-size:0.68rem;background:rgba(201,168,76,0.12);color:var(--gold);padding:2px 6px;border-radius:4px">Flat Rate</span>
+                <span id="cart-shipping-badge" style="font-size:0.68rem;background:rgba(201,168,76,0.12);color:var(--gold);padding:2px 6px;border-radius:4px">${window.isShippingCalculated ? 'Calculated' : 'Pending'}</span>
               </span>
-              <span class="co-calc-val">${Store.formatPrice(SHIPPING_CHARGE)}</span>
+              <span class="co-calc-val" id="cart-shipping-val">${window.isShippingCalculated ? Store.formatPrice(window.currentShipping) : 'Enter Pincode'}</span>
             </div>
             <div class="co-calc-divider"></div>
             <div class="co-total-row">
               <span class="co-total-label">Total Payable</span>
-              <span class="co-total-val">${Store.formatPrice(total)}</span>
+              <span class="co-total-val" id="cart-total-val">${Store.formatPrice(total)}</span>
             </div>
           </div>
           <div class="co-trust-bar">
@@ -972,15 +1019,22 @@ function setupInputValidation() {
     'co-state':   v => v.trim().length >= 2,
     'co-pin':     v => /^[0-9]{6}$/.test(v.trim()),
   };
+  if (!window.cartFormState) window.cartFormState = {};
   Object.keys(fields).forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
+    if (window.cartFormState[id]) {
+      el.value = window.cartFormState[id];
+      el.classList.toggle('valid', fields[id](el.value));
+    }
     el.addEventListener('blur', () => {
       const valid = fields[id](el.value);
       el.classList.toggle('valid', valid);
       el.classList.toggle('error', !valid && el.value.length > 0);
+      if (id === 'co-pin') fetchShippingRate();
     });
     el.addEventListener('input', () => {
+      window.cartFormState[id] = el.value;
       if (el.classList.contains('error') && fields[id](el.value)) {
         el.classList.remove('error');
         el.classList.add('valid');
@@ -1048,8 +1102,8 @@ window.submitCheckout = async function() {
     paymentMethod: 'COD',
     paymentStatus: 'pending',
     paymentId:     'COD_' + Date.now(),
-    shipping:      SHIPPING_CHARGE,
-    total:         subtotal + SHIPPING_CHARGE
+    shipping:      window.currentShipping,
+    total:         subtotal + window.currentShipping
   };
 
   try {
@@ -1082,7 +1136,7 @@ window.submitCheckout = async function() {
     showToast('Order failed. Please try again.', 'error');
     btn.disabled = false;
     icon.textContent = '📦';
-    const t = Store.getCartTotal() + SHIPPING_CHARGE;
+    const t = Store.getCartTotal() + window.currentShipping;
     text.textContent = 'Place Order · ₹' + t.toLocaleString('en-IN');
   }
 };
