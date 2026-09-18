@@ -828,6 +828,21 @@ window.getTeammates = getTeammates;
 window.saveTeammateToDB = saveTeammateToDB;
 window.deleteTeammateFromDB = deleteTeammateFromDB;
 window.updateOrderStatus = updateOrderStatus;
+
+// Update arbitrary fields on an order document (used after Shiprocket push)
+window.updateOrderFields = async function(orderId, fields) {
+  if (!firebaseReady) {
+    // Fallback to localStorage
+    const stored = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+    const idx = stored.findIndex(o => o.id === orderId);
+    if (idx !== -1) { Object.assign(stored[idx], fields); localStorage.setItem('pa_orders', JSON.stringify(stored)); }
+    return;
+  }
+  await _db.collection('orders').doc(orderId).update({
+    ...fields,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
 window.getAdminUsers = getAdminUsers;
 window.adminResetUserPassword = adminResetUserPassword;
 window.getUserByPhone = getUserByPhone;

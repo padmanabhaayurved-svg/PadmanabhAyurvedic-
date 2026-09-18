@@ -1423,17 +1423,75 @@ window.loadAdminOrders = loadAdminOrders;
 
 async function adminAcceptOrder(orderId) {
   if (!confirm('Are you sure you want to accept this order?')) return;
+  
+  const btn = document.getElementById(`btn-accept-${orderId}`);
+  
   try {
-    const btn = document.getElementById(`btn-accept-${orderId}`);
-    if(btn) { btn.disabled = true; btn.textContent = 'Accepting...'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Accepting...'; }
+
+    // 1. Update local status to processing
     await window.updateOrderStatus(orderId, 'processing');
-    showToast('Order accepted successfully', 'success');
+
+    // 2. Get full order data from local storage / Firestore
+    let orders = [];
+    try {
+      if (typeof window.getAdminOrders === 'function') {
+        const fsOrders = await window.getAdminOrders();
+        if (fsOrders && fsOrders.length > 0) orders = fsOrders;
+      }
+    } catch(e) {}
+    if (!orders.length) {
+      try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+    }
+    const order = orders.find(o => o.id === orderId);
+
+    // 3. Push to Shiprocket if we have the Shiprocket client
+    if (order && window.ShiprocketHelper) {
+      if (btn) btn.textContent = 'Pushing to Shiprocket...';
+      try {
+        const srResult = await window.ShiprocketHelper.createShipment(order);
+        
+        // 4. Save SR order ID, shipment ID, and AWB back so admin can track
+        if (srResult && srResult.shiprocketOrderId) {
+          const updates = {
+            srOrderId:    srResult.shiprocketOrderId,
+            shipmentId:   srResult.shipmentId,
+            trackingId:   srResult.awb || '',
+            srStatus:     'created',
+            status:       'processing',
+            updatedAt:    new Date().toISOString()
+          };
+
+          if (typeof window.updateOrderFields === 'function') {
+            await window.updateOrderFields(orderId, updates);
+          } else {
+            // Fallback: update localStorage
+            const stored = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+            const idx = stored.findIndex(o => o.id === orderId);
+            if (idx !== -1) {
+              Object.assign(stored[idx], updates);
+              localStorage.setItem('pa_orders', JSON.stringify(stored));
+            }
+          }
+
+          showToast(`✅ Order accepted & pushed to Shiprocket! AWB: ${srResult.awb || 'Pending'}`, 'success');
+        } else {
+          showToast('Order accepted. Shiprocket creation may be pending — check SR dashboard.', 'warning');
+        }
+      } catch (srError) {
+        console.error('[Shiprocket] Failed to push order:', srError);
+        showToast('Order accepted locally, but Shiprocket push failed. Check SR dashboard.', 'warning');
+      }
+    } else {
+      showToast('Order accepted successfully', 'success');
+    }
+
     loadAdminOrders(); // Refresh table
+
   } catch (error) {
     console.error('Error accepting order:', error);
     showToast('Failed to accept order', 'error');
-    const btn = document.getElementById(`btn-accept-${orderId}`);
-    if(btn) { btn.disabled = false; btn.textContent = 'Accept'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Accept'; }
   }
 }
 window.adminAcceptOrder = adminAcceptOrder;
