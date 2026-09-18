@@ -6,11 +6,11 @@
 
 const SR = {
   BASE: 'https://apiv2.shiprocket.in/v1/external',
-  // Pickup location defaults - update these in admin settings later
+  // Pickup location defaults - must match the name in Shiprocket account
   PICKUP: {
-    name:    'Primary',
-    pincode: '414001',
-    city:    'Ahilyanagar',
+    name:    'Rushikes',
+    pincode: '414111',
+    city:    'Ahmed Nagar',
     state:   'Maharashtra',
     country: 'India'
   },
@@ -156,6 +156,7 @@ const SR = {
       })),
       payment_method:  ((order.paymentMethod || order.payment || '').toUpperCase().includes('COD') || (order.paymentMethod || order.payment || '').toUpperCase().includes('CASH') || (order.paymentId && String(order.paymentId).startsWith('COD_'))) ? 'COD' : 'Prepaid',
       sub_total:       order.subtotal || 0,
+      shipping_charges: order.shipping || 0,
       length:          order.length || 15,
       breadth:         order.breadth || 10,
       height:          order.height || 10,
@@ -289,6 +290,7 @@ window.ShiprocketHelper = {
       })),
       paymentMethod: ((order.paymentMethod || order.payment || '').toUpperCase().includes('COD') || (order.paymentMethod || order.payment || '').toUpperCase().includes('CASH') || (order.paymentId && String(order.paymentId).startsWith('COD_'))) ? 'COD' : 'Prepaid',
       subtotal:      order.subtotal || order.total || 0,
+      shipping:      order.shipping || 0,
       courierCompany: order.courierCompany || order.courier || '',
       weight:        order.weight || 0.5
     });
