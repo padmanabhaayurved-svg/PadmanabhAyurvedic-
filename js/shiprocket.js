@@ -77,6 +77,16 @@ const SR = {
       })
     };
 
+    // Attach Firebase JWT if available for backend security
+    if (window.firebase && firebase.auth().currentUser) {
+      try {
+        const idToken = await firebase.auth().currentUser.getIdToken();
+        opts.headers['Authorization'] = `Bearer ${idToken}`;
+      } catch (e) {
+        console.warn('[Shiprocket] Failed to get Firebase ID token:', e);
+      }
+    }
+
     let res;
     try {
       res = await fetch('/api/shiprocket', opts);
