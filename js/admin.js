@@ -3375,11 +3375,14 @@ async function srAssignAWB(orderId) {
     return;
   }
 
-  const courier = o.courierCompany || o.courier || 'Delhivery';
-  showToast(`Assigning AWB via ${courier}...`, 'info');
+  // Use courier_company_id (numeric) if stored — Shiprocket API requires this
+  const courierId = o.courierCompanyId || o.courier_company_id;
+  const courierName = o.courierCompany || o.courier || 'Delhivery';
+  const courierArg = courierId ? courierId : courierName;
+  showToast(`Assigning AWB via ${courierName}...`, 'info');
 
   try {
-    const result = await Shiprocket.assignAWB(o.shipmentId, courier);
+    const result = await Shiprocket.assignAWB(o.shipmentId, courierArg);
 
     const updates = {
       awb:         result.awb,

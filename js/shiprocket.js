@@ -183,15 +183,22 @@ const SR = {
   },
 
   // ── 3. Assign AWB ───────────────────────────────────────
-  async assignAWB(shipmentId, courierName) {
-    const data = await this._request('/courier/assign/awb', 'POST', {
-      shipment_id:    shipmentId,
-      courier_company: courierName
-    });
+  async assignAWB(shipmentId, courierCompanyIdOrName) {
+    // Shiprocket API requires courier_company_id (numeric), not the name string
+    const isNumericId = !isNaN(parseInt(courierCompanyIdOrName));
+    const body = { shipment_id: shipmentId };
+    if (isNumericId) {
+      body.courier_company_id = parseInt(courierCompanyIdOrName);
+    } else {
+      // Fallback: Shiprocket also accepts courier_company (name) in some versions
+      body.courier_company = courierCompanyIdOrName;
+    }
+
+    const data = await this._request('/courier/assign/awb', 'POST', body);
     // Returns { awb_code, courier_name, ... }
     return {
       awb:          data.awb_code || data.awb,
-      courierName:  data.courier_name || courierName,
+      courierName:  data.courier_name || String(courierCompanyIdOrName),
       shipmentId:   data.shipment_id || shipmentId
     };
   },

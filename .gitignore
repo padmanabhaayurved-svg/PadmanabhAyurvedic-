@@ -36,3 +36,4 @@ dist/
 # Coverage
 coverage/
 
+.env*
