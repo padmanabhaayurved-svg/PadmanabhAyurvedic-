@@ -828,6 +828,7 @@ window.getTeammates = getTeammates;
 window.saveTeammateToDB = saveTeammateToDB;
 window.deleteTeammateFromDB = deleteTeammateFromDB;
 window.updateOrderStatus = updateOrderStatus;
+window.getAdminOrders = getAdminOrders;
 
 // Update arbitrary fields on an order document (used after Shiprocket push)
 window.updateOrderFields = async function(orderId, fields) {
