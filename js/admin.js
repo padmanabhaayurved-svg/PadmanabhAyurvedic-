@@ -997,34 +997,7 @@ async function loadHeroConfig() {
   if (!grid) return;
 
   const cats = config.collections || [];
-  let html = '';
-  for (let i = 0; i < 4; i++) {
-    const c = cats[i] || { title: '', image: '', category: 'wellness' };
-    html += `
-      <div class="collection-config-item" data-idx="${i}">
-        <div class="collection-config-thumb">
-          <img src="${c.image || ''}" id="cc-img-${i}" alt="Collection Image" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>
-        </div>
-        <div class="collection-config-body form-group" style="padding-top:12px">
-          <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;">GDrive Image Link</label>
-          <input type="text" class="form-input mb-4" id="cc-img-input-${i}" value="${c.image || ''}" placeholder="Paste GDrive View Link" oninput="document.getElementById('cc-img-${i}').src = convertGDriveUrl(this.value)"/>
-          <p class="text-muted" style="font-size:0.7rem;margin-bottom:12px;">Recommended size: 600x600px (1:1 ratio)</p>
-
-          <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;">Title</label>
-          <input type="text" class="form-input mb-8" id="cc-title-${i}" value="${c.title}" placeholder="Collection Title"/>
-          
-          <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;margin-top:4px;">Category Route</label>
-          <select class="form-select" id="cc-cat-${i}">
-            <option value="wellness" ${c.category==='wellness'?'selected':''}>Wellness</option>
-            <option value="skincare" ${c.category==='skincare'?'selected':''}>Skincare</option>
-            <option value="haircare" ${c.category==='haircare'?'selected':''}>Haircare</option>
-            <option value="immunity" ${c.category==='immunity'?'selected':''}>Immunity</option>
-          </select>
-        </div>
-      </div>
-    `;
-  }
-  grid.innerHTML = html;
+  renderCollectionGrid(cats);
 
   // Add listeners to main image inputs
   ['desktop', 'mobile'].forEach(type => {
@@ -1034,6 +1007,106 @@ async function loadHeroConfig() {
         document.getElementById(`preview-${type}`).innerHTML = `<img src="${e.target.value}" alt=""/>`;
       });
     }
+  });
+}
+
+// Build a single collection card's HTML
+function buildCollectionItem(i, c) {
+  return `
+    <div class="collection-config-item" data-idx="${i}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;">Collection #${i+1}</span>
+        <button class="tbl-btn" style="background:rgba(239,68,68,0.1);color:#ef4444;font-size:0.75rem;padding:3px 10px;" onclick="removeCollectionItem(${i})">✕ Remove</button>
+      </div>
+      <div class="collection-config-thumb">
+        <img src="${c.image || ''}" id="cc-img-${i}" alt="Collection Image" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>
+      </div>
+      <div class="collection-config-body form-group" style="padding-top:12px">
+        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;">GDrive Image Link</label>
+        <input type="text" class="form-input mb-4" id="cc-img-input-${i}" value="${c.image || ''}" placeholder="Paste GDrive View Link" oninput="document.getElementById('cc-img-${i}').src = convertGDriveUrl(this.value)"/>
+        <p class="text-muted" style="font-size:0.7rem;margin-bottom:12px;">Recommended size: 600x600px (1:1 ratio)</p>
+
+        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;">Title</label>
+        <input type="text" class="form-input mb-8" id="cc-title-${i}" value="${c.title || ''}" placeholder="Collection Title"/>
+
+        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;margin-top:4px;">Category Route</label>
+        <select class="form-select mb-8" id="cc-cat-${i}">
+          <option value="wellness" ${c.category==='wellness'?'selected':''}>Wellness</option>
+          <option value="skincare" ${c.category==='skincare'?'selected':''}>Skincare</option>
+          <option value="haircare" ${c.category==='haircare'?'selected':''}>Haircare</option>
+          <option value="immunity" ${c.category==='immunity'?'selected':''}>Immunity</option>
+        </select>
+
+        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;margin-top:4px;">🔗 Show Link (redirects user on click)</label>
+        <input type="url" class="form-input" id="cc-link-${i}" value="${c.link || ''}" placeholder="https://... (leave blank to use category filter)"/>
+        <p class="text-muted" style="font-size:0.7rem;margin-top:4px;">Optional: clicking this collection opens this URL instead of the category filter page.</p>
+      </div>
+    </div>
+  `;
+}
+
+// Render the full collections grid
+function renderCollectionGrid(cats) {
+  const grid = document.getElementById('collection-config-grid');
+  if (!grid) return;
+  let html = '';
+  for (let i = 0; i < cats.length; i++) {
+    html += buildCollectionItem(i, cats[i] || { title: '', image: '', category: 'wellness', link: '' });
+  }
+  grid.innerHTML = html;
+  // Insert "Add Collection" button below the grid (only once)
+  if (!document.getElementById('collection-add-wrap')) {
+    const wrap = document.createElement('div');
+    wrap.id = 'collection-add-wrap';
+    wrap.style.cssText = 'margin-top:16px;display:flex;gap:12px;align-items:center;';
+    wrap.innerHTML = `<button class="btn btn-outline btn-sm" onclick="addCollectionItem()">+ Add Collection</button>
+      <span style="font-size:0.78rem;color:var(--text-muted);">Unlimited collections supported.</span>`;
+    grid.parentNode.insertBefore(wrap, grid.nextSibling);
+  }
+}
+
+// Add a blank collection item
+function addCollectionItem() {
+  const grid = document.getElementById('collection-config-grid');
+  if (!grid) return;
+  const idx = grid.querySelectorAll('.collection-config-item').length;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = buildCollectionItem(idx, { title: '', image: '', category: 'wellness', link: '' });
+  grid.appendChild(wrapper.firstElementChild);
+}
+window.addCollectionItem = addCollectionItem;
+
+// Remove a collection item and re-index
+function removeCollectionItem(idx) {
+  const grid = document.getElementById('collection-config-grid');
+  if (!grid) return;
+  const items = grid.querySelectorAll('.collection-config-item');
+  if (items[idx]) items[idx].remove();
+  reindexCollectionItems();
+}
+window.removeCollectionItem = removeCollectionItem;
+
+// Re-index all remaining items after removal
+function reindexCollectionItems() {
+  const grid = document.getElementById('collection-config-grid');
+  if (!grid) return;
+  const items = grid.querySelectorAll('.collection-config-item');
+  items.forEach((item, newIdx) => {
+    item.setAttribute('data-idx', newIdx);
+    const heading = item.querySelector('span[style*="Collection"]');
+    if (heading) heading.textContent = `Collection #${newIdx+1}`;
+    const removeBtn = item.querySelector('button');
+    if (removeBtn) removeBtn.setAttribute('onclick', `removeCollectionItem(${newIdx})`);
+    const imgEl = item.querySelector(`img[id^="cc-img-"]`);
+    const imgInput = item.querySelector(`input[id^="cc-img-input-"]`);
+    const titleInput = item.querySelector(`input[id^="cc-title-"]`);
+    const catSelect = item.querySelector(`select[id^="cc-cat-"]`);
+    const linkInput = item.querySelector(`input[id^="cc-link-"]`);
+    if (imgEl) imgEl.id = `cc-img-${newIdx}`;
+    if (imgInput) { imgInput.id = `cc-img-input-${newIdx}`; imgInput.setAttribute('oninput', `document.getElementById('cc-img-${newIdx}').src = convertGDriveUrl(this.value)`); }
+    if (titleInput) titleInput.id = `cc-title-${newIdx}`;
+    if (catSelect) catSelect.id = `cc-cat-${newIdx}`;
+    if (linkInput) linkInput.id = `cc-link-${newIdx}`;
   });
 }
 
@@ -1058,12 +1131,22 @@ async function saveHeroConfigAdmin() {
     collections: []
   };
 
-  for (let i = 0; i < 4; i++) {
-    data.collections.push({
-      title:    document.getElementById(`cc-title-${i}`).value.trim(),
-      image:    convertGDriveUrl(document.getElementById(`cc-img-input-${i}`).value.trim()),
-      category: document.getElementById(`cc-cat-${i}`).value
-    });
+  // Collect all collection items dynamically (no fixed count)
+  const grid = document.getElementById('collection-config-grid');
+  const count = grid ? grid.querySelectorAll('.collection-config-item').length : 0;
+  for (let i = 0; i < count; i++) {
+    const titleEl = document.getElementById(`cc-title-${i}`);
+    const imgEl   = document.getElementById(`cc-img-input-${i}`);
+    const catEl   = document.getElementById(`cc-cat-${i}`);
+    const linkEl  = document.getElementById(`cc-link-${i}`);
+    if (titleEl) {
+      data.collections.push({
+        title:    titleEl.value.trim(),
+        image:    convertGDriveUrl((imgEl?.value || '').trim()),
+        category: catEl?.value || 'wellness',
+        link:     (linkEl?.value || '').trim()
+      });
+    }
   }
 
   try {
@@ -3141,12 +3224,22 @@ async function adminCheckServiceability() {
 }
 
 // Load SR orders table
-function loadSROrders() {
+async function loadSROrders() {
   const tbody = document.getElementById('sr-orders-body');
   if (!tbody) return;
 
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">Loading orders...</td></tr>`;
+
   let orders = [];
-  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  try {
+    if (typeof window.getAdminOrders === 'function') {
+      const fsOrders = await window.getAdminOrders();
+      if (fsOrders && fsOrders.length > 0) orders = fsOrders;
+    }
+  } catch(e) {}
+  if (!orders.length) {
+    try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  }
 
   if (orders.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">No orders yet</td></tr>`;
@@ -3192,8 +3285,18 @@ function loadSROrders() {
 }
 
 async function srCreateOrder(orderId) {
+  // Try Firestore first, then localStorage
   let orders = [];
-  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  try {
+    if (typeof window.getAdminOrders === 'function') {
+      const fsOrders = await window.getAdminOrders();
+      if (fsOrders && fsOrders.length > 0) orders = fsOrders;
+    }
+  } catch(e) {}
+  if (!orders.length) {
+    try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  }
+
   const o = orders.find(x => x.id === orderId);
   if (!o) { showToast('Order not found', 'error'); return; }
 
@@ -3212,9 +3315,9 @@ async function srCreateOrder(orderId) {
       email:         o.address?.email || o.email || '',
       phone:         o.address?.phone || o.phone || '',
       items:         (o.items || []).map(i => ({
-        name: i.name,
+        name: i.name || i.title || 'Product',
         sku: i.productId || i.sku || 'N/A',
-        qty: i.qty,
+        qty: i.qty || i.quantity || 1,
         price: i.price
       })),
       paymentMethod: ((o.paymentMethod || o.payment || '').toUpperCase().includes('COD') || (o.paymentMethod || o.payment || '').toUpperCase().includes('CASH') || (o.paymentId && String(o.paymentId).startsWith('COD_'))) ? 'COD' : 'Prepaid',
@@ -3226,13 +3329,22 @@ async function srCreateOrder(orderId) {
       height:        Shiprocket.PICKUP?.height || 10
     });
 
-    // Update local order
-    o.srOrderId = result.srOrderId;
-    o.shipmentId = result.shipmentId;
-    o.srStatus = 'created';
-    localStorage.setItem('pa_orders', JSON.stringify(orders));
+    const updates = {
+      srOrderId:  result.srOrderId,
+      shipmentId: result.shipmentId,
+      srStatus:   'created'
+    };
 
-    showToast(`Shiprocket order created: ${result.srOrderId}`, 'success');
+    // Persist to Firestore so it survives page reload
+    if (typeof window.updateOrderFields === 'function') {
+      try { await window.updateOrderFields(orderId, updates); } catch(e) { console.warn('[SR] Firestore update failed:', e.message); }
+    }
+    // Also update localStorage cache
+    const stored = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+    const idx = stored.findIndex(x => x.id === orderId);
+    if (idx !== -1) { Object.assign(stored[idx], updates); localStorage.setItem('pa_orders', JSON.stringify(stored)); }
+
+    showToast(`✅ Shiprocket order created: ${result.srOrderId} | Shipment: ${result.shipmentId}`, 'success');
     loadSROrders();
   } catch (e) {
     showToast(`Failed: ${e.message}`, 'error');
@@ -3240,10 +3352,28 @@ async function srCreateOrder(orderId) {
 }
 
 async function srAssignAWB(orderId) {
+  // Fetch from Firestore to get the latest shipmentId (may not be in localStorage)
   let orders = [];
-  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  try {
+    if (typeof window.getAdminOrders === 'function') {
+      const fsOrders = await window.getAdminOrders();
+      if (fsOrders && fsOrders.length > 0) orders = fsOrders;
+    }
+  } catch(e) {}
+  if (!orders.length) {
+    try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+  }
+
   const o = orders.find(x => x.id === orderId);
-  if (!o || !o.shipmentId) { showToast('Shipment ID not found. Create SR order first.', 'error'); return; }
+  if (!o) { showToast('Order not found', 'error'); return; }
+  if (!o.shipmentId && !o.srOrderId) {
+    showToast('Shiprocket Order not created yet. Click "Create SR Order" first.', 'error');
+    return;
+  }
+  if (!o.shipmentId) {
+    showToast('Shipment ID missing — try reconnecting Shiprocket or recreating the order.', 'error');
+    return;
+  }
 
   const courier = o.courierCompany || o.courier || 'Delhivery';
   showToast(`Assigning AWB via ${courier}...`, 'info');
@@ -3251,17 +3381,27 @@ async function srAssignAWB(orderId) {
   try {
     const result = await Shiprocket.assignAWB(o.shipmentId, courier);
 
-    o.awb = result.awb;
-    o.trackingId = result.awb;
-    o.courierName = result.courierName;
-    o.srStatus = 'awb_assigned';
-    localStorage.setItem('pa_orders', JSON.stringify(orders));
+    const updates = {
+      awb:         result.awb,
+      trackingId:  result.awb,
+      courierName: result.courierName,
+      srStatus:    'awb_assigned'
+    };
 
-    showToast(`AWB assigned: ${result.awb}`, 'success');
+    // Persist AWB to Firestore immediately so it's not lost
+    if (typeof window.updateOrderFields === 'function') {
+      try { await window.updateOrderFields(orderId, updates); } catch(e) { console.warn('[SR] Firestore AWB update failed:', e.message); }
+    }
+    // Also sync localStorage cache
+    const stored = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+    const idx = stored.findIndex(x => x.id === orderId);
+    if (idx !== -1) { Object.assign(stored[idx], updates); localStorage.setItem('pa_orders', JSON.stringify(stored)); }
+
+    showToast(`✅ AWB assigned: ${result.awb}`, 'success');
     loadSROrders();
     loadSRTracking();
   } catch (e) {
-    showToast(`Failed: ${e.message}`, 'error');
+    showToast(`Failed to assign AWB: ${e.message}`, 'error');
   }
 }
 

@@ -237,15 +237,21 @@ var initHero = async () => {
     if (grid && config.collections) {
       const lang = localStorage.getItem('pa_lang') || 'en';
       const labels = { en: 'Shop Collection', hi: 'संग्रह खरीदें', mr: 'संग्रह खरेदी करा' };
-      grid.innerHTML = config.collections.map(c => `
-        <div class="collection-card animate-in loading-skeleton" onclick="navigate('catalog')">
-          <img src="${Store.convertDriveLink(c.image)}" alt="${c.title}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton'); this.onerror=null; this.src=Store.FALLBACK_IMG"/>
-          <div class="collection-card-overlay">
-            <div class="collection-card-title">${c.title}</div>
-            <div class="collection-card-label">${labels[lang] || labels.en} →</div>
+      grid.innerHTML = config.collections.map(c => {
+        // If admin set a custom link, use it; otherwise filter by category
+        const clickHandler = c.link
+          ? `onclick="window.open('${c.link.replace(/'/g, "\\'")}', c.link.startsWith('http') ? '_blank' : '_self')"`
+          : `onclick="navigate('catalog', { category: '${c.category || 'all'}' })"`;
+        return `
+          <div class="collection-card animate-in loading-skeleton" ${clickHandler} style="cursor:pointer;">
+            <img src="${Store.convertDriveLink(c.image)}" alt="${c.title}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton'); this.onerror=null; this.src=Store.FALLBACK_IMG"/>
+            <div class="collection-card-overlay">
+              <div class="collection-card-title">${c.title}</div>
+              <div class="collection-card-label">${labels[lang] || labels.en} →</div>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     // Load CMS Content for Voices of Wellness (Reviews)
