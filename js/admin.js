@@ -3322,6 +3322,7 @@ async function srCreateOrder(orderId) {
       })),
       paymentMethod: ((o.paymentMethod || o.payment || '').toUpperCase().includes('COD') || (o.paymentMethod || o.payment || '').toUpperCase().includes('CASH') || (o.paymentId && String(o.paymentId).startsWith('COD_'))) ? 'COD' : 'Prepaid',
       subtotal:      o.subtotal || o.total || 0,
+      shipping:      o.shipping || 0,
       courierCompany: o.courierCompany || o.courier || '',
       weight:        o.weight || 0.5,
       length:        Shiprocket.PICKUP?.length || 15,
