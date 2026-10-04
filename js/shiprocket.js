@@ -103,7 +103,20 @@ const SR = {
 
     if (!res.ok) {
       let errMsg = `HTTP ${res.status}`;
-      try { const d = await res.json(); errMsg = d.message || d.error || errMsg; } catch {}
+      try { 
+        const d = await res.json(); 
+        let detailedError = '';
+        if (d.errors && typeof d.errors === 'object') {
+          detailedError = Object.values(d.errors).flat().join(', ');
+        }
+        
+        const baseMsg = d.message || d.error || '';
+        if (detailedError && baseMsg && detailedError !== baseMsg) {
+          errMsg = `${baseMsg} (${detailedError})`;
+        } else {
+          errMsg = detailedError || baseMsg || errMsg;
+        }
+      } catch {}
       throw new Error(errMsg);
     }
 
