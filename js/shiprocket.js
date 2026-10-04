@@ -62,7 +62,7 @@ const SR = {
     return await this.authenticate();
   },
 
-  async _request(endpoint, method = 'GET', body = null) {
+  async _request(endpoint, method = 'GET', body = null, isRetry = false) {
     const token = await this._ensureToken();
     const opts = {
       method: 'POST', // Proxy always receives POST
@@ -94,11 +94,11 @@ const SR = {
       throw new Error(`Network error: ${e.message}`);
     }
 
-    if (res.status === 401) {
-      // Token expired — re-auth and retry once
+    if (res.status === 401 && !isRetry) {
+      // Token expired — re-auth and retry ONCE
       this._clearToken();
       await this.authenticate();
-      return this._request(endpoint, method, body);
+      return this._request(endpoint, method, body, true);
     }
 
     if (!res.ok) {
