@@ -3528,10 +3528,21 @@ async function srTrackAWB(orderId) {
 
 // Manifest & Labels bulk actions
 async function generateManifestForSelected() {
-  showToast('Generating manifest...', 'info');
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem('pa_orders') || '[]'); } catch(e) {}
+
+  const awbOrders = orders.filter(o => o.shipmentId);
+  if (awbOrders.length === 0) {
+    showToast('No orders with shipment ID found', 'warning');
+    return;
+  }
+  const shipmentIds = awbOrders.map(o => o.shipmentId);
+  const srOrderIds = awbOrders.map(o => o.srOrderId);
+
+  showToast(`Generating manifest for ${awbOrders.length} orders...`, 'info');
   try {
-    const result = await Shiprocket.generateManifest();
-    const printResult = await Shiprocket.printManifest();
+    const result = await Shiprocket.generateManifest(shipmentIds);
+    const printResult = await Shiprocket.printManifest(srOrderIds);
     if (printResult.success && printResult.manifestUrl) {
       window.open(printResult.manifestUrl, '_blank');
       showToast('Manifest opened in new tab', 'success');

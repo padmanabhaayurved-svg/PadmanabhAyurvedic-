@@ -244,11 +244,14 @@ const SR = {
   },
 
   // ── 8. Print Manifest ───────────────────────────────────
-  async printManifest() {
-    const data = await this._request('/manifests/print', 'POST', {});
+  async printManifest(orderIds) {
+    const idsArray = Array.isArray(orderIds) ? orderIds : [orderIds];
+    const data = await this._request('/manifests/print', 'POST', {
+      order_ids: idsArray
+    });
     return {
-      manifestUrl: data.pdf_url || data.print_url || '',
-      success:     !!data.pdf_url || !!data.print_url
+      manifestUrl: data.manifest_url || data.pdf_url || data.print_url || '',
+      success:  !!data.manifest_url || !!data.pdf_url || !!data.print_url
     };
   },
 
