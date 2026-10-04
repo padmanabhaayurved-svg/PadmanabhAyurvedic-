@@ -207,7 +207,7 @@ const SR = {
   // ── 4. Generate Pickup ──────────────────────────────────
   async generatePickup(shipmentId) {
     const data = await this._request('/courier/generate/pickup', 'POST', {
-      shipment_id: shipmentId
+      shipment_id: [shipmentId]
     });
     return data;
   },
@@ -215,7 +215,7 @@ const SR = {
   // ── 5. Generate Label ───────────────────────────────────
   async generateLabel(shipmentId) {
     const data = await this._request('/courier/generate/label', 'POST', {
-      shipment_id: shipmentId,
+      shipment_id: [shipmentId],
       label_type:  'label'
     });
     return {
@@ -236,9 +236,9 @@ const SR = {
   },
 
   // ── 7. Generate Manifest ────────────────────────────────
-  async generateManifest(orderIds) {
+  async generateManifest(shipmentIds) {
     const data = await this._request('/manifests/generate', 'POST', {
-      ids: orderIds
+      shipment_id: Array.isArray(shipmentIds) ? shipmentIds : [shipmentIds]
     });
     return data;
   },
