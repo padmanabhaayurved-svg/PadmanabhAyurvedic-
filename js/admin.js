@@ -3096,10 +3096,7 @@ function initShiprocketTab() {
   const settings = getSRSettings();
   if (settings.pickupName) document.getElementById('sr-pickup-name').value = settings.pickupName;
   if (settings.pickupPin) document.getElementById('sr-pickup-pin').value = settings.pickupPin;
-  if (settings.length) document.getElementById('sr-default-length').value = settings.length;
-  if (settings.breadth) document.getElementById('sr-default-breadth').value = settings.breadth;
-  if (settings.height) document.getElementById('sr-default-height').value = settings.height;
-  if (settings.weight) document.getElementById('sr-default-weight').value = settings.weight;
+
 
   // Update Shiprocket client settings
   if (settings.pickupPin) Shiprocket.PICKUP.pincode = settings.pickupPin;
@@ -3169,11 +3166,7 @@ async function reconnectShiprocket() {
 function saveShiprocketSettings() {
   const settings = {
     pickupName: document.getElementById('sr-pickup-name').value,
-    pickupPin:  document.getElementById('sr-pickup-pin').value,
-    length:     Number(document.getElementById('sr-default-length').value) || 15,
-    breadth:    Number(document.getElementById('sr-default-breadth').value) || 10,
-    height:     Number(document.getElementById('sr-default-height').value) || 10,
-    weight:     Number(document.getElementById('sr-default-weight').value) || 0.5
+    pickupPin:  document.getElementById('sr-pickup-pin').value
   };
   saveSRSettings(settings);
 
@@ -3221,7 +3214,7 @@ async function adminCheckServiceability() {
 
   try {
     const pickupPin = Shiprocket.PICKUP.pincode;
-    const weight = Number(document.getElementById('sr-default-weight').value) || 0.5;
+    const weight = 0.5;
     const couriers = await Shiprocket.checkServiceability(pickupPin, pin, weight);
 
     if (!couriers || couriers.length === 0) {
