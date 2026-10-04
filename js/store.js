@@ -63,6 +63,9 @@ const Store = (() => {
         mrp:   product.mrp,
         image: product.images?.[0] || '',
         weight: product.weight || 0.5,
+        length: product.length || null,
+        breadth: product.breadth || null,
+        height: product.height || null,
         qty
       });
     }

@@ -787,6 +787,9 @@ function editProduct(id) {
   document.getElementById('pm-cat').value = p.category;
   document.getElementById('pm-stock').value = p.inStock ? 'true' : 'false';
   if(document.getElementById('pm-weight')) document.getElementById('pm-weight').value = p.weight || 0.5;
+  if(document.getElementById('pm-length')) document.getElementById('pm-length').value = p.length || '';
+  if(document.getElementById('pm-breadth')) document.getElementById('pm-breadth').value = p.breadth || '';
+  if(document.getElementById('pm-height')) document.getElementById('pm-height').value = p.height || '';
   if(document.getElementById('pm-desc')) document.getElementById('pm-desc').value = p.description || '';
   if(document.getElementById('pm-desc-hi')) document.getElementById('pm-desc-hi').value = p.descriptionHi || '';
   if(document.getElementById('pm-desc-mr')) document.getElementById('pm-desc-mr').value = p.descriptionMr || '';
@@ -882,6 +885,9 @@ async function saveProduct() {
     mrp:         Number(document.getElementById('pm-mrp')?.value) || null,
     category:    document.getElementById('pm-cat').value,
     weight:      Number(document.getElementById('pm-weight')?.value) || 0.5,
+    length:      Number(document.getElementById('pm-length')?.value) || null,
+    breadth:     Number(document.getElementById('pm-breadth')?.value) || null,
+    height:      Number(document.getElementById('pm-height')?.value) || null,
     inStock:     document.getElementById('pm-stock').value === 'true',
     description: document.getElementById('pm-desc')?.value || '',
     descriptionHi: document.getElementById('pm-desc-hi')?.value || '',
@@ -3325,9 +3331,9 @@ async function srCreateOrder(orderId) {
       shipping:      o.shipping || 0,
       courierCompany: o.courierCompany || o.courier || '',
       weight:        o.weight || 0.5,
-      length:        Shiprocket.PICKUP?.length || 15,
-      breadth:       Shiprocket.PICKUP?.breadth || 10,
-      height:        Shiprocket.PICKUP?.height || 10
+      length:        (o.items && o.items.length > 0) ? Math.max(...o.items.map(i => i.length || 0)) || Shiprocket.PICKUP?.length || 15 : Shiprocket.PICKUP?.length || 15,
+      breadth:       (o.items && o.items.length > 0) ? Math.max(...o.items.map(i => i.breadth || 0)) || Shiprocket.PICKUP?.breadth || 10 : Shiprocket.PICKUP?.breadth || 10,
+      height:        (o.items && o.items.length > 0) ? o.items.reduce((acc, i) => acc + ((i.height || 0) * i.qty), 0) || Shiprocket.PICKUP?.height || 10 : Shiprocket.PICKUP?.height || 10
     });
 
     const updates = {
@@ -3377,10 +3383,18 @@ async function srAssignAWB(orderId) {
   }
 
   // Use courier_company_id (numeric) if stored — Shiprocket API requires this
-  const courierId = o.courierCompanyId || o.courier_company_id;
+  let courierArg = o.courierCompanyId || o.courier_company_id;
   const courierName = o.courierCompany || o.courier || 'Delhivery';
-  const courierArg = courierId ? courierId : courierName;
-  showToast(`Assigning AWB via ${courierName}...`, 'info');
+  
+  if (!courierArg) {
+    courierArg = prompt(`Missing numeric Courier ID for ${courierName}.\nPlease enter the Courier ID (e.g., 10 for Delhivery Surface, 1 for Delhivery Express):`, "10");
+    if (!courierArg) {
+      showToast('Assignment cancelled. Courier ID is required.', 'warning');
+      return;
+    }
+  }
+
+  showToast(`Assigning AWB via Courier ID ${courierArg}...`, 'info');
 
   try {
     const result = await Shiprocket.assignAWB(o.shipmentId, courierArg);
