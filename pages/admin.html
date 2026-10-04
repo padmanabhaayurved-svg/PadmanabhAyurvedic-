@@ -911,8 +911,12 @@
       </div>
 
       <!-- Settings Panel -->
-      <div class="admin-section-divider">
+      <div class="admin-section-divider" style="display:flex; justify-content:space-between; align-items:center;">
         <span>⚙️ Shiprocket Settings</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span id="sr-wallet-display" style="font-size:0.9rem; font-weight:600; color:var(--text); background:var(--bg-accent); padding:4px 8px; border-radius:4px; display:none;">₹0.00</span>
+          <button class="btn btn-outline btn-sm" onclick="checkShiprocketWallet()">Check Wallet Balance</button>
+        </div>
       </div>
       <div class="sys-panel-grid" style="margin-bottom:24px">
         <div class="sys-panel">

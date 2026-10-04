@@ -3184,6 +3184,31 @@ function saveShiprocketSettings() {
   showToast('Shiprocket settings saved', 'success');
 }
 
+window.checkShiprocketWallet = async function() {
+  const display = document.getElementById('sr-wallet-display');
+  if (!display) return;
+  display.style.display = 'inline-block';
+  display.textContent = 'Checking...';
+  try {
+    // Attempt to hit the Shiprocket wallet balance endpoint
+    const res = await Shiprocket._request('/account/details/wallet-balance');
+    if (res && typeof res.balance_amount !== 'undefined') {
+      display.textContent = `₹${parseFloat(res.balance_amount).toFixed(2)}`;
+      showToast('Wallet balance fetched.', 'success');
+    } else if (res && typeof res.wallet_balance !== 'undefined') {
+      display.textContent = `₹${parseFloat(res.wallet_balance).toFixed(2)}`;
+      showToast('Wallet balance fetched.', 'success');
+    } else {
+      display.textContent = 'API Restricted';
+      showToast('Wallet Balance API restricted. Check Shiprocket Dashboard.', 'warning');
+    }
+  } catch (e) {
+    console.warn('Wallet balance fetch failed:', e);
+    display.textContent = 'API Restricted';
+    showToast('Cannot fetch balance directly (Shiprocket API restriction). Check Dashboard.', 'warning');
+  }
+};
+
 async function adminCheckServiceability() {
   const pin = document.getElementById('sr-check-pin').value.trim();
   if (!pin || !/^\d{6}$/.test(pin)) {
