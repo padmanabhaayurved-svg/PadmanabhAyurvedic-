@@ -218,7 +218,7 @@
     if (options.length > 0) {
       optHtml = '<div class="chat-options">';
       options.forEach(o => {
-        const safe = o.replace(/'/g, "\\'");
+        const safe = o.replace(/"/g, '&quot;').replace(/'/g, "\\'");
         optHtml += `<button type="button" onclick="handleChatOption('${safe}')">${o}</button>`;
       });
       optHtml += '</div>';

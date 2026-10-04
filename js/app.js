@@ -1000,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (options.length > 0) {
       html += `<div class="chat-options">`;
       options.forEach(o => {
-        const safe = o.replace(/'/g, "\\'");
+        const safe = o.replace(/"/g, '&quot;').replace(/'/g, "\\'");
         html += `<button type="button" onclick="handleChatOption('${safe}')">${o}</button>`;
       });
       html += `</div>`;

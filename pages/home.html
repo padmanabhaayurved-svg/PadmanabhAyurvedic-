@@ -249,9 +249,10 @@ var initHero = async () => {
           clickHandler = `onclick="navigate('catalog', { category: '${c.category || 'all'}' })"`;
         }
         
+        const safeTitle = (c.title || '').replace(/"/g, '&quot;');
         return `
           <div class="collection-card animate-in loading-skeleton" ${clickHandler} style="cursor:pointer;">
-            <img src="${Store.convertDriveLink(c.image)}" alt="${c.title}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton'); this.onerror=null; this.src=Store.FALLBACK_IMG"/>
+            <img src="${Store.convertDriveLink(c.image)}" alt="${safeTitle}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton'); this.onerror=null; this.src=Store.FALLBACK_IMG"/>
             <div class="collection-card-overlay">
               <div class="collection-card-title">${c.title}</div>
               <div class="collection-card-label">${labels[lang] || labels.en} →</div>
