@@ -188,7 +188,8 @@ const SR = {
     const isNumericId = !isNaN(parseInt(courierCompanyIdOrName));
     const body = { shipment_id: shipmentId };
     if (isNumericId) {
-      body.courier_company_id = parseInt(courierCompanyIdOrName);
+      body.courier_id = parseInt(courierCompanyIdOrName);
+      body.courier_company_id = parseInt(courierCompanyIdOrName); // keeping both to be safe across API versions
     } else {
       // Fallback: Shiprocket also accepts courier_company (name) in some versions
       body.courier_company = courierCompanyIdOrName;
