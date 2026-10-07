@@ -235,17 +235,14 @@ async function initAdminHub() {
         return;
       }
 
-      showToast('Uploading image...', 'info');
+      showToast('Uploading image to Cloudinary...', 'info');
       try {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          _adminImages.push(ev.target.result);
-          renderImagePreview();
-          showToast('Image added', 'success');
-        };
-        reader.readAsDataURL(file);
+        const url = await window.uploadImage(file, 'products');
+        _adminImages.push(url);
+        renderImagePreview();
+        showToast('Image uploaded successfully', 'success');
       } catch (err) {
-        showToast('Upload failed', 'error');
+        showToast('Upload failed: ' + err.message, 'error');
       }
       fileIn.value = '';
     });
@@ -4014,38 +4011,16 @@ async function checkImageReachable(url) {
 }
 window.scanProductImages = scanProductImages;
 
-window.handleTeammatePhotoUpload = function(event) {
+window.handleTeammatePhotoUpload = async function(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 400;
-      const MAX_HEIGHT = 400;
-      let width = img.width;
-      let height = img.height;
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
-        }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height;
-          height = MAX_HEIGHT;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-      document.getElementById('tm-photo').value = dataUrl;
-      if (window.showToast) window.showToast('Image compressed & ready', 'success');
-    }
-    img.src = e.target.result;
+  
+  if (window.showToast) window.showToast('Uploading photo to Cloudinary...', 'info');
+  try {
+    const url = await window.uploadImage(file, 'teammates');
+    document.getElementById('tm-photo').value = url;
+    if (window.showToast) window.showToast('Photo uploaded successfully', 'success');
+  } catch (err) {
+    if (window.showToast) window.showToast('Upload failed: ' + err.message, 'error');
   }
-  reader.readAsDataURL(file);
 };
