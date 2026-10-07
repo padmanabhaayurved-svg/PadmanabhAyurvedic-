@@ -382,7 +382,8 @@ async function getAnalyticsSummary(days = 30) {
       activeSessions: 0,
       dailyViews:    dailyMap,
       mobile,
-      desktop
+      desktop,
+      recentEvents:  events.slice(-50).reverse()
     };
   } catch (e) {
     console.warn('[Firebase] getAnalyticsSummary error:', e);
@@ -729,7 +730,8 @@ function getMockAnalytics(days) {
 
   return {
     ..._mockAnalyticsCache,
-    dailyViews: slicedViews
+    dailyViews: slicedViews,
+    recentEvents: []
   };
 }
 

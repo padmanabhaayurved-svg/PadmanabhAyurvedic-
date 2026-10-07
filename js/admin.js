@@ -597,6 +597,44 @@ async function renderAnalytics(type, customRange = null) {
   document.getElementById('m-active').textContent = data.activeSessions;
   document.getElementById('m-carts').textContent = data.cartAdds;
 
+  // Live Activity History
+  const tbody = document.getElementById('analytics-history-tbody');
+  if (tbody) {
+    if (!data.recentEvents || data.recentEvents.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No recent activity found.</td></tr>';
+    } else {
+      tbody.innerHTML = data.recentEvents.map(e => {
+        let timeStr = 'Unknown';
+        if (e.timestamp && e.timestamp.toDate) {
+          timeStr = e.timestamp.toDate().toLocaleString('en-IN', { hour12: true, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        let actionHtml = '';
+        if (e.type === 'pageView') {
+          actionHtml = '<span style="color:#3b82f6; display:flex; align-items:center; gap:6px;">👁️ Page View</span>';
+        } else if (e.type === 'cartAdd') {
+          actionHtml = '<span style="color:#eab308; display:flex; align-items:center; gap:6px;">🛒 Cart Add</span>';
+        } else {
+          actionHtml = `<span>${e.type}</span>`;
+        }
+        
+        let details = e.path || e.productId || '-';
+        if (e.type === 'pageView' && details === '/') details = 'Home Page';
+        
+        let device = e.device === 'mobile' ? '📱 Mobile' : '💻 Desktop';
+        
+        return `
+          <tr>
+            <td style="font-size:0.85rem; color:var(--text-muted);">${timeStr}</td>
+            <td style="font-weight:600">${actionHtml}</td>
+            <td style="color:var(--gold); font-size:0.85rem;">${details}</td>
+            <td style="font-size:0.85rem; color:var(--text-muted);">${device}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
   // Chart
   _adminTrafficChart?.destroy();
   const wrapper = document.getElementById('chart-wrapper');
