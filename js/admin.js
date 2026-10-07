@@ -846,24 +846,7 @@ function convertGDriveUrl(url) {
 }
 window.convertGDriveUrl = convertGDriveUrl;
 
-function addGDriveImage() {
-  const input = document.getElementById('pm-gdrive-input');
-  if (!input) return;
-  const url = input.value.trim();
-  if (!url) return;
 
-  if (_adminImages.length >= 4) {
-    showToast('Maximum 4 images allowed.', 'warning');
-    return;
-  }
-
-  const converted = convertGDriveUrl(url);
-  _adminImages.push(converted);
-  input.value = '';
-  renderImagePreview();
-  showToast('Image link added ✓', 'success');
-}
-window.addGDriveImage = addGDriveImage;
 
 async function saveProduct() {
   const form = document.getElementById('product-form');

@@ -1416,12 +1416,11 @@ document.getElementById('admin-main').insertAdjacentHTML('beforeend',
         <!-- Images -->
         <div class="form-group mt-16">
           <label class="form-label">Images (Max 4)</label>
-          <div style="display:flex; gap:10px;">
-            <input type="text" class="form-input" id="pm-gdrive-input" placeholder="Paste Google Drive view link..." />
-            <button type="button" class="btn btn-outline" onclick="addGDriveImage()">Add</button>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="file" class="form-input" id="img-file-input" accept="image/png, image/jpeg, image/webp" style="padding: 8px;" />
           </div>
           <div style="background:rgba(100,164,53,0.1); border-left:3px solid var(--gold); padding:8px 12px; margin-top:8px; border-radius:4px; font-size:0.8rem; color:var(--text-secondary);">
-            <strong>💡 Image Size:</strong> 1:1 Square aspect ratio is highly recommended for best display (e.g., <strong>800x800px</strong> or 1000x1000px). Ensure your Google Drive link has "Anyone with link can view".
+            <strong>💡 Image Size:</strong> 1:1 Square aspect ratio is highly recommended for best display (e.g., <strong>800x800px</strong> or 1000x1000px). Images will be uploaded to Cloudinary automatically.
           </div>
           <div class="image-preview-grid" id="pm-img-preview"></div>
           <!-- Hidden storage for URLs -->
