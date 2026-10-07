@@ -1022,10 +1022,13 @@ function buildCollectionItem(i, c) {
 
         <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;margin-top:4px;">Category Route</label>
         <select class="form-select mb-8" id="cc-cat-${i}">
+          <option value="orthopedic" ${c.category==='orthopedic'?'selected':''}>Orthopedic</option>
+          <option value="digestive" ${c.category==='digestive'?'selected':''}>Digestive</option>
           <option value="wellness" ${c.category==='wellness'?'selected':''}>Wellness</option>
+          <option value="immunity" ${c.category==='immunity'?'selected':''}>Immunity</option>
           <option value="skincare" ${c.category==='skincare'?'selected':''}>Skincare</option>
           <option value="haircare" ${c.category==='haircare'?'selected':''}>Haircare</option>
-          <option value="immunity" ${c.category==='immunity'?'selected':''}>Immunity</option>
+          <option value="combos" ${c.category==='combos'?'selected':''}>Premium Combos</option>
         </select>
 
         <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;margin-top:4px;">🔗 Show Link (redirects user on click)</label>
