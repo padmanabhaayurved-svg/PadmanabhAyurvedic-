@@ -473,10 +473,21 @@ async function linkOrderToUser(phone, orderId) {
 // ── Firebase Storage ──────────────────────────────────────────
 
 async function uploadImage(file, path) {
-  if (!firebaseReady) throw new Error('Firebase not ready');
-  const ref = _storage.ref(path);
-  const snap = await ref.put(file);
-  return await snap.ref.getDownloadURL();
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'padmanabh_store');
+  
+  const res = await fetch('https://api.cloudinary.com/v1_1/ybzj1wn7/image/upload', {
+    method: 'POST',
+    body: formData
+  });
+  
+  if (!res.ok) {
+    throw new Error('Image upload failed');
+  }
+  
+  const data = await res.json();
+  return data.secure_url;
 }
 
 // ── Offline Fallbacks ─────────────────────────────────────────

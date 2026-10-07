@@ -825,7 +825,7 @@ function convertGDriveUrl(url) {
   if (!url) return '';
   // Already a data URI or Firebase Storage — use as-is
   if (url.startsWith('data:')) return url;
-  if (url.includes('firebasestorage.googleapis.com')) return url;
+  if (url.includes('firebasestorage.googleapis.com') || url.includes('res.cloudinary.com')) return url;
   // Already a working thumbnail URL — use as-is
   if (url.includes('drive.google.com/thumbnail')) return url;
   if (url.includes('drive.usercontent.google.com/download')) return url;

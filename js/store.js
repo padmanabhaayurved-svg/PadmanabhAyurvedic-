@@ -177,7 +177,7 @@ const Store = (() => {
     if (!url) return STORE_FALLBACK_IMG;
     // Already a data URI or Firebase Storage URL — use as-is
     if (url.startsWith('data:')) return url;
-    if (url.includes('firebasestorage.googleapis.com')) return url;
+    if (url.includes('firebasestorage.googleapis.com') || url.includes('res.cloudinary.com')) return url;
     // Fix blurry thumbnail links stored in database by forcing sz=w1000
     if (url.includes('drive.google.com/thumbnail')) {
       return url.replace(/&sz=\w*\d+/, '') + '&sz=w1000';
