@@ -1008,8 +1008,11 @@ function buildCollectionItem(i, c) {
         <img src="${c.image || ''}" id="cc-img-${i}" alt="Collection Image" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>
       </div>
       <div class="collection-config-body form-group" style="padding-top:12px">
-        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;">GDrive Image Link</label>
-        <input type="text" class="form-input mb-4" id="cc-img-input-${i}" value="${c.image || ''}" placeholder="Paste GDrive View Link" oninput="document.getElementById('cc-img-${i}').src = convertGDriveUrl(this.value)"/>
+        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;">Image Link</label>
+        <div style="display:flex; gap:8px; margin-bottom:4px;">
+          <input type="text" class="form-input" id="cc-img-input-${i}" value="${c.image || ''}" placeholder="Paste Link or Upload" oninput="document.getElementById('cc-img-${i}').src = this.value" style="flex:1"/>
+          <button type="button" class="btn btn-outline" style="padding:0 12px;" onclick="const f = document.createElement('input'); f.type='file'; f.accept='image/*'; f.onchange=async (e)=>{ if(!e.target.files[0])return; try{ window.showToast('Uploading...','info'); const url = await window.uploadImage(e.target.files[0], 'hero'); const inp = document.getElementById('cc-img-input-${i}'); inp.value=url; document.getElementById('cc-img-${i}').src=url; window.showToast('Uploaded','success');}catch(err){window.showToast('Upload failed','error');} }; f.click();">Upload</button>
+        </div>
         <p class="text-muted" style="font-size:0.7rem;margin-bottom:12px;">Recommended size: 600x600px (1:1 ratio)</p>
 
         <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;">Title</label>
@@ -1174,6 +1177,7 @@ window.addBannerInput = function(type, imgValue = '', linkValue = '') {
   div.innerHTML = `
     <div style="display:flex; gap:8px">
       <input type="text" class="form-input banner-img-${type}" style="flex:1" placeholder="Image Link (Rec: ${recSize})" value="${imgValue}"/>
+      <button type="button" class="btn btn-outline" style="padding:0 12px;" onclick="const f = document.createElement('input'); f.type='file'; f.accept='image/*'; f.onchange=async (e)=>{ if(!e.target.files[0])return; try{ window.showToast('Uploading...','info'); const url = await window.uploadImage(e.target.files[0], 'hero'); this.previousElementSibling.value=url; updateBannerPreview('${type}'); window.showToast('Uploaded','success');}catch(err){window.showToast('Upload failed','error');} }; f.click();">Upload</button>
       <button class="btn btn-outline" style="padding:0 12px;color:var(--danger)" onclick="this.closest('.banner-item-${type}').remove();updateBannerPreview('${type}')">X</button>
     </div>
     ${type === 'desktop' ? `
@@ -1284,7 +1288,10 @@ window.addReviewItem = function(name = '', text = '', dp = '') {
     <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; gap:8px;">
         <input type="text" class="form-input review-name" placeholder="Customer Name" value="${name}" style="flex:1"/>
-        <input type="text" class="form-input review-dp" placeholder="DP Link (Rec: 100x100px)" value="${dp}" style="flex:1" onchange="this.value = convertGDriveUrl(this.value)"/>
+        <div style="flex:1; display:flex; gap:4px">
+          <input type="text" class="form-input review-dp" placeholder="DP Link (Rec: 100x100px)" value="${dp}" style="flex:1" onchange="this.value = this.value" />
+          <button type="button" class="btn btn-outline" style="padding:0 8px;" onclick="const f = document.createElement('input'); f.type='file'; f.accept='image/*'; f.onchange=async (e)=>{ if(!e.target.files[0])return; try{ window.showToast('Uploading...','info'); const url = await window.uploadImage(e.target.files[0], 'reviews'); this.previousElementSibling.value=url; window.showToast('Uploaded','success');}catch(err){window.showToast('Upload failed','error');} }; f.click();">Upload</button>
+        </div>
       </div>
       <textarea class="form-textarea review-text" placeholder="Review Content" style="min-height:60px">${text}</textarea>
     </div>
