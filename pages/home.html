@@ -191,7 +191,7 @@ var initHero = async () => {
     const renderImages = (imgs) => {
       console.log('[Home] Rendering hero images:', imgs.length);
       carousel.innerHTML = imgs.map((item, i) => `
-        <a href="${item.link || '#'}" class="carousel-img" style="position:${i===0 ? 'relative' : 'absolute'};top:0;left:0;width:100%;display:block;opacity:${i===0 ? 1 : 0};transition:opacity 2s ease-in-out;z-index:2;">
+        <a href="${item.link || '#'}" class="carousel-img" style="position:${i===0 ? 'relative' : 'absolute'};top:0;left:0;width:100%;display:block;opacity:${i===0 ? 1 : 0};pointer-events:${i===0 ? 'auto' : 'none'};transition:opacity 2s ease-in-out;z-index:${i===0 ? 3 : 2};">
           <img src="${item.url}" alt="Ayurvedic wellness" referrerpolicy="no-referrer" loading="${i === 0 ? 'eager' : 'lazy'}" style="width:100%;height:auto;display:block;"/>
         </a>
       `).join('');
@@ -203,8 +203,12 @@ var initHero = async () => {
     if (imgElements.length > 1) {
       window.heroInterval = setInterval(() => {
         imgElements[currentIndex].style.opacity = '0';
+        imgElements[currentIndex].style.pointerEvents = 'none';
+        imgElements[currentIndex].style.zIndex = '2';
         currentIndex = (currentIndex + 1) % imgElements.length;
         imgElements[currentIndex].style.opacity = '1';
+        imgElements[currentIndex].style.pointerEvents = 'auto';
+        imgElements[currentIndex].style.zIndex = '3';
       }, 5000);
     }
   };
