@@ -782,6 +782,7 @@ function editProduct(id) {
   document.getElementById('pm-price').value = p.price;
   if(document.getElementById('pm-mrp')) document.getElementById('pm-mrp').value = p.mrp || '';
   document.getElementById('pm-cat').value = p.category;
+  if(document.getElementById('pm-collection')) document.getElementById('pm-collection').value = p.collection || '';
   document.getElementById('pm-stock').value = p.inStock ? 'true' : 'false';
   if(document.getElementById('pm-weight')) document.getElementById('pm-weight').value = p.weight || 0.5;
   if(document.getElementById('pm-length')) document.getElementById('pm-length').value = p.length || '';
@@ -864,6 +865,7 @@ async function saveProduct() {
     price:       Number(document.getElementById('pm-price').value),
     mrp:         Number(document.getElementById('pm-mrp')?.value) || null,
     category:    document.getElementById('pm-cat').value,
+    collection:  document.getElementById('pm-collection')?.value || '',
     weight:      Number(document.getElementById('pm-weight')?.value) || 0.5,
     length:      Number(document.getElementById('pm-length')?.value) || null,
     breadth:     Number(document.getElementById('pm-breadth')?.value) || null,

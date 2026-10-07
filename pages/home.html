@@ -325,7 +325,12 @@ var initHero = async () => {
   // Load featured products (first 3)
   Store.loadProducts().then(prods => {
     const homeGrid = document.getElementById('home-products-grid');
-    if (homeGrid) homeGrid.innerHTML = prods.slice(0, 3).map(p => renderProductCard(p)).join('');
+    if (homeGrid) {
+      let bestsellers = prods.filter(p => p.collection === 'bestseller');
+      if (bestsellers.length === 0) bestsellers = prods.slice(0, 3);
+      else bestsellers = bestsellers.slice(0, 3);
+      homeGrid.innerHTML = bestsellers.map(p => renderProductCard(p)).join('');
+    }
   }).catch(() => {});
 
   // Trigger cinematic hero animation
