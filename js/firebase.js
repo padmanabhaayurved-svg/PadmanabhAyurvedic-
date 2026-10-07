@@ -309,14 +309,41 @@ async function saveLead(data) {
 
 // ── Analytics Tracking ────────────────────────────────────────
 
+// Generate or retrieve persistent visitor ID
+function getVisitorId() {
+  let vid = localStorage.getItem('pa_vid');
+  if (!vid) {
+    vid = 'v_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    localStorage.setItem('pa_vid', vid);
+  }
+  return vid;
+}
+
+function getVisitorContext() {
+  const user = _auth && _auth.currentUser;
+  let ref = document.referrer || 'Direct';
+  if (ref.includes('google.com')) ref = 'Google Search';
+  else if (ref.includes('instagram.com')) ref = 'Instagram';
+  else if (ref.includes('facebook.com')) ref = 'Facebook';
+  else if (ref.includes('padmanabhayurved')) ref = 'Internal';
+  
+  return {
+    visitorId: getVisitorId(),
+    email: user ? user.email : null,
+    uid: user ? user.uid : null,
+    referrer: ref
+  };
+}
+
 async function trackPageView(path) {
   if (!firebaseReady) return;
   try {
     const device = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
     await _db.collection('analytics').add({
-      type:      'pageView',
+      type: 'pageView',
       path,
       device,
+      ...getVisitorContext(),
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch (e) { /* silent */ }
@@ -326,8 +353,9 @@ async function trackCartAdd(productId) {
   if (!firebaseReady) return;
   try {
     await _db.collection('analytics').add({
-      type:      'cartAdd',
+      type: 'cartAdd',
       productId,
+      ...getVisitorContext(),
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch (e) { /* silent */ }
@@ -375,15 +403,43 @@ async function getAnalyticsSummary(days = 30) {
     const mobile  = views.filter(v => v.device === 'mobile').length;
     const desktop = views.length - mobile;
 
+    // Group events by visitorId for live visitor tracking
+    const visitorsMap = {};
+    events.forEach(e => {
+      const vid = e.visitorId || 'Anonymous';
+      if (!visitorsMap[vid]) {
+        visitorsMap[vid] = {
+          visitorId: vid,
+          email: e.email || null,
+          device: e.device || 'Unknown',
+          referrer: e.referrer || 'Direct',
+          events: [],
+          lastActive: e.timestamp
+        };
+      }
+      visitorsMap[vid].events.push(e);
+      if (e.email) visitorsMap[vid].email = e.email;
+      if (e.timestamp && (!visitorsMap[vid].lastActive || e.timestamp > visitorsMap[vid].lastActive)) {
+        visitorsMap[vid].lastActive = e.timestamp;
+      }
+    });
+
+    const activeVisitors = Object.values(visitorsMap).sort((a,b) => {
+      const tA = a.lastActive ? a.lastActive.toMillis() : 0;
+      const tB = b.lastActive ? b.lastActive.toMillis() : 0;
+      return tB - tA;
+    });
+
     return {
       viewsToday:    viewsToday,
       lifetimeViews: allSnap.size,
       cartAdds:      carts.length,
-      activeSessions: 0,
+      activeSessions: activeVisitors.length,
       dailyViews:    dailyMap,
       mobile,
       desktop,
-      recentEvents:  events.slice(-50).reverse()
+      recentEvents:  events.slice(-50).reverse(),
+      activeVisitors: activeVisitors
     };
   } catch (e) {
     console.warn('[Firebase] getAnalyticsSummary error:', e);
@@ -731,7 +787,8 @@ function getMockAnalytics(days) {
   return {
     ..._mockAnalyticsCache,
     dailyViews: slicedViews,
-    recentEvents: []
+    recentEvents: [],
+    activeVisitors: []
   };
 }
 

@@ -224,24 +224,13 @@
         </div>
       </div>
 
-      <!-- ── LIVE ACTIVITY HISTORY ────────────────────────────── -->
+      <!-- ── LIVE VISITORS & ACTIVITY ────────────────────────────── -->
       <div class="admin-section-divider">
-        <span>Live Activity History</span>
+        <span>Live Visitors & Activity</span>
       </div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Action</th>
-              <th>Details</th>
-              <th>Device</th>
-            </tr>
-          </thead>
-          <tbody id="analytics-history-tbody">
-            <tr><td colspan="4" class="text-center text-muted">Loading live activity...</td></tr>
-          </tbody>
-        </table>
+      
+      <div id="analytics-visitors-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
+        <div class="text-muted">Loading live visitors...</div>
       </div>
 
       <!-- ── ORDER ANALYTICS ────────────────────────────── -->

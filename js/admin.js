@@ -595,41 +595,89 @@ async function renderAnalytics(type, customRange = null) {
   document.getElementById('m-today').textContent = data.viewsToday;
   document.getElementById('m-lifetime').textContent = data.lifetimeViews;
   document.getElementById('m-active').textContent = data.activeSessions;
-  document.getElementById('m-carts').textContent = data.cartAdds;
-
-  // Live Activity History
-  const tbody = document.getElementById('analytics-history-tbody');
-  if (tbody) {
-    if (!data.recentEvents || data.recentEvents.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No recent activity found.</td></tr>';
+  // Live Visitors & Activity
+  const visitorGrid = document.getElementById('analytics-visitors-grid');
+  if (visitorGrid) {
+    if (!data.activeVisitors || data.activeVisitors.length === 0) {
+      visitorGrid.innerHTML = '<div class="text-muted" style="grid-column:1/-1;">No recent visitors found.</div>';
     } else {
-      tbody.innerHTML = data.recentEvents.map(e => {
+      visitorGrid.innerHTML = data.activeVisitors.slice(0, 12).map(v => {
         let timeStr = 'Unknown';
-        if (e.timestamp && e.timestamp.toDate) {
-          timeStr = e.timestamp.toDate().toLocaleString('en-IN', { hour12: true, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        if (v.lastActive && v.lastActive.toDate) {
+          timeStr = v.lastActive.toDate().toLocaleString('en-IN', { hour12: true, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
         
-        let actionHtml = '';
-        if (e.type === 'pageView') {
-          actionHtml = '<span style="color:#3b82f6; display:flex; align-items:center; gap:6px;">👁️ Page View</span>';
-        } else if (e.type === 'cartAdd') {
-          actionHtml = '<span style="color:#eab308; display:flex; align-items:center; gap:6px;">🛒 Cart Add</span>';
-        } else {
-          actionHtml = `<span>${e.type}</span>`;
+        let headerIcon = v.email ? '👤' : '🕵️';
+        let identity = v.email ? v.email : `Guest (${v.visitorId.slice(0,6)})`;
+        let deviceIcon = v.device === 'mobile' ? '📱 Mobile' : '💻 Desktop';
+        
+        // Compute order history cross-reference
+        let orderCount = 0;
+        let totalSpent = 0;
+        try {
+          const orders = JSON.parse(localStorage.getItem('pa_orders') || '[]');
+          if (v.email) {
+            const userOrders = orders.filter(o => {
+              const oEmail = o.customerEmail || o.email || o.address?.email || '';
+              return oEmail.toLowerCase() === v.email.toLowerCase();
+            });
+            orderCount = userOrders.length;
+            totalSpent = userOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+          }
+        } catch(e) {}
+        
+        // Show last 3 events
+        let eventList = v.events.slice(-3).reverse().map(e => {
+          let action = e.type === 'pageView' ? '👁️' : (e.type === 'cartAdd' ? '🛒' : '⚡');
+          let detail = e.path || e.productId || '';
+          if (e.type === 'pageView' && detail === '/') detail = 'Home Page';
+          return `<div style="font-size:0.8rem; padding:4px 0; border-bottom:1px solid var(--border); display:flex; gap:6px;">
+            <span>${action}</span> <span style="color:var(--text-secondary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${detail}</span>
+          </div>`;
+        }).join('');
+        if (v.events.length > 3) {
+          eventList += `<div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding-top:4px;">+ ${v.events.length - 3} more actions</div>`;
         }
         
-        let details = e.path || e.productId || '-';
-        if (e.type === 'pageView' && details === '/') details = 'Home Page';
-        
-        let device = e.device === 'mobile' ? '📱 Mobile' : '💻 Desktop';
+        let ordersHtml = orderCount > 0 
+          ? `<div style="color:var(--gold); font-weight:600;">${orderCount} Orders (₹${Math.round(totalSpent)})</div>` 
+          : `<div style="color:var(--text-muted);">No orders yet</div>`;
         
         return `
-          <tr>
-            <td style="font-size:0.85rem; color:var(--text-muted);">${timeStr}</td>
-            <td style="font-weight:600">${actionHtml}</td>
-            <td style="color:var(--gold); font-size:0.85rem;">${details}</td>
-            <td style="font-size:0.85rem; color:var(--text-muted);">${device}</td>
-          </tr>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+              <div style="font-weight:600; font-size:0.95rem; display:flex; align-items:center; gap:6px;" title="${v.visitorId}">
+                ${headerIcon} <span style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${identity}</span>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">${timeStr}</div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+              <div style="font-size:0.8rem; background:var(--bg-inset); padding:6px; border-radius:4px;">
+                <div style="color:var(--text-muted); font-size:0.7rem; margin-bottom:2px;">Referrer</div>
+                <div style="font-weight:500; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${v.referrer}">${v.referrer}</div>
+              </div>
+              <div style="font-size:0.8rem; background:var(--bg-inset); padding:6px; border-radius:4px;">
+                <div style="color:var(--text-muted); font-size:0.7rem; margin-bottom:2px;">Device</div>
+                <div style="font-weight:500;">${deviceIcon}</div>
+              </div>
+              <div style="font-size:0.8rem; background:var(--bg-inset); padding:6px; border-radius:4px;">
+                <div style="color:var(--text-muted); font-size:0.7rem; margin-bottom:2px;">Total Visits</div>
+                <div style="font-weight:500;">${v.events.length} actions</div>
+              </div>
+              <div style="font-size:0.8rem; background:var(--bg-inset); padding:6px; border-radius:4px;">
+                <div style="color:var(--text-muted); font-size:0.7rem; margin-bottom:2px;">Order History</div>
+                ${ordersHtml}
+              </div>
+            </div>
+            
+            <div style="font-size:0.8rem; font-weight:600; margin-bottom:6px; color:var(--text-muted); display:flex; justify-content:space-between;">
+              <span>Recent Activity</span>
+            </div>
+            <div style="background:var(--bg-inset); padding:4px 8px; border-radius:4px;">
+              ${eventList}
+            </div>
+          </div>
         `;
       }).join('');
     }
