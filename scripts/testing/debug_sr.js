@@ -1,47 +1,59 @@
-// Quick debug — log the exact Shiprocket error response
-require('dotenv').config({ path: '.env.local' });
+const fetch = require('node-fetch');
+require('dotenv').config({ path: '.env.production.local' });
 
-const PROXY = 'https://www.padmanabhayurved.com/api/shiprocket';
-
-async function callProxy(endpoint, method, body, token) {
-  const res = await fetch(PROXY, {
+async function runTest() {
+  console.log('1. Authenticating...');
+  const authRes = await fetch('https://apiv2.shiprocket.in/v1/external/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint, method, body, token })
+    body: JSON.stringify({
+      email: process.env.SHIPROCKET_EMAIL,
+      password: process.env.SHIPROCKET_PASSWORD
+    })
   });
-  return res.json();
-}
+  const token = (await authRes.json()).token;
 
-async function run() {
-  // Auth
-  const authData = await callProxy('/auth/login', 'POST', {});
-  const token = authData.token;
-  console.log('Auth OK, token:', token ? token.slice(0, 20) + '...' : 'MISSING');
-
-  // Try to create order and log full response
-  const payload = {
-    order_id:               `TEST-${Date.now()}`,
-    order_date:             new Date().toISOString().slice(0, 10),
-    pickup_location:        'Rushikes',
-    billing_customer_name:  'Test',
-    billing_last_name:      'User',
-    billing_address:        '123 MG Road',
-    billing_city:           'Ahilyanagar',
-    billing_pincode:        '414001',
-    billing_state:          'Maharashtra',
-    billing_country:        'India',
-    billing_email:          'padmanabhaayurved@gmail.com',
-    billing_phone:          '9822334455',
-    shipping_is_billing:    true,
-    order_items: [{ name: 'Test Product', sku: 'SKU-001', units: 1, selling_price: 299 }],
-    payment_method: 'COD',
-    sub_total:      299,
-    length: 15, breadth: 10, height: 10, weight: 0.5,
+  console.log('\n2. Creating Test Order...');
+  const orderData = {
+    order_id: 'TEST-' + Date.now(),
+    order_date: new Date().toISOString().split('T')[0],
+    pickup_location: 'Primary',
+    billing_customer_name: 'Test',
+    billing_last_name: 'User',
+    billing_address: '123 Test Street',
+    billing_city: 'Pune',
+    billing_pincode: '411001',
+    billing_state: 'Maharashtra',
+    billing_country: 'India',
+    billing_email: 'padmanabhaayurved@gmail.com',
+    billing_phone: '9999999999',
+    shipping_is_billing: true,
+    order_items: [{ name: 'Test Product', sku: 'TEST-SKU', units: 1, selling_price: 100 }],
+    payment_method: 'Prepaid',
+    sub_total: 100,
+    length: 10, breadth: 10, height: 10, weight: 0.5
   };
 
-  const data = await callProxy('/orders/create/adhoc', 'POST', payload, token);
-  console.log('\nFull response from Shiprocket:');
-  console.log(JSON.stringify(data, null, 2));
+  const createRes = await fetch('https://apiv2.shiprocket.in/v1/external/orders/create/adhoc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(orderData)
+  });
+  const createData = await createRes.json();
+  console.log('Order Create Response:', JSON.stringify(createData, null, 2));
+  
+  if (createData.shipment_id) {
+    console.log('\n3. Assigning AWB...');
+    const awbRes = await fetch('https://apiv2.shiprocket.in/v1/external/courier/assign/awb', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        shipment_id: createData.shipment_id,
+        courier_company_id: 10
+      })
+    });
+    console.log('AWB Response:', JSON.stringify(await awbRes.json(), null, 2));
+  }
 }
 
-run().catch(console.error);
+runTest().catch(console.error);

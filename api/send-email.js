@@ -139,9 +139,21 @@ async function sendEmails(transporter, gmailUser, orderId, address, items, total
                   <td style="text-align: right">&#8377;${price.toLocaleString('en-IN')}</td>
                 </tr>`;
             }).join('')}
+            <tr>
+              <td colspan="2" style="text-align: right; padding-top:16px;">Subtotal:</td>
+              <td style="text-align: right; padding-top:16px;">&#8377;${(orderPayload.subtotal || total - (orderPayload.shipping || 0)).toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td colspan="2" style="text-align: right; color:#666;">Shipping:</td>
+              <td style="text-align: right; color:#666;">${(orderPayload.shipping || 0) === 0 ? 'FREE' : '&#8377;' + (orderPayload.shipping || 0).toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td colspan="2" style="text-align: right; color:#666; padding-bottom:8px; border-bottom:1px solid #eee;">GST (18% Inclusive):</td>
+              <td style="text-align: right; color:#666; padding-bottom:8px; border-bottom:1px solid #eee;">&#8377;${Math.round((orderPayload.subtotal || total - (orderPayload.shipping || 0)) - ((orderPayload.subtotal || total - (orderPayload.shipping || 0)) / 1.18)).toLocaleString('en-IN')}</td>
+            </tr>
             <tr class="total-row">
-              <td colspan="2" style="text-align: right">Total Amount:</td>
-              <td style="text-align: right" class="gold">&#8377;${(total || 0).toLocaleString('en-IN')}</td>
+              <td colspan="2" style="text-align: right; padding-top:12px;">Grand Total:</td>
+              <td style="text-align: right; padding-top:12px;" class="gold">&#8377;${(total || 0).toLocaleString('en-IN')}</td>
             </tr>
           </tbody>
         </table>

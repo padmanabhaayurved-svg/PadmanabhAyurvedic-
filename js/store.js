@@ -239,8 +239,8 @@ const Store = (() => {
     }));
     const subtotal = getCartTotal();
     const shipping = subtotal >= 499 ? 0 : 60;
-    const tax      = Math.round(subtotal * 0.18);
-    const total    = subtotal + shipping + tax;
+    const tax      = Math.round(subtotal - (subtotal / 1.18)); // 18% Inclusive GST
+    const total    = subtotal + shipping;
 
     const session = PhoneAuth.getUser();
     const uid = userId || session?.phone || 'guest';

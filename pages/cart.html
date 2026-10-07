@@ -977,6 +977,10 @@ function renderCartPage() {
               </span>
               <span class="co-calc-val" id="cart-shipping-val">${window.isShippingCalculated ? Store.formatPrice(window.currentShipping) : 'Enter Pincode'}</span>
             </div>
+            <div class="co-calc-row">
+              <span class="co-calc-label" style="color:var(--text-muted); font-size:0.85rem;">GST (18% Inclusive)</span>
+              <span class="co-calc-val" style="color:var(--text-muted); font-size:0.85rem;">${Store.formatPrice(Math.round(subtotal - (subtotal / 1.18)))}</span>
+            </div>
             <div class="co-calc-divider"></div>
             <div class="co-total-row">
               <span class="co-total-label">Total Payable</span>
@@ -1165,6 +1169,11 @@ window.submitCheckout = async function() {
   });
   if (hasError) {
     showToast('Please fill all required fields correctly', 'error');
+    return;
+  }
+
+  if (!window.isShippingCalculated) {
+    showToast('Please enter a valid PIN code to calculate shipping charges before checking out.', 'error');
     return;
   }
 

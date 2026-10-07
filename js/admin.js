@@ -1655,9 +1655,9 @@ function generateInvoice(orderId) {
 
   // CORRECT CALCULATIONS
   const itemsSubtotal = (o.items || []).reduce((s, item) => s + (item.qty * (item.price || 0)), 0);
-  const gst = Math.round(itemsSubtotal * 0.18); // 18% GST
+  const gst = Math.round(itemsSubtotal - (itemsSubtotal / 1.18)); // 18% Inclusive GST
   const shipping = Number(o.shipping) || 0;
-  const grandTotal = itemsSubtotal + gst + shipping;
+  const grandTotal = itemsSubtotal + shipping;
 
   const itemRows = (o.items || []).map(item => `
     <tr>
@@ -1724,7 +1724,7 @@ function generateInvoice(orderId) {
             <span>₹${itemsSubtotal.toLocaleString('en-IN')}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
-            <span style="color: #666;">GST (18%)</span>
+            <span style="color: #666;">GST (18% Inclusive)</span>
             <span>₹${gst.toLocaleString('en-IN')}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
