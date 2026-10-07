@@ -402,12 +402,14 @@
   right: 12px;
   transform: translateY(8px);
   opacity: 0;
+  pointer-events: none;
   transition: var(--transition);
 }
 
 .product-card:hover .product-card-quick-add {
   transform: translateY(0);
   opacity: 1;
+  pointer-events: auto;
 }
 
 .product-card-body {
@@ -2278,6 +2280,7 @@
   justify-content: center;
   cursor: pointer;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.2s;
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -2286,7 +2289,7 @@
   right: auto;
   left: -32px;
 }
-.chat-msg-wrap:hover .chat-msg-reply-btn { opacity: 1; }
+.chat-msg-wrap:hover .chat-msg-reply-btn { opacity: 1; pointer-events: auto; }
 
 /* ── Streaming text cursor ── */
 .chat-streaming::after {
