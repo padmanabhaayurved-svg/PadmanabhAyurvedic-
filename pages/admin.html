@@ -1198,8 +1198,25 @@
         <p class="admin-page-subtitle">Backup, restore, theming, and admin-controlled data reset.</p>
       </div>
 
-      <!-- UI Themes -->
+      <!-- Tracking & Analytics Config -->
       <div class="admin-section-divider" style="margin-top:0">
+        <span>📈 Tracking &amp; Analytics Config</span>
+      </div>
+      <div class="sys-panel-grid">
+        <div class="sys-panel">
+          <div class="sys-panel-icon">📊</div>
+          <h3 class="sys-panel-title">Meta Pixel Configuration</h3>
+          <p class="sys-panel-desc">Configure your Facebook / Meta Pixel ID for tracking conversions and page views.</p>
+          <div class="form-group" style="margin-top:16px">
+            <label class="form-label">Meta Pixel ID</label>
+            <input type="text" class="form-input" id="sys-meta-pixel-id" placeholder="e.g. 1119182327147454"/>
+          </div>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="saveMetaPixelConfig()" id="btn-save-pixel">💾 Save Pixel ID</button>
+        </div>
+      </div>
+
+      <!-- UI Themes -->
+      <div class="admin-section-divider">
         <span>🎨 UI Themes</span>
       </div>
       <div class="sys-themes-grid">

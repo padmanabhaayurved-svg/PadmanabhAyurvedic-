@@ -4105,3 +4105,47 @@ window.handleTeammatePhotoUpload = async function(event) {
     if (window.showToast) window.showToast('Upload failed: ' + err.message, 'error');
   }
 };
+
+// --- Meta Pixel Config ---
+window.saveMetaPixelConfig = async function() {
+  const btn = document.getElementById('btn-save-pixel');
+  const oldText = btn.textContent;
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  try {
+    const pixelId = document.getElementById('sys-meta-pixel-id').value.trim();
+    // Use the existing config saving mechanism or save directly to a config document
+    const docRef = db.collection('config').doc('meta_pixel');
+    await docRef.set({ pixelId: pixelId }, { merge: true });
+    showToast('Meta Pixel ID saved successfully!', 'success');
+  } catch (err) {
+    console.error('Failed to save Meta Pixel ID:', err);
+    showToast('Error saving Pixel ID', 'error');
+  } finally {
+    btn.textContent = oldText;
+    btn.disabled = false;
+  }
+};
+
+async function loadMetaPixelConfig() {
+  try {
+    const doc = await db.collection('config').doc('meta_pixel').get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.pixelId) {
+        document.getElementById('sys-meta-pixel-id').value = data.pixelId;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load Meta Pixel config', err);
+  }
+}
+
+// Call loadMetaPixelConfig when admin dashboard loads
+const _oldAdminLoad = window.initAdminDashboard || function(){};
+window.initAdminDashboard = async function() {
+  await _oldAdminLoad();
+  await loadMetaPixelConfig();
+};
+// If there is an event or mutation observer we can also just run it
+setTimeout(loadMetaPixelConfig, 2000); // Fallback
