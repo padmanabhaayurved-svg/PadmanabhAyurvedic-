@@ -187,9 +187,13 @@ function runInitializationSequence() {
   const splash = document.getElementById('lang-splash');
 
   // ── Returning visitor: lang already chosen — go straight to app ──
-  const langAlreadySet = localStorage.getItem('pa_lang');
-  if (langAlreadySet) {
-    // Both elements start as display:none in HTML — nothing to hide
+  const urlParams = new URLSearchParams(window.location.search);
+  const isFromAds = urlParams.has("fbclid") || urlParams.has("utm_source") || urlParams.has("gclid") || urlParams.has("campaign") || window.location.hash.includes("product") || window.location.hash.includes("catalog") || window.location.hash.includes("cart");
+  const langAlreadySet = localStorage.getItem("pa_lang");
+  if (langAlreadySet || isFromAds) {
+    if (!langAlreadySet) { localStorage.setItem("pa_lang", "en"); }
+    if (loader) { loader.style.display = "none"; try { loader.remove(); } catch(e){} }
+    if (splash) { splash.style.display = "none"; try { splash.remove(); } catch(e){} }
     startApp();
     return;
   }
