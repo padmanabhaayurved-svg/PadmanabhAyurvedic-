@@ -249,6 +249,34 @@ async function initAdminHub() {
   }
 }
 
+
+window.adminPinLogin = function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const pinInput = document.getElementById('admin-pin-input');
+  const pin = pinInput ? pinInput.value.trim() : '';
+  
+  // Valid master PINs (current default + backup)
+  const validPins = ['848587', 'padmanabh2026848587'];
+  
+  if (validPins.includes(pin)) {
+    sessionStorage.setItem('pa_admin_auth', 'true');
+    sessionStorage.setItem('pa_auth_provider', 'pin');
+    showToast('PIN login successful', 'success');
+
+    const loginView = document.getElementById('admin-login-view');
+    const shellView = document.getElementById('admin-shell');
+    if (loginView) loginView.style.display = 'none';
+    if (shellView) shellView.style.display = 'flex';
+    loadAdminData();
+  } else {
+    showToast('Incorrect Admin PIN', 'error');
+    if (pinInput) {
+      pinInput.value = '';
+      pinInput.focus();
+    }
+  }
+};
+
 window.adminGoogleLogin = async function() {
   try {
     const result = await window.signInWithGoogle();

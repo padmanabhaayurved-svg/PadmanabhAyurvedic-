@@ -11,7 +11,7 @@
       <p style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-bottom:8px;">Sign in with the authorized Google Account</p>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:16px">
       <button type="button" class="btn btn-outline btn-full" onclick="adminGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:12px;">
         <svg width="20" height="20" viewBox="0 0 48 48">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -21,6 +21,17 @@
         </svg>
         Sign in with Google
       </button>
+
+      <div style="display:flex;align-items:center;text-align:center;color:var(--text-muted);font-size:0.8rem;gap:10px;">
+        <div style="flex:1;height:1px;background:var(--border, #e2e8f0)"></div>
+        <span>OR</span>
+        <div style="flex:1;height:1px;background:var(--border, #e2e8f0)"></div>
+      </div>
+
+      <form id="admin-pin-form" onsubmit="adminPinLogin(event)" style="display:flex;flex-direction:column;gap:10px;">
+        <input type="password" id="admin-pin-input" class="form-input" placeholder="Enter Admin PIN" required autocomplete="current-password" inputmode="numeric" style="width:100%;text-align:center;letter-spacing:4px;font-size:1.1rem;padding:10px;" />
+        <button type="submit" class="btn btn-primary btn-full">Unlock with PIN</button>
+      </form>
     </div>
   </div>
 </div>
