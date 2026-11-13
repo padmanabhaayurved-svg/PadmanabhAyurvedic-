@@ -180,61 +180,20 @@ function fixBrokenImage(img) {
   img.parentElement?.classList?.remove('loading-skeleton');
 }
 
-// ── Cinematic Boot Sequence ───────────────────────────────────
+// ── Initialization Sequence ───────────────────────────────────
 function runInitializationSequence() {
   initImageFixer(); // Start watching early
-  const loader = document.getElementById('page-loader');
-  const splash = document.getElementById('lang-splash');
+  const loader = document.getElementById("page-loader");
+  const splash = document.getElementById("lang-splash");
+  if (loader) { try { loader.remove(); } catch(e){} }
+  if (splash) { try { splash.remove(); } catch(e){} }
 
-  // ── Returning visitor: lang already chosen — go straight to app ──
-  const urlParams = new URLSearchParams(window.location.search);
-  const isFromAds = urlParams.has("fbclid") || urlParams.has("utm_source") || urlParams.has("gclid") || urlParams.has("campaign") || window.location.hash.includes("product") || window.location.hash.includes("catalog") || window.location.hash.includes("cart");
   const langAlreadySet = localStorage.getItem("pa_lang");
-  if (langAlreadySet || isFromAds) {
-    if (!langAlreadySet) { localStorage.setItem("pa_lang", "en"); }
-    if (loader) { loader.style.display = "none"; try { loader.remove(); } catch(e){} }
-    if (splash) { splash.style.display = "none"; try { splash.remove(); } catch(e){} }
-    startApp();
-    return;
+  if (!langAlreadySet) {
+    localStorage.setItem("pa_lang", "en");
   }
 
-  // ── First-time visitor: reveal loader, then lang splash ──
-  const quoteEl = document.getElementById('loader-quote');
-  if (loader && quoteEl && splash) {
-    // Show the loader (it starts hidden in HTML)
-    loader.style.display = 'flex';
-
-    const quotes = [
-      "\"Health is a state of complete harmony of the body, mind and spirit.\"",
-      "\"When diet is wrong, medicine is of no use. When diet is correct, medicine is of no need.\"",
-      "\"The groundwork of all happiness is health.\"",
-      "\"To ensure good health: eat lightly, breathe deeply, live moderately, cultivate cheerfulness.\""
-    ];
-    quoteEl.textContent = quotes[Math.floor(Math.random() * quotes.length)];
-    setTimeout(() => { quoteEl.style.opacity = '1'; }, 500);
-
-    // After 3.5 s hide loader and show language picker
-    setTimeout(() => {
-      loader.style.display = 'none';
-      if (loader.parentNode) loader.remove();
-
-      splash.style.display = 'flex';
-
-      document.querySelectorAll('.splash-lang-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          splash.style.display = 'none';
-          if (splash.parentNode) splash.remove();
-          await setLang(btn.dataset.lang);
-          window.scrollTo({ top: 0, behavior: 'instant' });
-          startApp();
-        });
-      });
-    }, 3500);
-
-  } else {
-    // Elements missing — just start the app immediately
-    startApp();
-  }
+  startApp();
 }
 
 async function startApp() {
