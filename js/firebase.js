@@ -199,8 +199,88 @@ async function getHeroConfig() {
 
 /** Save hero config */
 async function saveHeroConfig(data) {
-  if (!firebaseReady) throw new Error('Firebase not ready');
-  await _db.collection('heroConfig').doc('main').set(data, { merge: true });
+  // 1. Clean & normalize data to ensure no undefined values
+  const cleanData = {
+    desktopBanner: Array.isArray(data.desktopBanner) ? data.desktopBanner.map(item => ({
+      url: String(item?.url || '').trim(),
+      link: String(item?.link || '').trim()
+    })).filter(b => b.url) : [],
+    mobileBanner: Array.isArray(data.mobileBanner) ? data.mobileBanner.map(item => ({
+      url: String(item?.url || '').trim(),
+      link: String(item?.link || '').trim()
+    })).filter(b => b.url) : [],
+    collections: Array.isArray(data.collections) ? data.collections.map(col => ({
+      title: String(col?.title || '').trim(),
+      image: String(col?.image || '').trim(),
+      category: String(col?.category || 'wellness').trim(),
+      link: String(col?.link || '').trim()
+    })).filter(c => c.title || c.image) : []
+  };
+
+  // Try direct Firestore SDK if available
+  if (firebaseReady && _db) {
+    try {
+      await _db.collection('heroConfig').doc('main').set(cleanData, { merge: true });
+      return;
+    } catch (sdkError) {
+      console.warn('[Firebase] SDK heroConfig save failed, trying REST API fallback:', sdkError);
+    }
+  }
+
+  // REST API Fallback to Firestore (ensures Admin can publish even if SDK is unauthenticated/offline)
+  const restPayload = {
+    fields: {
+      desktopBanner: {
+        arrayValue: {
+          values: cleanData.desktopBanner.map(b => ({
+            mapValue: {
+              fields: {
+                url: { stringValue: b.url },
+                link: { stringValue: b.link }
+              }
+            }
+          }))
+        }
+      },
+      mobileBanner: {
+        arrayValue: {
+          values: cleanData.mobileBanner.map(b => ({
+            mapValue: {
+              fields: {
+                url: { stringValue: b.url },
+                link: { stringValue: b.link }
+              }
+            }
+          }))
+        }
+      },
+      collections: {
+        arrayValue: {
+          values: cleanData.collections.map(c => ({
+            mapValue: {
+              fields: {
+                title: { stringValue: c.title },
+                image: { stringValue: c.image },
+                category: { stringValue: c.category },
+                link: { stringValue: c.link }
+              }
+            }
+          }))
+        }
+      }
+    }
+  };
+
+  const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/heroConfig/main`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(restPayload)
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Failed to save via REST API (${res.status}): ${errText}`);
+  }
 }
 
 /** Create order */

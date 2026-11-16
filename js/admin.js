@@ -1220,51 +1220,62 @@ function reindexCollectionItems() {
 
 async function saveHeroConfigAdmin() {
   const btn = document.getElementById('btn-save-hero');
-  btn.disabled = true;
-  btn.textContent = 'Publishing...';
-
-  const desktopItems = Array.from(document.querySelectorAll('.banner-item-desktop')).map(el => ({
-    url: convertGDriveUrl(el.querySelector('.banner-img-desktop').value.trim()),
-    link: el.querySelector('.banner-link-desktop').value.trim()
-  })).filter(item => item.url);
-
-  const mobileItems = Array.from(document.querySelectorAll('.banner-item-mobile')).map((el, index) => ({
-    url: convertGDriveUrl(el.querySelector('.banner-img-mobile').value.trim()),
-    link: desktopItems[index] ? desktopItems[index].link : ''
-  })).filter(item => item.url);
-
-  const data = {
-    desktopBanner: desktopItems,
-    mobileBanner: mobileItems,
-    collections: []
-  };
-
-  // Collect all collection items dynamically (no fixed count)
-  const grid = document.getElementById('collection-config-grid');
-  const count = grid ? grid.querySelectorAll('.collection-config-item').length : 0;
-  for (let i = 0; i < count; i++) {
-    const titleEl = document.getElementById(`cc-title-${i}`);
-    const imgEl   = document.getElementById(`cc-img-input-${i}`);
-    const catEl   = document.getElementById(`cc-cat-${i}`);
-    const linkEl  = document.getElementById(`cc-link-${i}`);
-    if (titleEl) {
-      data.collections.push({
-        title:    titleEl.value.trim(),
-        image:    convertGDriveUrl((imgEl?.value || '').trim()),
-        category: catEl?.value || 'wellness',
-        link:     (linkEl?.value || '').trim()
-      });
-    }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Publishing...';
   }
 
   try {
+    const desktopItems = Array.from(document.querySelectorAll('.banner-item-desktop')).map(el => ({
+      url: convertGDriveUrl((el.querySelector('.banner-img-desktop')?.value || '').trim()),
+      link: (el.querySelector('.banner-link-desktop')?.value || '').trim()
+    })).filter(item => item.url);
+
+    const mobileItems = Array.from(document.querySelectorAll('.banner-item-mobile')).map((el, index) => ({
+      url: convertGDriveUrl((el.querySelector('.banner-img-mobile')?.value || '').trim()),
+      link: desktopItems[index] ? desktopItems[index].link : ''
+    })).filter(item => item.url);
+
+    const data = {
+      desktopBanner: desktopItems,
+      mobileBanner: mobileItems,
+      collections: []
+    };
+
+    // Collect all collection items safely from DOM elements directly
+    const collectionItems = document.querySelectorAll('.collection-config-item');
+    collectionItems.forEach((item, idx) => {
+      const titleEl = item.querySelector('input[id^="cc-title-"]') || item.querySelector('input[placeholder*="Title"]');
+      const imgEl   = item.querySelector('input[id^="cc-img-input-"]') || item.querySelector('input[placeholder*="Link"]');
+      const catEl   = item.querySelector('select[id^="cc-cat-"]') || item.querySelector('select');
+      const linkEl  = item.querySelector('input[id^="cc-link-"]') || item.querySelector('input[type="url"]');
+
+      const title = (titleEl?.value || '').trim();
+      const image = convertGDriveUrl((imgEl?.value || '').trim());
+      const category = (catEl?.value || 'wellness').trim();
+      const link = (linkEl?.value || '').trim();
+
+      if (title || image) {
+        data.collections.push({
+          title,
+          image,
+          category,
+          link
+        });
+      }
+    });
+
+    console.log('[Admin] Publishing Hero Config:', data);
     await saveHeroConfig(data);
-    showToast('Hero config updated', 'success');
+    showToast('Hero config updated successfully!', 'success');
   } catch (e) {
-    showToast('Failed to save config', 'error');
+    console.error('[Admin] saveHeroConfig error:', e);
+    showToast('Failed to save config: ' + (e.message || 'Check connection'), 'error');
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Publish Changes';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Publish Changes';
+    }
   }
 }
 window.saveHeroConfigAdmin = saveHeroConfigAdmin;
