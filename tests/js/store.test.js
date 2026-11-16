@@ -163,8 +163,8 @@ describe('Store Core Functionality', () => {
     expect(payload.subtotal).toBe(500);
     // 500 >= 499, shipping should be 0 based on store logic (note: new checkout uses flat 70, but we test store logic)
     expect(payload.shipping).toBe(0); 
-    expect(payload.tax).toBe(Math.round(500 * 0.18));
-    expect(payload.total).toBe(500 + 0 + Math.round(500 * 0.18));
+    expect(payload.tax).toBe(Math.round(500 - (500 / 1.18))); // 18% Inclusive GST
+    expect(payload.total).toBe(500 + 0); // Inclusive tax means total is subtotal + shipping
     expect(payload.items.length).toBe(1);
     expect(payload.items[0].productId).toBe('p1');
   });

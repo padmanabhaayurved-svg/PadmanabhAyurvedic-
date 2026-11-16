@@ -191,8 +191,8 @@ var initHero = async () => {
     const renderImages = (imgs) => {
       console.log('[Home] Rendering hero images:', imgs.length);
       carousel.innerHTML = imgs.map((item, i) => `
-        <a href="${item.link || '#'}" class="carousel-img" style="position:${i===0 ? 'relative' : 'absolute'};top:0;left:0;width:100%;display:block;opacity:${i===0 ? 1 : 0};pointer-events:${i===0 ? 'auto' : 'none'};transition:opacity 2s ease-in-out;z-index:${i===0 ? 3 : 2};">
-          <img src="${item.url}" alt="Ayurvedic wellness" referrerpolicy="no-referrer" loading="${i === 0 ? 'eager' : 'lazy'}" style="width:100%;height:auto;display:block;"/>
+        <a href="${item.link || '#'}" class="carousel-img" style="position:absolute;top:0;left:0;width:100%;height:100%;display:block;opacity:${i===0 ? 1 : 0};pointer-events:${i===0 ? 'auto' : 'none'};transition:opacity 2s ease-in-out;z-index:${i===0 ? 3 : 2};">
+          <img src="${item.url}" alt="Ayurvedic wellness" referrerpolicy="no-referrer" loading="${i === 0 ? 'eager' : 'lazy'}" width="${isMobile ? 800 : 1600}" height="${isMobile ? 1000 : 700}" fetchpriority="${i === 0 ? 'high' : 'auto'}" style="width:100%;height:100%;object-fit:cover;display:block;"/>
         </a>
       `).join('');
       
@@ -256,7 +256,7 @@ var initHero = async () => {
         const safeTitle = (c.title || '').replace(/"/g, '&quot;');
         return `
           <div class="collection-card animate-in loading-skeleton" ${clickHandler} style="cursor:pointer;">
-            <img src="${Store.convertDriveLink(c.image)}" alt="${safeTitle}" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton'); this.onerror=null; this.src=Store.FALLBACK_IMG"/>
+            <img src="${Store.convertDriveLink(c.image)}" alt="${safeTitle}" width="300" height="400" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.parentElement.classList.remove('loading-skeleton'); this.onerror=null; this.src=Store.FALLBACK_IMG"/>
             <div class="collection-card-overlay">
               <div class="collection-card-title">${c.title}</div>
               <div class="collection-card-label">${labels[lang] || labels.en} →</div>
