@@ -299,6 +299,16 @@ async function navigate(hash, force = false) {
 
   if (route === _currentRoute && !force) return;
 
+  // If initial load on home and markup is already pre-rendered in index.html, skip wipe
+  const isInitialHomeLoad = (!hash || hash === 'home' || hash === '#home') && !_currentRoute && document.getElementById('hero-section');
+  if (isInitialHomeLoad && !force) {
+    _currentRoute = 'home';
+    document.body.setAttribute('data-route', 'home');
+    updateNavActive('home');
+    trackPageView('#home').catch(() => {});
+    return;
+  }
+
   // If someone tries to navigate to dashboard via JS
   if (route === 'dashboard') {
     openUserDrawer();
