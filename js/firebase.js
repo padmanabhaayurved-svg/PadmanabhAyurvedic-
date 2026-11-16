@@ -68,7 +68,7 @@ async function getProducts() {
     const snap = await _db.collection('products')
       .where('deleted', '==', false)
       .get();
-    const products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const products = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.id !== 'pa-ortho-secure');
     if (products.length === 0) {
       return getSampleProducts();
     }
@@ -551,24 +551,6 @@ async function uploadImage(file, path) {
 
 function getSampleProducts() {
   return [
-  {
-    "id": "pa-ortho-secure",
-    "images": [
-      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=80",
-      "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&q=80",
-      "https://res.cloudinary.com/ybzj1wn7/image/upload/v1791388118/products/aa4iqbflw6z046theaha.png"
-    ],
-    "usage": "Take 2 capsules twice daily with warm water or milk, preferably after meals. Continue for 90 days for best results.",
-    "mrp": 1199,
-    "description": "Padmanabh's flagship orthopedic supplement for joint inflammation, cartilage repair, and long-term bone health. Formulated by Vaidya Padmanabh Shinde with over 20 years of clinical expertise.",
-    "inStock": true,
-    "name": "Ortho Secure Capsule",
-    "price": 849,
-    "nameHi": "ऑर्थो सिक्योर कैप्सूल",
-    "category": "wellness",
-    "ingredients": "Shallaki (Boswellia) 300mg, Ashwagandha 200mg, Guggul 150mg, Haridra (Turmeric) 100mg, Piperine 5mg",
-    "nameMr": "ऑर्थो सिक्युअर कॅप्सूल"
-  },
   {
     "id": "AJPmfzNdKV7Sj9yt3Odi",
     "nameMr": "अर्शस-क्योर कैप्सूल",
