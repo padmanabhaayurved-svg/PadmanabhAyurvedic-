@@ -51,8 +51,22 @@
   }
   </script>
 
-  <!-- Meta Pixel Code -->
-  <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js'); fbq('init', '1119182327147454'); fbq('track', 'PageView');</script><noscript> <img height="1" width="1" src="https://www.facebook.com/tr?id=1119182327147454&ev=PageView&noscript=1"/></noscript>
+  <!-- Meta Pixel Code (Deferred) -->
+  <script>
+    window.addEventListener("load", () => {
+      const initPixel = () => {
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");
+        fbq("init", "1119182327147454");
+        fbq("track", "PageView");
+      };
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(initPixel, { timeout: 2500 });
+      } else {
+        setTimeout(initPixel, 1500);
+      }
+    });
+  </script>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1119182327147454&ev=PageView&noscript=1"/></noscript>
   <!-- End Meta Pixel Code -->
   </head>
 <body>
@@ -60,7 +74,10 @@
 <!-- ══ NAVBAR ════════════════════════════════════════════════ -->
 <nav id="navbar" aria-label="Main navigation">
   <div class="nav-brand" data-nav="home" id="nav-brand" style="display: flex; align-items: center; padding: 4px 0;">
-    <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" width="44" height="44" style="height: 44px; width: auto; flex-shrink: 0; object-fit: contain;" />
+    <picture>
+      <source srcset="assets/logo.webp" type="image/webp"/>
+      <img src="assets/logo.png" alt="Padmanabh Ayurvedics Logo" width="44" height="44" style="height: 44px; width: auto; flex-shrink: 0; object-fit: contain;" />
+    </picture>
   </div>
 
   <ul class="nav-links" role="list">
@@ -281,12 +298,12 @@ var initHero = async () => {
   if (!initialImages.length) {
     initialImages = isMobile 
       ? [
-          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&q=80', link: '' },
-          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1000&q=80', link: '' }
+          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=75', link: '' },
+          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=800&auto=format&fit=crop&q=75', link: '' }
         ]
       : [
-          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1600&q=80', link: '' },
-          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1600&q=80', link: '' }
+          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1400&auto=format&fit=crop&q=75', link: '' },
+          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1400&auto=format&fit=crop&q=75', link: '' }
         ];
   }
 
@@ -729,7 +746,7 @@ document.addEventListener('page:home', initHero);
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<!-- firebase-storage removed: uploads use Cloudinary directly -->
 
 <script defer src="js/firebase.js?v=30"></script>
 <script defer src="js/phone-auth.js?v=30"></script>
