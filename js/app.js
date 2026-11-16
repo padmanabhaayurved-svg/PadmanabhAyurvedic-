@@ -306,6 +306,9 @@ async function navigate(hash, force = false) {
     document.body.setAttribute('data-route', 'home');
     updateNavActive('home');
     trackPageView('#home').catch(() => {});
+    applyStrings();
+    initScrollAnimations();
+    setTimeout(() => document.dispatchEvent(new Event('page:home')), 50);
     return;
   }
 

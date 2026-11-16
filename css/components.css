@@ -162,15 +162,16 @@
 }
 
 .nav-link {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: #f5f0e8 !important; /* High-contrast off-white over hero images */
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
   padding: 8px 14px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: var(--transition);
-  font-weight: 500;
+  font-weight: 600;
   position: relative;
   background: transparent;
   border: none;

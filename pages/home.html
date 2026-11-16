@@ -147,10 +147,42 @@
 </section>
 
 <script>
+window.renderProductCard = window.renderProductCard || function(p) {
+  const price = p.price || 0;
+  const mrp = p.mrp || 0;
+  const savings = (mrp > price) ? Math.round(((mrp - price) / mrp) * 100) : 0;
+  const lang = localStorage.getItem('pa_lang') || 'en';
+  const name = lang === 'hi' ? (p.nameHi || p.name) : lang === 'mr' ? (p.nameMr || p.name) : p.name;
+  const imgUrl = (typeof Store !== 'undefined' && Store.convertDriveLink) 
+    ? Store.convertDriveLink(p.images?.[0]) 
+    : (p.images?.[0] || 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=600&auto=format&fit=crop&q=80');
+  const formatP = (typeof Store !== 'undefined' && Store.formatPrice) ? Store.formatPrice : ((amt) => '₹' + Math.round(amt).toLocaleString('en-IN'));
+
+  return `
+    <div class="product-card" onclick="navigate('product/${p.id}')" style="opacity:1;transform:none">
+      <div class="product-card-image loading-skeleton">
+        <img src="${imgUrl}" alt="${p.name}" width="300" height="300" referrerpolicy="no-referrer" loading="lazy" onload="this.parentElement.classList.remove('loading-skeleton')" onerror="this.dataset.fixing!='done'&&(this.dataset.fixing='done',this.parentElement.classList.remove('loading-skeleton'),this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0MDAnIGhlaWdodD0nNDAwJyB2aWV3Qm94PScwIDAgNDAwIDQwMCc+PHJlY3Qgd2lkdGg9JzQwMCcgaGVpZ2h0PSc0MDAnIGZpbGw9JyMxYTFhMWEnLz48ZyBmaWxsPScjYzlhODRjJyBvcGFjaXR5PScwLjUnPjxjaXJjbGUgY3g9JzIwMCcgY3k9JzE2MCcgcj0nNTAnLz48cGF0aCBkPSdNMTMwIDI3MCBRMjAwIDIyMCAyNzAgMjcwIFEyMDAgMzEwIDEzMCAyNzAnLz48L2c+PHRleHQgeD0nMjAwJyB5PSczMzAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNjOWE4NGMnIGZvbnQtc2l6ZT0nMTQnIGZvbnQtZmFtaWx5PSdzZXJpZic+UGFkbWFuYWJoIEF5dXJ2ZWRpY3M8L3RleHQ+PC9zdmc+')"/>
+        ${savings > 0 ? `<span class="product-card-badge badge-sale">${savings}% OFF</span>` : '<span class="product-card-badge badge-new">New</span>'}
+        <div class="product-card-quick-add">
+          <button class="btn btn-primary btn-sm btn-full" onclick="event.stopPropagation();addToCartFromCard('${p.id}')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="product-card-body">
+        <span class="product-card-category">${p.category || 'ayurvedic'}</span>
+        <div class="product-card-name">${name}</div>
+        <div class="product-card-price">
+          <span class="price-current">${formatP(price)}</span>
+          ${mrp ? `<span class="price-mrp">${formatP(mrp)}</span>` : ''}
+          ${savings > 0 ? `<span class="price-save">Save ${savings}%</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+};
+
 var initHero = async () => {
   console.log('%c[Home] 🚀 Initializing Hero Banner...', 'color: #ffcc00; font-weight: bold; font-size: 1.2rem;');
   const safeConvertDrive = (url) => (typeof Store !== 'undefined' && Store.convertDriveLink ? Store.convertDriveLink(url) : (url || ''));
-  const safeFallbackImg = (typeof Store !== 'undefined' && Store.FALLBACK_IMG) ? Store.FALLBACK_IMG : 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=75';
+  const safeFallbackImg = (typeof Store !== 'undefined' && Store.FALLBACK_IMG) ? Store.FALLBACK_IMG : 'https://images.unsplash.com/photo-1543362906-acfc16c67564?w=600&auto=format&fit=crop&q=80';
   const carousel = document.getElementById('hero-carousel');
   if (!carousel) return;
 
@@ -181,12 +213,12 @@ var initHero = async () => {
   if (!initialImages.length) {
     initialImages = isMobile 
       ? [
-          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=75', link: '' },
-          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=800&auto=format&fit=crop&q=75', link: '' }
+          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=800&auto=format&fit=crop&q=80', link: '' },
+          { url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&auto=format&fit=crop&q=75', link: '' }
         ]
       : [
-          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1400&auto=format&fit=crop&q=75', link: '' },
-          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1400&auto=format&fit=crop&q=75', link: '' }
+          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1600&auto=format&fit=crop&q=80', link: '' },
+          { url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1600&auto=format&fit=crop&q=75', link: '' }
         ];
   }
 
