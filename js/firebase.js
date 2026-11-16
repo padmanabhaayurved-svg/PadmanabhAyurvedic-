@@ -636,7 +636,7 @@ function getSampleProducts() {
       mrp: 799,
       category: 'wellness',
       images: [
-        'https://images.unsplash.com/photo-1512069772995-8f6dfc794017?w=600&auto=format&fit=crop&q=75',
+        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1600&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80'
       ],
       description: 'Premium KSM-66 Ashwagandha root extract for stress relief, energy, testosterone support, and overall vitality. Recommended by Vaidya Padmanabh for patients with chronic fatigue.',
@@ -746,8 +746,8 @@ function getSampleProducts() {
 
 function getDefaultHeroConfig() {
   return {
-    desktopBanner: 'https://images.unsplash.com/photo-1512069772995-8f6dfc794017?w=1600&auto=format&fit=crop&q=80',
-    mobileBanner:  'https://images.unsplash.com/photo-1512069772995-8f6dfc794017?w=800&auto=format&fit=crop&q=80',
+    desktopBanner: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1600&auto=format&fit=crop&q=80',
+    mobileBanner: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80',
     collections: [
       { title: 'Orthopedic Care', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=80', category: 'orthopedic' },
       { title: 'Digestive Health', image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=600&q=80', category: 'digestive' },

@@ -32,11 +32,11 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600&family=Mukta:wght@300;400;500;600;700&display=swap"/>
 
   <!-- CSS -->
-  <link rel="preload" href="css/base.css?v=13" as="style">
-  <link rel="stylesheet" href="css/base.css?v=13"/>
-  <link rel="stylesheet" href="css/components.css?v=13"/>
-  <link rel="stylesheet" href="css/pages.css?v=13"/>
-  <link rel="stylesheet" href="css/admin.css?v=13" media="print" onload="this.media='all'"/>
+  <link rel="preload" href="css/base.css?v=14" as="style">
+  <link rel="stylesheet" href="css/base.css?v=14"/>
+  <link rel="stylesheet" href="css/components.css?v=14"/>
+  <link rel="stylesheet" href="css/pages.css?v=14"/>
+  <link rel="stylesheet" href="css/admin.css?v=14" media="print" onload="this.media='all'"/>
 
   <!-- Schema.org -->
   <script type="application/ld+json">
@@ -274,7 +274,7 @@ window.renderProductCard = window.renderProductCard || function(p) {
   const name = lang === 'hi' ? (p.nameHi || p.name) : lang === 'mr' ? (p.nameMr || p.name) : p.name;
   const imgUrl = (typeof Store !== 'undefined' && Store.convertDriveLink) 
     ? Store.convertDriveLink(p.images?.[0]) 
-    : (p.images?.[0] || 'https://images.unsplash.com/photo-1512069772995-8f6dfc794017?w=600&auto=format&fit=crop&q=80');
+    : (p.images?.[0] || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1600&auto=format&fit=crop&q=80');
   const formatP = (typeof Store !== 'undefined' && Store.formatPrice) ? Store.formatPrice : ((amt) => '₹' + Math.round(amt).toLocaleString('en-IN'));
 
   return `
@@ -332,11 +332,11 @@ var initHero = async () => {
   if (!initialImages.length) {
     initialImages = isMobile 
       ? [
-          { url: 'https://images.unsplash.com/photo-1512069772995-8f6dfc794017?w=800&auto=format&fit=crop&q=80', link: '' },
+          { url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1600&auto=format&fit=crop&q=80', link: '' },
           { url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&auto=format&fit=crop&q=75', link: '' }
         ]
       : [
-          { url: 'https://images.unsplash.com/photo-1512069772995-8f6dfc794017?w=1600&auto=format&fit=crop&q=80', link: '' },
+          { url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1600&auto=format&fit=crop&q=80', link: '' },
           { url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1600&auto=format&fit=crop&q=75', link: '' }
         ];
   }
@@ -797,12 +797,12 @@ document.addEventListener('page:home', initHero);
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <!-- firebase-storage removed: uploads use Cloudinary directly -->
 
-<script defer src="js/firebase.js?v=33"></script>
-<script defer src="js/phone-auth.js?v=33"></script>
-<script defer src="js/store.js?v=33"></script>
+<script defer src="js/firebase.js?v=34"></script>
+<script defer src="js/phone-auth.js?v=34"></script>
+<script defer src="js/store.js?v=34"></script>
 <script defer src="js/razorpay.js?v=30"></script>
 <script defer src="js/shiprocket.js?v=30"></script>
-<script defer src="js/app.js?v=33"></script>
+<script defer src="js/app.js?v=34"></script>
 <script defer src="js/chat-upgrade.js?v=2"></script>
 <script defer src="js/atc-panel.js?v=2"></script>
 
