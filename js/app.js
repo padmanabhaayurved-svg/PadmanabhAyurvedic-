@@ -2373,7 +2373,9 @@ function loadFooterData() {
         if (footer.phone) {
           const pl = document.getElementById('ui-footer-phone-link');
           const pt = document.getElementById('ui-footer-phone-text');
-          if (pl) pl.href = 'tel:' + footer.phone.replace(/[^+\d]/g, '');
+          // If multiple numbers exist (e.g. comma/slash separated or concatenated), extract first valid phone for href
+          const primaryDigits = footer.phone.split(/[/,\s]+/)[0].replace(/[^+\d]/g, '');
+          if (pl) pl.href = 'tel:' + primaryDigits;
           if (pt) pt.textContent = footer.phone;
         }
         if (footer.email) {
@@ -2395,7 +2397,16 @@ function loadFooterData() {
         }
         if (footer.whatsapp) {
           const wl = document.getElementById('ui-footer-wa');
-          if (wl) { wl.href = footer.whatsapp; wl.style.display = 'inline-flex'; }
+          if (wl) {
+            let waUrl = footer.whatsapp.trim();
+            if (!waUrl.startsWith('http://') && !waUrl.startsWith('https://')) {
+              waUrl = 'https://' + waUrl.replace(/^\/+/, '');
+            }
+            wl.href = waUrl;
+            wl.target = '_blank';
+            wl.rel = 'noopener noreferrer';
+            wl.style.display = 'inline-flex';
+          }
         } else {
           const wl = document.getElementById('ui-footer-wa');
           if (wl) wl.style.display = 'none';

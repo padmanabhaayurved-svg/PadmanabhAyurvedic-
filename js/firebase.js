@@ -579,7 +579,7 @@ function getSampleProducts() {
       mrp: 999,
       category: 'digestive',
       images: [
-        'https://images.unsplash.com/photo-1550572017-edd951b55104?w=600&q=80',
+        'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=75',
         'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=600&q=80'
       ],
       description: 'A targeted Ayurvedic formulation for the natural treatment of piles (Arsha/Hemorrhoids). Reduces bleeding, itching, and inflammation without surgery.',
@@ -598,8 +598,8 @@ function getSampleProducts() {
       mrp: 499,
       category: 'digestive',
       images: [
-        'https://drive.google.com/file/d/1-JKNg6MKfAsAvWHHCh1Kd_q-xZcIU_Sc/view?usp=sharing',
-        'https://drive.google.com/file/d/1-JKNg6MKfAsAvWHHCh1Kd_q-xZcIU_Sc/view?usp=sharing'
+        'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=75',
+        'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=75'
       ],
       description: 'A popular digestive powder used for managing gas, acidity, bloating, and maintaining oral hygiene. Fast-acting relief with a refreshing herbal taste.',
       usage: 'Mix ½ teaspoon in warm water and drink after meals. Can also be used as a mouth freshener after meals.',
@@ -674,7 +674,7 @@ function getSampleProducts() {
       mrp: 579,
       category: 'immunity',
       images: [
-        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
+        'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=75',
         'https://images.unsplash.com/photo-1543362906-acfc16c67564?w=600&q=80'
       ],
       description: 'Natural Giloy (Guduchi) extract tablets to boost immunity, reduce seasonal allergies, manage fever, and fight chronic infections. Trusted by thousands of Ahilyanagar families.',
@@ -752,7 +752,7 @@ function getDefaultHeroConfig() {
       { title: 'Orthopedic Care', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=80', category: 'orthopedic' },
       { title: 'Digestive Health', image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=600&q=80', category: 'digestive' },
       { title: 'Wellness',        image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80', category: 'wellness' },
-      { title: 'Immunity',        image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80', category: 'immunity' }
+      { title: 'Immunity',        image: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=75', category: 'immunity' }
     ]
   };
 }
