@@ -179,12 +179,13 @@ var initHero = async () => {
   if (!initialImages.length) {
     initialImages = isMobile 
       ? [
-          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=75', link: '' },
-          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=800&auto=format&fit=crop&q=75', link: '' }
+          { url: 'https://res.cloudinary.com/ybzj1wn7/image/upload/v1791388131/products/fu9kdhueyu7a1ijhqw8c.png', link: '#product/AJPmfzNdKV7Sj9yt3Odi' },
+          { url: 'https://res.cloudinary.com/ybzj1wn7/image/upload/v1791388135/products/kei7z4jeuqp84tlhqfbz.png', link: '#product/29ywAvr0BRxF3Q4WWkTZ' }
         ]
       : [
-          { url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1400&auto=format&fit=crop&q=75', link: '' },
-          { url: 'https://images.unsplash.com/photo-1608283088555-8f6dfc794017?w=1400&auto=format&fit=crop&q=75', link: '' }
+          { url: 'https://res.cloudinary.com/ybzj1wn7/image/upload/v1791388122/products/vrukox6az8it8lm7vwce.png', link: '#product/AJPmfzNdKV7Sj9yt3Odi' },
+          { url: 'https://res.cloudinary.com/ybzj1wn7/image/upload/v1791388125/products/qg27g7ea1t56aq9rkg90.png', link: '#product/UYouEPU3gncoClAXtSSO' },
+          { url: 'https://res.cloudinary.com/ybzj1wn7/image/upload/v1791388128/products/qgtbe0pdrmbtdh3echwx.png', link: '#product/29ywAvr0BRxF3Q4WWkTZ' }
         ];
   }
 
@@ -346,14 +347,17 @@ var initHero = async () => {
   }
 
   // Load featured products (first 3)
-  Store.loadProducts().then(prods => {
+  const renderFeatured = (prods) => {
     const homeGrid = document.getElementById('home-products-grid');
-    if (homeGrid) {
-      let bestsellers = prods.filter(p => p.collection === 'bestseller');
-      if (bestsellers.length === 0) bestsellers = prods.slice(0, 3);
-      else bestsellers = bestsellers.slice(0, 3);
-      homeGrid.innerHTML = bestsellers.map(p => renderProductCard(p)).join('');
-    }
+    if (!homeGrid || !prods || prods.length === 0) return;
+    let bestsellers = prods.filter(p => p.collection === 'bestseller');
+    if (bestsellers.length === 0) bestsellers = prods.slice(0, 3);
+    else bestsellers = bestsellers.slice(0, 3);
+    homeGrid.innerHTML = bestsellers.map(p => renderProductCard(p)).join('');
+  };
+
+  Store.loadProducts().then(prods => {
+    renderFeatured(prods);
   }).catch(() => {});
 
   // Trigger cinematic hero animation
