@@ -74,7 +74,8 @@ html {
 }
 
 body {
-  background: var(--bg-primary);
+  position: relative;
+  background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-weight: 400;
@@ -83,6 +84,42 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ambient Moving White Silk Mesh Gradient */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.15) 30%, transparent 60%),
+    radial-gradient(circle at 82% 28%, rgba(248, 250, 255, 0.38) 0%, rgba(255, 255, 255, 0.12) 35%, transparent 65%),
+    radial-gradient(circle at 45% 72%, rgba(255, 255, 255, 0.45) 0%, rgba(245, 248, 250, 0.16) 40%, transparent 70%),
+    radial-gradient(circle at 75% 82%, rgba(235, 248, 240, 0.30) 0%, transparent 55%),
+    linear-gradient(135deg, #2b2e34 0%, #17181c 45%, #23272d 100%);
+  background-size: 200% 200%;
+  animation: ambientWhiteGradient 20s ease-in-out infinite alternate;
+  filter: blur(30px);
+  will-change: transform, background-position;
+}
+
+@keyframes ambientWhiteGradient {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    background-position: 0% 0%;
+  }
+  50% {
+    transform: translate(3%, 4%) scale(1.05) rotate(1.5deg);
+    background-position: 100% 50%;
+  }
+  100% {
+    transform: translate(-3%, -2%) scale(1.02) rotate(-1deg);
+    background-position: 50% 100%;
+  }
 }
 
 body.lang-hi, body.lang-mr {
