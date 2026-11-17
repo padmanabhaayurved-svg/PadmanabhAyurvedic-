@@ -120,11 +120,11 @@
   align-items: center;
   padding: 0 32px;
   transition: var(--transition-slow);
-  background: linear-gradient(180deg, rgba(10, 10, 10, 0.88) 0%, rgba(10, 10, 10, 0.45) 75%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 75%, transparent 100%) 75%, transparent 100%);
 }
 
 #navbar.scrolled {
-  background: rgba(14, 14, 14, 0.96) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -165,17 +165,13 @@
   font-size: 0.82rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #f5f0e8 !important; /* High-contrast off-white over hero images */
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+  color: var(--text-primary) !important;
+  text-shadow: none;
   padding: 8px 14px;
   border-radius: var(--radius-sm);
-  cursor: pointer;
   transition: var(--transition);
-  font-weight: 600;
   position: relative;
-  background: transparent;
-  border: none;
-  outline: none;
+  font-weight: 500;
 }
 
 .nav-link::after {
@@ -343,7 +339,7 @@
 /* ── Product Card ───────────────────────────────────────────── */
 .product-card {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: var(--radius-xl);
   overflow: hidden;
   cursor: pointer;
@@ -351,14 +347,14 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   transform: translateY(0);
 }
 
 .product-card:hover {
   border-color: rgba(255, 255, 255, 0.12);
   transform: translateY(-6px);
-  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(100, 164, 53, 0.1);
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.1), 0 0 20px rgba(76, 133, 36, 0.12);
 }
 
 .product-card-image {
@@ -692,13 +688,13 @@
 
 /* ── Card ───────────────────────────────────────────────────── */
 .card {
-  background: rgba(25, 25, 25, 0.85);
+  background: var(--bg-card);
   
 
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.07);
   border-radius: var(--radius-xl);
   padding: 32px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease;
 }
@@ -706,7 +702,7 @@
 .card:hover {
   transform: translateY(-6px);
   box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(100, 164, 53, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--border-gold);
 }
 
 /* ── Image Upload ───────────────────────────────────────────── */
@@ -1358,7 +1354,7 @@
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.4);
   
   z-index: 1999;
   opacity: 0;
@@ -1674,7 +1670,7 @@
 
 /* ── PREMIUM FOOTER ───────────────────────────────────────────── */
 #site-footer {
-  background: linear-gradient(180deg, var(--bg-surface) 0%, #0d0d0d 100%);
+  background: linear-gradient(180deg, var(--bg-surface) 0%, #edf2eb 100%);
   border-top: 1px solid var(--border);
   padding: 0 0 24px;
   margin-top: 80px;
