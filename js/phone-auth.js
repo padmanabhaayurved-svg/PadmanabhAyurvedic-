@@ -36,42 +36,65 @@ const PhoneAuth = (() => {
     return !!(s && (s.phone || s.email || s.uid));
   }
 
-  async function register(phone, name, password) {
-    const email = phone + '@padmanabh.site';
+  async function register(phone, name, password, userEmail = '') {
+    const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+    const authEmail = (userEmail && userEmail.includes('@')) ? userEmail.trim().toLowerCase() : (cleanPhone + '@padmanabh.site');
     const passwordHash = await hashPassword(password);
     let userCred;
     
     try {
-      userCred = await signUp(email, password);
+      userCred = await signUp(authEmail, password);
     } catch (e) {
       if (e.code === 'auth/email-already-in-use') {
-        throw new Error('This phone number is already registered. Please login instead.');
+        throw new Error('This account or email is already registered. Please login instead.');
       }
       console.warn("Firebase Auth Error, falling back to local:", e);
       const localAuth = JSON.parse(localStorage.getItem('pa_local_auth') || '{}');
-      if (localAuth[phone]) {
-        throw new Error('This phone number is already registered. Please login instead.');
+      if (localAuth[cleanPhone] || (userEmail && localAuth[userEmail])) {
+        throw new Error('This phone or email is already registered. Please login instead.');
       }
       const uid = 'local_' + Date.now();
-      localAuth[phone] = { password, uid };
+      localAuth[cleanPhone] = { password, uid, email: userEmail || authEmail };
+      if (userEmail) localAuth[userEmail] = { password, uid, phone: cleanPhone };
       localStorage.setItem('pa_local_auth', JSON.stringify(localAuth));
       userCred = { user: { uid } };
     }
 
     const uid = userCred.user.uid;
-    const userData = { phone, name, uid, registeredAt: new Date().toISOString(), orderIds: [], passwordHash };
-    await createOrUpdateUser(phone, userData);
+    const userData = { 
+      phone: cleanPhone, 
+      name, 
+      email: userEmail || authEmail,
+      uid, 
+      registeredAt: new Date().toISOString(), 
+      orderIds: [], 
+      passwordHash 
+    };
+    
+    // Store user by phone as key (and if email exists, also ensure lookup)
+    await createOrUpdateUser(cleanPhone, userData);
+    if (userEmail && userEmail !== cleanPhone) {
+      await createOrUpdateUser(userEmail, userData);
+    }
 
-    _setSession({ phone, name, uid });
+    _setSession({ phone: cleanPhone, name, email: userEmail || authEmail, uid });
     if (window.updateAuthUI) window.updateAuthUI();
     return userData;
   }
 
-  async function login(phone, password) {
-    const email = phone + '@padmanabh.site';
+  async function login(identifier, password) {
+    const raw = String(identifier || '').trim();
+    const isEmail = raw.includes('@');
+    const cleanPhone = raw.replace(/\D/g, '').slice(-10);
+    const authEmail = isEmail ? raw.toLowerCase() : (cleanPhone + '@padmanabh.site');
+    const lookupKey = isEmail ? raw.toLowerCase() : cleanPhone;
     const enteredHash = await hashPassword(password);
     
-    let userData = await getUserByPhone(phone);
+    let userData = await getUserByPhone(lookupKey);
+    // If looked up by email and not found, try looking up by cleaned phone if 10 digits
+    if (!userData && cleanPhone.length === 10) {
+      userData = await getUserByPhone(cleanPhone);
+    }
     let uid = '';
     let loggedIn = false;
 
@@ -89,21 +112,30 @@ const PhoneAuth = (() => {
     if (!loggedIn) {
       let userCred;
       try {
-        userCred = await signIn(email, password);
+        userCred = await signIn(authEmail, password);
       } catch (e) {
         console.warn("Firebase Auth Error, falling back to local:", e);
         const localAuth = JSON.parse(localStorage.getItem('pa_local_auth') || '{}');
-        if (!localAuth[phone] || localAuth[phone].password !== password) {
+        const match = localAuth[lookupKey] || (cleanPhone.length === 10 ? localAuth[cleanPhone] : null);
+        if (!match || match.password !== password) {
           throw new Error('Invalid phone number or password.');
         }
-        userCred = { user: { uid: localAuth[phone].uid } };
+        userCred = { user: { uid: match.uid } };
       }
       uid = userCred.user.uid;
       loggedIn = true;
 
       // Auto-migrate legacy user: Save secure password hash to Firestore
       if (!userData) {
-        userData = { phone, name: phone, uid, lastLoginAt: new Date().toISOString(), orderIds: [], passwordHash: enteredHash };
+        userData = { 
+          phone: cleanPhone || raw, 
+          email: isEmail ? raw : (cleanPhone + '@padmanabh.site'),
+          name: cleanPhone || raw, 
+          uid, 
+          lastLoginAt: new Date().toISOString(), 
+          orderIds: [], 
+          passwordHash: enteredHash 
+        };
       } else {
         userData.passwordHash = enteredHash;
       }
@@ -113,13 +145,15 @@ const PhoneAuth = (() => {
     if (userData) {
       userData.lastLoginAt = new Date().toISOString();
       userData.uid = uid;
-      await createOrUpdateUser(phone, userData);
-    } else {
-      userData = { phone, name: phone, uid, lastLoginAt: new Date().toISOString(), orderIds: [], passwordHash: enteredHash };
-      await createOrUpdateUser(phone, userData);
+      await createOrUpdateUser(userData.phone || cleanPhone, userData);
     }
 
-    _setSession({ phone, name: userData.name, uid });
+    _setSession({ 
+      phone: userData.phone || cleanPhone, 
+      name: userData.name, 
+      email: userData.email || authEmail,
+      uid 
+    });
     if (window.updateAuthUI) window.updateAuthUI();
     return userData;
   }

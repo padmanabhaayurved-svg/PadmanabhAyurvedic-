@@ -36,6 +36,91 @@
   /* opacity controlled by JS carousel — do not set here */
 }
 
+/* ── HERO CAROUSEL CONTROLS ─────────────────────────────── */
+.hero-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  user-select: none;
+}
+
+.hero-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--primary);
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  border-color: rgba(62, 117, 29, 0.3);
+}
+
+.hero-nav-btn:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.hero-nav-prev {
+  left: 20px;
+}
+
+.hero-nav-next {
+  right: 20px;
+}
+
+.hero-dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.hero-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.hero-dot.active {
+  width: 26px;
+  border-radius: 10px;
+  background: var(--primary);
+  box-shadow: 0 0 10px rgba(62, 117, 29, 0.5);
+}
+
+@media (max-width: 768px) {
+  .hero-nav-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .hero-nav-prev {
+    left: 10px;
+  }
+  .hero-nav-next {
+    right: 10px;
+  }
+}
+
 
 .hero-content {
   position: relative;

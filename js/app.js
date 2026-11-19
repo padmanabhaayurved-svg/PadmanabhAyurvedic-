@@ -2291,8 +2291,8 @@ window.printInvoice = function(orderId) {
   }, 350);
 };
 
-// ── Universal Phone Auth Modal ───────────────────────────────
-window.showPhoneAuthModal = function() {
+// ── Universal Auth Modal (Google + Manual Account) ──────────────
+window.showPhoneAuthModal = function(initialTab = 'login') {
   const existing = document.getElementById('phone-auth-overlay');
   if (existing) existing.remove();
 
@@ -2300,16 +2300,15 @@ window.showPhoneAuthModal = function() {
   overlay.id = 'phone-auth-overlay';
   overlay.className = 'modal-overlay active';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px; text-align:center;">
-      <div class="modal-header">
-        <h3 class="modal-title" id="phone-auth-title">Sign In</h3>
-        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+    <div class="modal" style="max-width:420px; text-align:left;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px;">
+        <h3 class="modal-title" id="auth-modal-title" style="margin:0; font-family:var(--font-serif); font-size:1.35rem;">Sign In</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
       </div>
-      <div class="modal-body">
-        <p style="color:var(--text-muted);margin-bottom:24px;font-size:0.95rem;">
-          Sign in to view your orders and checkout faster.
-        </p>
-        <button class="btn btn-outline btn-full" onclick="handleGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:12px;">
+
+      <div class="modal-body" style="padding-top:16px;">
+        <!-- Google Fast Login Button -->
+        <button class="btn btn-outline btn-full" onclick="handleGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:12px;font-weight:600;padding:12px;border-radius:var(--radius-md);">
           <svg width="20" height="20" viewBox="0 0 48 48">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
             <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -2318,10 +2317,193 @@ window.showPhoneAuthModal = function() {
           </svg>
           Sign in with Google
         </button>
+
+        <div style="display:flex;align-items:center;text-align:center;color:var(--text-muted);font-size:0.8rem;gap:12px;margin:20px 0 16px;">
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+          <span>OR USE EMAIL / PHONE</span>
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+
+        <!-- Auth Tabs (Login vs Register) -->
+        <div style="display:flex; border-bottom:2px solid var(--border); margin-bottom:20px;">
+          <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1; padding:10px 0; background:none; border:none; border-bottom:2px solid var(--primary); font-weight:700; color:var(--primary); cursor:pointer; font-size:0.95rem;">
+            Sign In
+          </button>
+          <button id="auth-tab-register" onclick="switchAuthTab('register')" style="flex:1; padding:10px 0; background:none; border:none; border-bottom:2px solid transparent; font-weight:600; color:var(--text-muted); cursor:pointer; font-size:0.95rem;">
+            Create Account
+          </button>
+        </div>
+
+        <!-- Error notice -->
+        <div id="auth-modal-error" style="display:none; padding:10px 14px; background:rgba(239, 68, 68, 0.1); border-left:3px solid #ef4444; color:#ef4444; border-radius:4px; font-size:0.85rem; margin-bottom:16px;"></div>
+
+        <!-- Form: Sign In -->
+        <form id="auth-form-login" onsubmit="handleManualLogin(event)" style="display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:5px; color:var(--text-primary);">Phone Number or Email</label>
+            <input type="text" id="auth-login-identifier" class="form-input" placeholder="e.g. 9876543210 or name@example.com" required style="width:100%; box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:5px; color:var(--text-primary);">Password</label>
+            <input type="password" id="auth-login-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password" style="width:100%; box-sizing:border-box;" />
+          </div>
+          <button type="submit" id="auth-login-submit" class="btn btn-primary btn-full" style="padding:12px; font-weight:600; margin-top:6px;">
+            Sign In to Account
+          </button>
+        </form>
+
+        <!-- Form: Create Manual Account -->
+        <form id="auth-form-register" onsubmit="handleManualRegister(event)" style="display:none; flex-direction:column; gap:12px;">
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:4px; color:var(--text-primary);">Full Name *</label>
+            <input type="text" id="auth-reg-name" class="form-input" placeholder="e.g. Rahul Sharma" required style="width:100%; box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:4px; color:var(--text-primary);">Mobile Number *</label>
+            <input type="tel" id="auth-reg-phone" class="form-input" placeholder="10-digit mobile number" required maxlength="10" pattern="[0-9]{10}" style="width:100%; box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:4px; color:var(--text-primary);">Email ID *</label>
+            <input type="email" id="auth-reg-email" class="form-input" placeholder="name@example.com" required style="width:100%; box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:4px; color:var(--text-primary);">Create Password *</label>
+            <input type="password" id="auth-reg-password" class="form-input" placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password" style="width:100%; box-sizing:border-box;" />
+          </div>
+          <button type="submit" id="auth-reg-submit" class="btn btn-primary btn-full" style="padding:12px; font-weight:600; margin-top:6px;">
+            Create Account
+          </button>
+        </form>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
+
+  if (initialTab === 'register') {
+    switchAuthTab('register');
+  }
+};
+
+window.switchAuthTab = function(tab) {
+  const loginTab = document.getElementById('auth-tab-login');
+  const regTab = document.getElementById('auth-tab-register');
+  const loginForm = document.getElementById('auth-form-login');
+  const regForm = document.getElementById('auth-form-register');
+  const title = document.getElementById('auth-modal-title');
+  const err = document.getElementById('auth-modal-error');
+  if (err) err.style.display = 'none';
+
+  if (tab === 'register') {
+    if (loginTab) { loginTab.style.borderBottomColor = 'transparent'; loginTab.style.color = 'var(--text-muted)'; loginTab.style.fontWeight = '600'; }
+    if (regTab) { regTab.style.borderBottomColor = 'var(--primary)'; regTab.style.color = 'var(--primary)'; regTab.style.fontWeight = '700'; }
+    if (loginForm) loginForm.style.display = 'none';
+    if (regForm) regForm.style.display = 'flex';
+    if (title) title.textContent = 'Create Account';
+  } else {
+    if (loginTab) { loginTab.style.borderBottomColor = 'var(--primary)'; loginTab.style.color = 'var(--primary)'; loginTab.style.fontWeight = '700'; }
+    if (regTab) { regTab.style.borderBottomColor = 'transparent'; regTab.style.color = 'var(--text-muted)'; regTab.style.fontWeight = '600'; }
+    if (loginForm) loginForm.style.display = 'flex';
+    if (regForm) regForm.style.display = 'none';
+    if (title) title.textContent = 'Sign In';
+  }
+};
+
+window.handleManualLogin = async function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const idEl = document.getElementById('auth-login-identifier');
+  const passEl = document.getElementById('auth-login-password');
+  const submitBtn = document.getElementById('auth-login-submit');
+  const errEl = document.getElementById('auth-modal-error');
+
+  const identifier = idEl ? idEl.value.trim() : '';
+  const password = passEl ? passEl.value : '';
+
+  if (!identifier || !password) {
+    if (errEl) { errEl.textContent = 'Please enter your phone/email and password.'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Signing in...'; }
+  if (errEl) errEl.style.display = 'none';
+
+  try {
+    const user = await window.PhoneAuth.login(identifier, password);
+    showToast('Signed in successfully! Welcome ' + (user.name || ''), 'success');
+    updateAuthUI();
+    const overlay = document.getElementById('phone-auth-overlay');
+    if (overlay) overlay.remove();
+
+    const checkoutForm = document.getElementById('checkout-form');
+    if (checkoutForm) {
+      checkoutForm.requestSubmit();
+    } else if (window.openUserDrawer) {
+      openUserDrawer();
+    }
+  } catch(err) {
+    console.error('Manual login error:', err);
+    if (errEl) {
+      errEl.textContent = err.message || 'Login failed. Please check your credentials.';
+      errEl.style.display = 'block';
+    }
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In to Account'; }
+  }
+};
+
+window.handleManualRegister = async function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const nameEl = document.getElementById('auth-reg-name');
+  const phoneEl = document.getElementById('auth-reg-phone');
+  const emailEl = document.getElementById('auth-reg-email');
+  const passEl = document.getElementById('auth-reg-password');
+  const submitBtn = document.getElementById('auth-reg-submit');
+  const errEl = document.getElementById('auth-modal-error');
+
+  const name = nameEl ? nameEl.value.trim() : '';
+  const phone = phoneEl ? phoneEl.value.trim().replace(/\D/g, '').slice(-10) : '';
+  const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
+  const password = passEl ? passEl.value : '';
+
+  if (!name) {
+    if (errEl) { errEl.textContent = 'Please enter your full name.'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (!phone || phone.length !== 10) {
+    if (errEl) { errEl.textContent = 'Please enter a valid 10-digit mobile number.'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (!email || !email.includes('@')) {
+    if (errEl) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (!password || password.length < 6) {
+    if (errEl) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creating account...'; }
+  if (errEl) errEl.style.display = 'none';
+
+  try {
+    const user = await window.PhoneAuth.register(phone, name, password, email);
+    showToast('Account created successfully! Welcome ' + name, 'success');
+    updateAuthUI();
+    const overlay = document.getElementById('phone-auth-overlay');
+    if (overlay) overlay.remove();
+
+    const checkoutForm = document.getElementById('checkout-form');
+    if (checkoutForm) {
+      checkoutForm.requestSubmit();
+    } else if (window.openUserDrawer) {
+      openUserDrawer();
+    }
+  } catch(err) {
+    console.error('Manual registration error:', err);
+    if (errEl) {
+      errEl.textContent = err.message || 'Registration failed. Please try again.';
+      errEl.style.display = 'block';
+    }
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create Account'; }
+  }
 };
 
 window.handleGoogleLogin = async function() {
@@ -2340,12 +2522,20 @@ window.handleGoogleLogin = async function() {
       localStorage.setItem('pa_user_session', JSON.stringify({
         phone: user.email,
         name: userData.name,
+        email: user.email,
         uid: user.uid
       }));
       showToast('Signed in successfully!', 'success');
       updateAuthUI();
       const overlay = document.getElementById('phone-auth-overlay');
       if (overlay) overlay.remove();
+
+      const checkoutForm = document.getElementById('checkout-form');
+      if (checkoutForm) {
+        checkoutForm.requestSubmit();
+      } else if (window.openUserDrawer) {
+        openUserDrawer();
+      }
     }
   } catch(e) {
     console.error('Google Sign-in Error:', e);

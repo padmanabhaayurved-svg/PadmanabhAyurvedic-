@@ -123,6 +123,17 @@
   <div class="hero-bg" id="hero-carousel">
     <!-- Images injected by JS -->
   </div>
+  <button class="hero-nav-btn hero-nav-prev" id="hero-prev-btn" aria-label="Previous slide" style="display:none;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+  </button>
+  <button class="hero-nav-btn hero-nav-next" id="hero-next-btn" aria-label="Next slide" style="display:none;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </button>
+  <div class="hero-dots" id="hero-dots" style="display:none;"></div>
   <div class="hero-scroll-hint">Scroll</div>
 </section>
 
@@ -311,27 +322,111 @@ var initHero = async () => {
     const renderImages = (imgs) => {
       console.log('[Home] Rendering hero images:', imgs.length);
       carousel.innerHTML = imgs.map((item, i) => `
-        <a href="${item.link || '#'}" class="carousel-img" style="position:absolute;top:0;left:0;width:100%;height:100%;display:block;opacity:${i===0 ? 1 : 0};pointer-events:${i===0 ? 'auto' : 'none'};transition:opacity 2s ease-in-out;z-index:${i===0 ? 3 : 2};">
+        <a href="${item.link || '#'}" class="carousel-img" style="position:absolute;top:0;left:0;width:100%;height:100%;display:block;opacity:${i===0 ? 1 : 0};pointer-events:${i===0 ? 'auto' : 'none'};transition:opacity 0.8s ease-in-out;z-index:${i===0 ? 3 : 2};">
           <img src="${item.url}" alt="Ayurvedic wellness" referrerpolicy="no-referrer" loading="${i === 0 ? 'eager' : 'lazy'}" width="${isMobile ? 800 : 1600}" height="${isMobile ? 1000 : 700}" fetchpriority="${i === 0 ? 'high' : 'auto'}" style="width:100%;height:100%;object-fit:cover;display:block;"/>
         </a>
       `).join('');
-      
-      // Restart Interval
-    let currentIndex = 0;
-    const imgElements = carousel.querySelectorAll('.carousel-img');
-    if (window.heroInterval) clearInterval(window.heroInterval);
-    if (imgElements.length > 1) {
-      window.heroInterval = setInterval(() => {
+
+      const prevBtn = document.getElementById('hero-prev-btn');
+      const nextBtn = document.getElementById('hero-next-btn');
+      const dotsContainer = document.getElementById('hero-dots');
+
+      let currentIndex = 0;
+      const imgElements = carousel.querySelectorAll('.carousel-img');
+
+      if (imgElements.length > 1) {
+        if (prevBtn) prevBtn.style.display = 'flex';
+        if (nextBtn) nextBtn.style.display = 'flex';
+        if (dotsContainer) {
+          dotsContainer.style.display = 'flex';
+          dotsContainer.innerHTML = imgs.map((_, i) => `
+            <button class="hero-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Slide ${i + 1}"></button>
+          `).join('');
+
+          dotsContainer.querySelectorAll('.hero-dot').forEach(dot => {
+            dot.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const idx = parseInt(dot.getAttribute('data-index'), 10);
+              goToSlide(idx);
+            });
+          });
+        }
+      } else {
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (dotsContainer) dotsContainer.style.display = 'none';
+      }
+
+      function goToSlide(nextIndex) {
+        if (nextIndex === currentIndex || imgElements.length <= 1) return;
         imgElements[currentIndex].style.opacity = '0';
         imgElements[currentIndex].style.pointerEvents = 'none';
         imgElements[currentIndex].style.zIndex = '2';
-        currentIndex = (currentIndex + 1) % imgElements.length;
+
+        currentIndex = (nextIndex + imgElements.length) % imgElements.length;
+
         imgElements[currentIndex].style.opacity = '1';
         imgElements[currentIndex].style.pointerEvents = 'auto';
         imgElements[currentIndex].style.zIndex = '3';
-      }, 5000);
-    }
-  };
+
+        if (dotsContainer) {
+          dotsContainer.querySelectorAll('.hero-dot').forEach((d, i) => {
+            d.classList.toggle('active', i === currentIndex);
+          });
+        }
+        resetInterval();
+      }
+
+      function nextSlide() {
+        goToSlide(currentIndex + 1);
+      }
+
+      function prevSlide() {
+        goToSlide(currentIndex - 1);
+      }
+
+      if (prevBtn) {
+        prevBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          prevSlide();
+        };
+      }
+
+      if (nextBtn) {
+        nextBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          nextSlide();
+        };
+      }
+
+      // Swipe support for touch devices
+      let touchStartX = 0;
+      let touchEndX = 0;
+      carousel.ontouchstart = (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      };
+      carousel.ontouchend = (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 45) {
+          nextSlide();
+        } else if (touchEndX - touchStartX > 45) {
+          prevSlide();
+        }
+      };
+
+      function resetInterval() {
+        if (window.heroInterval) clearInterval(window.heroInterval);
+        if (imgElements.length > 1) {
+          window.heroInterval = setInterval(() => {
+            nextSlide();
+          }, 5000);
+        }
+      }
+
+      resetInterval();
+    };
 
     // Render collections helper
     const renderCollections = (collections) => {

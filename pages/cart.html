@@ -836,14 +836,29 @@ function renderCartPage() {
         </div>
         <!-- Delivery Form -->
         <div class="co-card active-card">
-          <div class="co-card-header">
-            <div class="co-card-header-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="co-card-header" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="co-card-header-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <span class="co-card-title">Delivery Details</span>
             </div>
-            <span class="co-card-title">Delivery Details</span>
+            <div id="co-auth-banner-status">
+              <!-- Rendered dynamically: Sign In / Create Account button or user badge -->
+            </div>
           </div>
           <form id="co-form" novalidate>
             <div class="co-form-body">
+              <div id="co-auth-prompt-box" style="margin-bottom:16px; padding:12px 16px; background:rgba(62,117,29,0.06); border:1px solid rgba(62,117,29,0.2); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div style="font-size:0.86rem; color:var(--text-secondary);">
+                  <strong style="color:var(--text-primary); display:block; margin-bottom:2px;">Have an account or want to save your orders?</strong>
+                  Sign in or create a manual account to track shipments and auto-fill details.
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="showPhoneAuthModal('login')" style="padding:6px 14px; font-size:0.82rem;">Sign In</button>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="showPhoneAuthModal('register')" style="padding:6px 14px; font-size:0.82rem;">Create Account</button>
+                </div>
+              </div>
               <div class="co-form-row">
                 <div class="co-form-group">
                   <label class="co-label">Full Name <span>*</span></label>
@@ -992,17 +1007,28 @@ function renderCartPage() {
     </div>
   `;
 
-  // Pre-fill user data
+  // Pre-fill user data & configure prompt banner
   if (typeof PhoneAuth !== 'undefined') {
     const s = PhoneAuth.getUser();
-    if (s) {
+    const promptBox = document.getElementById('co-auth-prompt-box');
+    const statusHeader = document.getElementById('co-auth-banner-status');
+
+    if (s && (s.phone || s.email || s.uid)) {
       const nameEl = document.getElementById('co-name');
       const emailEl = document.getElementById('co-email');
       const phoneEl = document.getElementById('co-phone');
       
       if (s.name && nameEl && !nameEl.value) nameEl.value = s.name;
       if (s.email && emailEl && !emailEl.value) emailEl.value = s.email;
-      if (s.phone && phoneEl && !phoneEl.value) phoneEl.value = s.phone;
+      if (s.phone && phoneEl && !phoneEl.value && !s.phone.includes('@')) phoneEl.value = s.phone;
+
+      if (promptBox) promptBox.style.display = 'none';
+      if (statusHeader) {
+        statusHeader.innerHTML = `<span style="font-size:0.8rem; color:var(--primary); font-weight:600; display:flex; align-items:center; gap:5px;">✓ Signed in as <strong>${s.name || s.phone || s.email}</strong></span>`;
+      }
+    } else {
+      if (promptBox) promptBox.style.display = 'flex';
+      if (statusHeader) statusHeader.innerHTML = '';
     }
   }
 
