@@ -31,7 +31,9 @@ function initFirebase() {
     _db      = firebase.firestore();
     window.pa_db = _db; // Expose globally for app.js, admin.js, about.html, home.html
     _auth    = firebase.auth();
-    _storage = firebase.storage();
+    if (typeof firebase.storage === 'function') {
+      _storage = firebase.storage();
+    }
     firebaseReady = true;
   } catch (e) {
     console.warn('[Firebase] Init failed — running in offline mode:', e.message);
