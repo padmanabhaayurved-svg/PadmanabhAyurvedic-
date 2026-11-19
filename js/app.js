@@ -1952,12 +1952,14 @@ window.openUserDrawer = async function() {
   }
 
   body.innerHTML = `
-    <div style="margin-bottom: 24px; padding: 24px; background:linear-gradient(135deg, var(--bg-surface), #1a1a1a); border:1px solid var(--border); border-radius:var(--radius-lg);">
-      <div style="font-size:0.75rem; color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:8px;">Account Profile</div>
-      <div style="font-weight:600; font-size:1.2rem; color:var(--text-primary); margin-bottom:4px;">${name}</div>
-      <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">${phone}</div>
+    <div style="margin-bottom: 24px; padding: 20px 22px; background:linear-gradient(135deg, rgba(62,117,29,0.08) 0%, rgba(201,168,76,0.1) 100%); border:1px solid rgba(62,117,29,0.25); border-radius:var(--radius-lg);">
+      <div style="font-size:0.75rem; color:var(--primary); text-transform:uppercase; letter-spacing:1.5px; font-weight:700; margin-bottom:6px;">Account Profile</div>
+      <div style="font-weight:700; font-size:1.25rem; color:var(--text-primary); margin-bottom:4px;">${name}</div>
+      <div style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:14px; display:flex; align-items:center; gap:6px;">
+        <span>📱</span> <span>${phone}</span>
+      </div>
       <div style="display:flex; gap:8px;">
-        <button class="btn btn-outline btn-sm" onclick="handleSignOut()" style="flex:1">Sign Out</button>
+        <button class="btn btn-outline btn-sm" onclick="handleSignOut()" style="flex:1; border-color:rgba(0,0,0,0.15); color:var(--text-primary); font-weight:600; padding:8px 12px; border-radius:var(--radius-md);">Sign Out</button>
       </div>
     </div>
 
